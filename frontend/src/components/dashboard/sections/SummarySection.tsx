@@ -75,14 +75,14 @@ export function SummarySection({
         <div className="col-span-1">
           <CategoryDistributionCard 
             data={categoryDistributionData}
-            currency="R$"
+            currency="$"
           />
         </div>
         
         <div className="col-span-1">
           <AnomaliesCard 
             anomalies={anomaliesData}
-            currency="R$"
+            currency="$"
           />
         </div>
 

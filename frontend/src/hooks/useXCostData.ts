@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useCredentials } from './useCredentials';
 import { useAnalytics } from './useAnalytics';
-import { timeFilterToDays } from '@/utils/timeFrame';
+import { timeFilterToDays, getDateRangeFromTimeFilter } from '@/utils/timeFrame';
 import { getProviderFromRegion, getProviderColor } from '@/utils/providerColors';
 import type { 
   SpendSummary,
@@ -21,10 +21,12 @@ import type {
 interface UseXCostDataOptions {
   timeFilter?: string;
   credentialId?: number;
+  customStartDate?: Date;
+  customEndDate?: Date;
 }
 
 export const useXCostData = (options: UseXCostDataOptions = {}) => {
-  const { timeFilter, credentialId: optionsCredentialId } = options;
+  const { timeFilter, credentialId: optionsCredentialId, customStartDate, customEndDate } = options;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { credentials } = useCredentials();
@@ -52,7 +54,10 @@ export const useXCostData = (options: UseXCostDataOptions = {}) => {
   // Função para carregar dados de uma credencial específica
   const loadDataForCredential = async (credentialId: number, timeFilterOrDays?: string | number) => {
     // Criar chave única para os parâmetros atuais
-    const currentParams = `${credentialId}-${timeFilterOrDays || '30'}`;
+    const dateRangeKey = customStartDate && customEndDate 
+      ? `${customStartDate.toISOString()}-${customEndDate.toISOString()}`
+      : '';
+    const currentParams = `${credentialId}-${timeFilterOrDays || '30'}-${dateRangeKey}`;
     
     // Evitar chamadas duplicadas
     if (isLoadingRef.current || currentParams === lastParamsRef.current) {
@@ -64,24 +69,31 @@ export const useXCostData = (options: UseXCostDataOptions = {}) => {
     setLoading(true);
     setError(null);
 
-    // Calcular dias baseado no parâmetro
-    const days = typeof timeFilterOrDays === 'string' 
-      ? timeFilterToDays(timeFilterOrDays) 
-      : (timeFilterOrDays || 30);
+    // Determinar se usar data customizada ou calcular dias
+    let dateRange: { startDate?: Date; endDate?: Date } | undefined;
+    let days = 30;
+
+    if (customStartDate && customEndDate) {
+      dateRange = { startDate: customStartDate, endDate: customEndDate };
+    } else {
+      days = typeof timeFilterOrDays === 'string' 
+        ? timeFilterToDays(timeFilterOrDays) 
+        : (timeFilterOrDays || 30);
+    }
 
     try {
       console.log(`🔄 X Cost API call: ${currentParams}`);
       
       const [trends, services, regions] = await Promise.all([
-        getTrend(credentialId, days).catch(err => {
+        getTrend(credentialId, days, dateRange).catch(err => {
           console.log('⚠️ Trend data not available:', err.message);
           return [];
         }),
-        getServiceCosts(credentialId, days).catch(err => {
+        getServiceCosts(credentialId, days, dateRange).catch(err => {
           console.log('⚠️ Service costs not available:', err.message);
           return [];
         }),
-        getRegionCosts(credentialId, days).catch(err => {
+        getRegionCosts(credentialId, days, dateRange).catch(err => {
           console.log('⚠️ Region costs not available:', err.message);
           return [];
         })

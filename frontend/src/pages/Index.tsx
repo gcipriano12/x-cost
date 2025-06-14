@@ -31,6 +31,8 @@ const Index = () => {
   const {
     timeFilter,
     setTimeFilter,
+    customDateRange,
+    handleCustomDateRange,
     spendSummaryData,
     providerDistributionData,
     categoryDistributionData,
@@ -61,6 +63,7 @@ const Index = () => {
           showTimeFilter={true}
           timeFilter={timeFilter}
           onTimeFilterChange={setTimeFilter}
+          onCustomDateRange={handleCustomDateRange}
         />
         
         <div className="p-4 space-y-6">

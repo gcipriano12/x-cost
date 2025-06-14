@@ -29,7 +29,9 @@
     "noNotifications": "Nenhuma notificação",
     "markAllAsRead": "Marcar todas como lidas",
     "cloudCostManagementDashboard": "Painel de gerenciamento de custos na nuvem",
-    "all": "Todos"
+    "all": "Todos",
+    "apply": "Aplicar",
+    "cancel": "Cancelar"
   },
   "spendSummary": {
     "title": "Resumo de Gastos",
@@ -204,8 +206,13 @@
     "last30days": "Últimos 30 dias",
     "last90days": "Últimos 90 dias",
     "lastYear": "Último ano",
+    "previousYear": "Ano anterior",
+    "thisYear": "Este ano",
     "custom": "Período personalizado",
-    "selectPeriod": "Selecione o período"
+    "selectPeriod": "Selecione o período",
+    "selectDateRange": "Selecionar intervalo de datas",
+    "selectCustomPeriod": "Selecionar período personalizado",
+    "selectStartAndEndDate": "Selecione as datas de início e fim"
   },
   "mockData": {
     "categories": {
@@ -600,6 +607,7 @@
         "budgetNamePlaceholder": "ex.: Time de Engenharia Q2, Produção AWS",
         "budgetAmount": "Valor do Orçamento",
         "budgetAmountPlaceholder": "0,00",
+        "budgetAmountHelp": "Digite o valor no formato: 1.000,00",
         "period": "Período",
         "alertThreshold": "Limite de Alerta (%)",
         "alertThresholdHelp": "Alertar quando o consumo do orçamento atingir esta porcentagem",

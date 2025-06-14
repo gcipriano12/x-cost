@@ -99,6 +99,11 @@ interface UseBudgetsReturn {
   totalBudgetAmount: string;
   totalConsumption: string;
   overallConsumptionPercentage: string;
+  // Active budget summaries
+  activeBudgetCount: number;
+  activeBudgetAmount: string;
+  activeBudgetConsumption: string;
+  activeBudgetConsumptionPercentage: string;
   loading: boolean;
   error: string | null;
   createBudget: (data: BudgetCreate) => Promise<BudgetResponse>;
@@ -117,9 +122,15 @@ export const useBudgets = (options: UseBudgetsOptions = {}): UseBudgetsReturn =>
   const [totalBudgetAmount, setTotalBudgetAmount] = useState('0');
   const [totalConsumption, setTotalConsumption] = useState('0');
   const [overallConsumptionPercentage, setOverallConsumptionPercentage] = useState('0');
+  // Active budget states
+  const [activeBudgetCount, setActiveBudgetCount] = useState(0);
+  const [activeBudgetAmount, setActiveBudgetAmount] = useState('0');
+  const [activeBudgetConsumption, setActiveBudgetConsumption] = useState('0');
+  const [activeBudgetConsumptionPercentage, setActiveBudgetConsumptionPercentage] = useState('0');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated } = useAuth();
+
 
   const apiCall = async (url: string, options: { method?: string; body?: any } = {}) => {
     const { method = 'GET', body } = options;
@@ -228,6 +239,36 @@ export const useBudgets = (options: UseBudgetsOptions = {}): UseBudgetsReturn =>
     await refreshBudgets(); // Refresh list
   };
 
+  // Calculate active budget summaries when data changes
+  useEffect(() => {
+    const activeBudgets = budgets.filter(budget => budget.is_active);
+    
+    const activeCount = activeBudgets.length;
+    const activeBudgetSum = activeBudgets.reduce((sum, budget) => sum + parseFloat(budget.budget_amount), 0);
+    
+    setActiveBudgetCount(activeCount);
+    setActiveBudgetAmount(activeBudgetSum.toString());
+    
+    // For consumption, we'll calculate proportionally based on the backend data
+    // This is an approximation since we can't efficiently fetch all consumption data here
+    const allBudgetSum = parseFloat(totalBudgetAmount);
+    const totalConsumptionValue = parseFloat(totalConsumption);
+    
+    if (allBudgetSum > 0 && totalConsumptionValue > 0) {
+      // Approximate active consumption based on proportion of active budgets
+      const activeConsumptionApprox = (activeBudgetSum / allBudgetSum) * totalConsumptionValue;
+      const activeConsumptionPercentage = activeBudgetSum > 0 
+        ? (activeConsumptionApprox / activeBudgetSum) * 100 
+        : 0;
+      
+      setActiveBudgetConsumption(activeConsumptionApprox.toString());
+      setActiveBudgetConsumptionPercentage(activeConsumptionPercentage.toFixed(2));
+    } else {
+      setActiveBudgetConsumption('0');
+      setActiveBudgetConsumptionPercentage('0');
+    }
+  }, [budgets, totalBudgetAmount, totalConsumption]);
+
   useEffect(() => {
     if (isAuthenticated) {
       refreshBudgets();
@@ -240,6 +281,11 @@ export const useBudgets = (options: UseBudgetsOptions = {}): UseBudgetsReturn =>
     totalBudgetAmount,
     totalConsumption,
     overallConsumptionPercentage,
+    // Active budget summaries
+    activeBudgetCount,
+    activeBudgetAmount,
+    activeBudgetConsumption,
+    activeBudgetConsumptionPercentage,
     loading,
     error,
     createBudget,

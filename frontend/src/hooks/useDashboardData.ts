@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { DateRange } from 'react-day-picker';
+import { format, differenceInDays } from 'date-fns';
 import { useXCostData } from './useXCostData';
 
 // Types for dashboard data
@@ -175,10 +177,21 @@ export type DashboardData = {
 };
 
 export const useDashboardData = () => {
-  const [timeFilter, setTimeFilter] = useState('30d');
+  const [timeFilter, setTimeFilter] = useState('7d');
+  const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
   const { t } = useTranslation();
   
-  // Integração com X Cost API - passar timeFilter
+  // Function to handle custom date range
+  const handleCustomDateRange = (range: DateRange | undefined) => {
+    setCustomDateRange(range);
+    if (range?.from && range?.to) {
+      // Calculate days difference and update timeFilter to custom
+      const days = differenceInDays(range.to, range.from) + 1;
+      console.log(`Custom date range selected: ${format(range.from, 'dd/MM/yyyy')} - ${format(range.to, 'dd/MM/yyyy')} (${days} days)`);
+    }
+  };
+  
+  // Integração com X Cost API - passar timeFilter e datas customizadas
   const {
     spendSummary: apiSpendSummary,
     providerDistribution: apiProviderDistribution,
@@ -188,15 +201,19 @@ export const useDashboardData = () => {
     regionCosts: apiRegionCosts,
     loading: apiLoading,
     hasCredentials
-  } = useXCostData({ timeFilter });
+  } = useXCostData({ 
+    timeFilter,
+    customStartDate: customDateRange?.from,
+    customEndDate: customDateRange?.to
+  });
   
   // Mock data for the dashboard
   const mockDashboardData: DashboardData = {
-    currency: 'R$',
+    currency: '$',
     // Dados para a seção de resumo
     spendSummaryData: {
       totalSpend: 1245678.90,
-      currency: 'R$',
+      currency: '$',
       previousPeriodChange: -12.5,
       sparklineData: [45000, 48000, 52000, 49000, 54000, 59000, 58000],
       providerBreakdown: [
@@ -346,7 +363,7 @@ export const useDashboardData = () => {
         }
       ],
       totalPotentialSavings: 152574.85,
-      currency: 'R$'
+      currency: '$'
     },
 
     // Dados para a seção de categorias e tendências
@@ -465,7 +482,7 @@ export const useDashboardData = () => {
       { 
         name: t('kpis.names.costPerWorkload'), 
         value: 3240, 
-        unit: 'R$', 
+        unit: '$', 
         trend: -4.2, 
         target: 3000, 
         isGoodWhenHigher: false,
@@ -509,7 +526,7 @@ export const useDashboardData = () => {
       { 
         name: t('kpis.names.costPerVcpuGpuHour'), 
         value: 0.42, 
-        unit: 'R$/h', 
+        unit: '$/h', 
         trend: -2.8, 
         target: 0.35, 
         isGoodWhenHigher: false,
@@ -575,7 +592,7 @@ export const useDashboardData = () => {
       { 
         name: t('kpis.names.anomalyDetectionSavings'), 
         value: 45250, 
-        unit: 'R$', 
+        unit: '$', 
         trend: 12.8, 
         target: 50000, 
         isGoodWhenHigher: true,
@@ -587,17 +604,17 @@ export const useDashboardData = () => {
 
     costEventsData: [
       // Eventos passados (serão destacados em vermelho)
-      { id: 'e1', date: '2025-04-20', title: 'Faturamento AWS (anterior)', type: 'billing', impact: 543210.50, currency: 'R$' },
-      { id: 'e2', date: '2025-05-02', title: 'Renovação licenças (anterior)', type: 'contract', impact: 85000.00, currency: 'R$' },
+      { id: 'e1', date: '2025-04-20', title: 'Faturamento AWS (anterior)', type: 'billing', impact: 543210.50, currency: '$' },
+      { id: 'e2', date: '2025-05-02', title: 'Renovação licenças (anterior)', type: 'contract', impact: 85000.00, currency: '$' },
       
       // Eventos do mês atual
-      { id: 'e3', date: '2025-05-20', title: 'Faturamento AWS', type: 'billing', impact: 543210.50, currency: 'R$' },
-      { id: 'e4', date: '2025-05-25', title: 'Renovação contrato Azure', type: 'contract', impact: 120000.00, currency: 'R$' },
+      { id: 'e3', date: '2025-05-20', title: 'Faturamento AWS', type: 'billing', impact: 543210.50, currency: '$' },
+      { id: 'e4', date: '2025-05-25', title: 'Renovação contrato Azure', type: 'contract', impact: 120000.00, currency: '$' },
       { id: 'e5', date: '2025-05-28', title: 'Revisão de orçamento', type: 'budget' },
       
       // Eventos futuros
-      { id: 'e6', date: '2025-06-05', title: 'Faturamento GCP', type: 'billing', impact: 234567.40, currency: 'R$' },
-      { id: 'e7', date: '2025-06-15', title: 'Renovação suporte', type: 'contract', impact: 75000.00, currency: 'R$' },
+      { id: 'e6', date: '2025-06-05', title: 'Faturamento GCP', type: 'billing', impact: 234567.40, currency: '$' },
+      { id: 'e7', date: '2025-06-15', title: 'Renovação suporte', type: 'contract', impact: 75000.00, currency: '$' },
     ],
 
     environmentsData: [
@@ -663,7 +680,7 @@ export const useDashboardData = () => {
         provider: 'AWS',
         addedDate: '2025-05-10',
         cost: 5430.20,
-        currency: 'R$',
+        currency: '$',
         tags: ['serverless', 'novo-projeto']
       },
       { 
@@ -672,7 +689,7 @@ export const useDashboardData = () => {
         provider: 'Azure',
         addedDate: '2025-05-08',
         cost: 3200.50,
-        currency: 'R$',
+        currency: '$',
         tags: ['devops', 'ci-cd'] 
       },
       { 
@@ -681,7 +698,7 @@ export const useDashboardData = () => {
         provider: 'GCP',
         addedDate: '2025-05-02',
         cost: 7800.30,
-        currency: 'R$',
+        currency: '$',
         tags: ['analytics', 'big-data'] 
       },
     ]
@@ -699,6 +716,8 @@ export const useDashboardData = () => {
   return {
     timeFilter,
     setTimeFilter,
+    customDateRange,
+    handleCustomDateRange,
     ...finalDashboardData,
     isLoadingRealData: apiLoading,
     hasRealData: hasCredentials

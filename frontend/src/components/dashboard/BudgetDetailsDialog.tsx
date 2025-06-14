@@ -207,7 +207,15 @@ export function BudgetDetailsDialog({
               <CardTitle className="flex items-center justify-between">
                 <span>{t('budgets.details.budgetStatus')}</span>
                 <div className="flex items-center gap-2">
-                  <Badge variant={budget.is_active ? "default" : "secondary"}>
+                  <Badge 
+                    variant="outline"
+                    className={cn(
+                      "text-xs font-medium",
+                      budget.is_active 
+                        ? "text-green-600 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-950/20 dark:border-green-800"
+                        : "text-red-600 bg-red-50 border-red-200 dark:text-red-400 dark:bg-red-950/20 dark:border-red-800"
+                    )}
+                  >
                     {budget.is_active ? t('budgets.status.active') : t('budgets.status.inactive')}
                   </Badge>
                   <Button
@@ -215,7 +223,12 @@ export function BudgetDetailsDialog({
                     variant="outline"
                     onClick={handleToggleActive}
                     disabled={loadingAction}
-                    className="flex items-center gap-1"
+                    className={cn(
+                      "flex items-center gap-1 font-medium border-2 transition-all duration-200",
+                      budget.is_active 
+                        ? "text-red-600 border-red-200 bg-red-50 hover:bg-red-100 hover:border-red-300 dark:text-red-400 dark:border-red-800 dark:bg-red-950/20 dark:hover:bg-red-950/40"
+                        : "text-green-600 border-green-200 bg-green-50 hover:bg-green-100 hover:border-green-300 dark:text-green-400 dark:border-green-800 dark:bg-green-950/20 dark:hover:bg-green-950/40"
+                    )}
                   >
                     {budget.is_active ? (
                       <>

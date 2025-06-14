@@ -48,8 +48,8 @@ export function TimeFrameTest({ timeFilter }: TimeFrameTestProps) {
 
       <div className="space-y-2">
         <h4 className="font-medium">Dados Carregados</h4>
-        <p><strong>Spend Summary:</strong> {spendSummary ? `R$ ${spendSummary.totalSpend.toLocaleString()}` : 'Não carregado'}</p>
-        <p><strong>Dashboard Data:</strong> {dashboardData ? `R$ ${dashboardData.metrics.total_cost.toLocaleString()}` : 'Não carregado'}</p>
+        <p><strong>Spend Summary:</strong> {spendSummary ? `$ ${spendSummary.totalSpend.toLocaleString()}` : 'Não carregado'}</p>
+        <p><strong>Dashboard Data:</strong> {dashboardData ? `$ ${dashboardData.metrics.total_cost.toLocaleString()}` : 'Não carregado'}</p>
       </div>
 
       <div className="text-xs text-gray-500">

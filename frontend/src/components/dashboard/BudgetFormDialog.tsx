@@ -46,20 +46,37 @@ export function BudgetFormDialog({
   });
 
   const [tagsText, setTagsText] = useState('');
+  const [displayBudgetAmount, setDisplayBudgetAmount] = useState('');
 
   // Atualizar o estado do formulário quando o budget mudar ou o diálogo for aberto
   useEffect(() => {
     if (mode === 'edit' && budget && open) {
+      const budgetAmount = budget.budget_amount || '';
       setFormData({
         budget_name: budget.budget_name || '',
         provider_name: budget.provider_name || null,
         service_name: budget.service_name || '',
-        budget_amount: budget.budget_amount || '',
+        budget_amount: budgetAmount,
         budget_period: budget.budget_period || 'monthly',
         alert_threshold: budget.alert_threshold || '80.00',
         is_active: budget.is_active ?? true,
         tags: budget.tags || {}
       });
+      
+      // Formatar valor para exibição
+      if (budgetAmount) {
+        const numericValue = parseFloat(budgetAmount);
+        if (!isNaN(numericValue)) {
+          setDisplayBudgetAmount(numericValue.toLocaleString('en-US', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+          }));
+        } else {
+          setDisplayBudgetAmount('');
+        }
+      } else {
+        setDisplayBudgetAmount('');
+      }
       
       setTagsText(budget.tags ? JSON.stringify(budget.tags, null, 2) : '');
       setError(null);
@@ -75,6 +92,7 @@ export function BudgetFormDialog({
         is_active: true,
         tags: {}
       });
+      setDisplayBudgetAmount('');
       setTagsText('');
       setError(null);
     }
@@ -84,6 +102,43 @@ export function BudgetFormDialog({
     setFormData(prev => ({
       ...prev,
       [field]: value
+    }));
+    setError(null);
+  };
+
+  // Funções utilitárias para formatação monetária
+  const formatCurrency = (value: string): string => {
+    // Remove tudo que não for dígito
+    const cleanValue = value.replace(/\D/g, '');
+    
+    if (!cleanValue) return '';
+    
+    // Não dividir por 100 - tratar o valor como já sendo em unidades completas
+    const numberValue = parseInt(cleanValue);
+    
+    // Formatar no padrão americano (separador de milhares com vírgula, decimal com ponto)
+    return numberValue.toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    });
+  };
+
+  const parseFormattedCurrency = (formattedValue: string): string => {
+    // Remove vírgulas de separação de milhares e retorna só os dígitos
+    const cleanValue = formattedValue.replace(/,/g, '');
+    return cleanValue || '';
+  };
+
+  const handleBudgetAmountChange = (value: string) => {
+    // Atualizar valor formatado para exibição
+    const formatted = formatCurrency(value);
+    setDisplayBudgetAmount(formatted);
+    
+    // Atualizar valor limpo no state para envio ao backend
+    const cleanValue = parseFormattedCurrency(formatted);
+    setFormData(prev => ({
+      ...prev,
+      budget_amount: cleanValue
     }));
     setError(null);
   };
@@ -206,16 +261,17 @@ export function BudgetFormDialog({
                     <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
                     <Input
                       id="budget_amount"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.budget_amount}
-                      onChange={(e) => handleInputChange('budget_amount', e.target.value)}
-                      placeholder={t('budgets.form.fields.budgetAmountPlaceholder')}
-                      className="pl-7"
+                      type="text"
+                      value={displayBudgetAmount}
+                      onChange={(e) => handleBudgetAmountChange(e.target.value)}
+                      placeholder="1,000,000"
+                      className="pl-8"
                       required
                     />
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    {t('budgets.form.fields.budgetAmountHelp')}
+                  </p>
                 </div>
 
                 <div className="grid gap-2">

@@ -54,7 +54,7 @@ export function RegionHeatmapCard({ data, currency }: RegionHeatmapCardProps) {
             : "bg-white border-gray-200 text-slate-900"
         )}>
           <p className="font-semibold mb-1">{item.name}</p>
-          <p>Custo: <span className="font-medium">{currency} {item.value.toLocaleString('pt-BR', {
+          <p>Custo: <span className="font-medium">{currency} {item.value.toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
           })}</span></p>

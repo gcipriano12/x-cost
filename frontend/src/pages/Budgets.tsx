@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Dashboard from '@/components/dashboard/Dashboard';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { LineChart, Plus, Search, AlertTriangle, CheckCircle, AlertCircle, Edit, Trash2, Eye, Power, PowerOff, RefreshCw, Filter } from 'lucide-react';
+import { LineChart, Plus, Search, AlertTriangle, CheckCircle, AlertCircle, Edit, Trash2, Eye, Power, PowerOff, RefreshCw, Filter, Target, DollarSign, TrendingUp, BarChart3, ArrowUpDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,8 +52,8 @@ const getStatusInfo = (budget: BudgetResponse, isActive: boolean = true) => {
   if (!isActive) {
     return {
       status: 'inactive',
-      color: 'text-gray-500',
-      bgColor: 'bg-gray-50',
+      color: 'text-red-600 dark:text-red-400',
+      bgColor: 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800',
       icon: <AlertCircle className="h-4 w-4" />
     };
   }
@@ -62,8 +62,8 @@ const getStatusInfo = (budget: BudgetResponse, isActive: boolean = true) => {
   // Real consumption status will be shown in details dialog
   return {
     status: 'active',
-    color: 'text-green-500',
-    bgColor: 'bg-green-50',
+    color: 'text-green-600 dark:text-green-400',
+    bgColor: 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800',
     icon: <CheckCircle className="h-4 w-4" />
   };
 };
@@ -117,6 +117,11 @@ const Budgets = () => {
     totalBudgetAmount,
     totalConsumption,
     overallConsumptionPercentage,
+    // Active budget summaries
+    activeBudgetCount,
+    activeBudgetAmount,
+    activeBudgetConsumption,
+    activeBudgetConsumptionPercentage,
     loading,
     error,
     createBudget,
@@ -137,10 +142,14 @@ const Budgets = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<BudgetResponse | null>(null);
   const [budgetToDelete, setBudgetToDelete] = useState<BudgetResponse | null>(null);
+  
+  // Sorting state
+  const [sortField, setSortField] = useState<keyof BudgetResponse | ''>('');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
-  // Filter and search budgets
+  // Filter, search and sort budgets
   const filteredBudgets = useMemo(() => {
-    return budgets.filter(budget => {
+    let filtered = budgets.filter(budget => {
       const matchesSearch = searchQuery === '' || 
         budget.budget_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         budget.provider_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -148,7 +157,63 @@ const Budgets = () => {
       
       return matchesSearch;
     });
-  }, [budgets, searchQuery]);
+
+    // Apply sorting
+    if (sortField) {
+      filtered = [...filtered].sort((a, b) => {
+        let aValue = a[sortField];
+        let bValue = b[sortField];
+        
+        // Handle null/undefined values
+        if (aValue == null) aValue = '';
+        if (bValue == null) bValue = '';
+        
+        // Special handling for numeric fields
+        if (sortField === 'budget_amount' || sortField === 'alert_threshold') {
+          const aNum = parseFloat(aValue.toString());
+          const bNum = parseFloat(bValue.toString());
+          const aNumValue = isNaN(aNum) ? 0 : aNum;
+          const bNumValue = isNaN(bNum) ? 0 : bNum;
+          
+          if (aNumValue < bNumValue) return sortDirection === 'asc' ? -1 : 1;
+          if (aNumValue > bNumValue) return sortDirection === 'asc' ? 1 : -1;
+          return 0;
+        }
+        
+        // Special handling for date fields
+        if (sortField === 'created_at') {
+          const aDate = new Date(aValue.toString());
+          const bDate = new Date(bValue.toString());
+          
+          if (aDate < bDate) return sortDirection === 'asc' ? -1 : 1;
+          if (aDate > bDate) return sortDirection === 'asc' ? 1 : -1;
+          return 0;
+        }
+        
+        // Special handling for boolean fields
+        if (sortField === 'is_active') {
+          const aBool = aValue === true ? 1 : 0;
+          const bBool = bValue === true ? 1 : 0;
+          
+          if (aBool < bBool) return sortDirection === 'asc' ? -1 : 1;
+          if (aBool > bBool) return sortDirection === 'asc' ? 1 : -1;
+          return 0;
+        }
+        
+        // Convert to string for comparison (for text fields)
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          aValue = aValue.toLowerCase();
+          bValue = bValue.toLowerCase();
+        }
+        
+        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return filtered;
+  }, [budgets, searchQuery, sortField, sortDirection]);
 
   const handleCreateBudget = async (data: BudgetCreate) => {
     await createBudget(data);
@@ -197,11 +262,41 @@ const Budgets = () => {
     setEditDialogOpen(true);
   };
 
-  const handleFilterChange = (key: string, value: any) => {
+  const handleFilterChange = (key: string, value: string | boolean | undefined) => {
     setFilters(prev => ({
       ...prev,
       [key]: value === 'all' ? undefined : value
     }));
+  };
+
+  const handleSort = (field: keyof BudgetResponse) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const SortableTableHead = ({ field, children }: { field?: keyof BudgetResponse; children: React.ReactNode }) => {
+    if (!field) {
+      return <TableHead className="text-center">{children}</TableHead>;
+    }
+    
+    return (
+      <TableHead 
+        className="text-center cursor-pointer hover:bg-muted/50 select-none"
+        onClick={() => handleSort(field)}
+      >
+        <div className="flex items-center justify-center gap-1">
+          {children}
+          <ArrowUpDown className={cn(
+            "h-3 w-3 transition-colors",
+            sortField === field ? "text-blue-600" : "text-muted-foreground"
+          )} />
+        </div>
+      </TableHead>
+    );
   };
 
   // Update selectedBudget when budgets list changes (after activate/deactivate)
@@ -214,7 +309,7 @@ const Budgets = () => {
     }
   }, [budgets, selectedBudget]);
 
-  const overallProgress = parseFloat(overallConsumptionPercentage) || 0;
+  const overallProgress = parseFloat(activeBudgetConsumptionPercentage) || 0;
 
   // Debug: verificar estado de autenticação
   console.log('🔍 [Budgets] Debug auth state:', {
@@ -222,6 +317,10 @@ const Budgets = () => {
     error,
     budgetsCount: budgets.length,
     totalCount,
+    activeBudgetCount,
+    activeBudgetAmount,
+    activeBudgetConsumption,
+    activeBudgetConsumptionPercentage,
     token: localStorage.getItem('access_token') ? 'Present' : 'Missing'
   });
 
@@ -284,40 +383,80 @@ const Budgets = () => {
         <div className="p-4 space-y-6">
           {/* Overall Budget Summary */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
+            <Card className="border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/50 dark:to-background">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{t('budgets.summary.totalBudgets')}</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <Target className="h-4 w-4 text-blue-500" />
+                  {t('budgets.summary.totalBudgets')}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{totalCount}</div>
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{activeBudgetCount}</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-white dark:from-green-950/50 dark:to-background">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{t('budgets.summary.totalBudgetAmount')}</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-green-500" />
+                  {t('budgets.summary.totalBudgetAmount')}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(totalBudgetAmount)}</div>
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(activeBudgetAmount)}</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-l-4 border-l-amber-500 bg-gradient-to-r from-amber-50 to-white dark:from-amber-950/50 dark:to-background">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{t('budgets.summary.totalConsumption')}</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-amber-500" />
+                  {t('budgets.summary.totalConsumption')}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(totalConsumption)}</div>
+                <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{formatCurrency(activeBudgetConsumption)}</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className={cn(
+              "border-l-4 bg-gradient-to-r to-white dark:to-background",
+              overallProgress > 90 
+                ? "border-l-red-500 from-red-50 dark:from-red-950/50" 
+                : overallProgress > 70 
+                  ? "border-l-orange-500 from-orange-50 dark:from-orange-950/50"
+                  : "border-l-purple-500 from-purple-50 dark:from-purple-950/50"
+            )}>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{t('budgets.summary.overallProgress')}</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <BarChart3 className={cn(
+                    "h-4 w-4",
+                    overallProgress > 90 
+                      ? "text-red-500" 
+                      : overallProgress > 70 
+                        ? "text-orange-500"
+                        : "text-purple-500"
+                  )} />
+                  {t('budgets.summary.overallProgress')}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <div className="text-2xl font-bold">{overallProgress.toFixed(1)}%</div>
+                  <div className={cn(
+                    "text-2xl font-bold",
+                    overallProgress > 90 
+                      ? "text-red-600 dark:text-red-400" 
+                      : overallProgress > 70 
+                        ? "text-orange-600 dark:text-orange-400"
+                        : "text-purple-600 dark:text-purple-400"
+                  )}>{overallProgress.toFixed(1)}%</div>
                   <Progress 
                     value={overallProgress} 
                     className="h-2"
+                    progressColor={cn(
+                      overallProgress > 90 
+                        ? "bg-red-500" 
+                        : overallProgress > 70 
+                          ? "bg-orange-500"
+                          : "bg-purple-500"
+                    )}
                   />
                 </div>
               </CardContent>
@@ -376,14 +515,14 @@ const Budgets = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-center">{t('budgets.table.columns.status')}</TableHead>
-                      <TableHead className="text-center">{t('budgets.table.columns.budgetName')}</TableHead>
-                      <TableHead className="text-center">{t('budgets.table.columns.provider')}</TableHead>
-                      <TableHead className="text-center">{t('budgets.table.columns.service')}</TableHead>
-                      <TableHead className="text-center">{t('budgets.table.columns.budgetAmount')}</TableHead>
-                      <TableHead className="text-center">{t('budgets.table.columns.period')}</TableHead>
-                      <TableHead className="text-center">{t('budgets.table.columns.created')}</TableHead>
-                      <TableHead className="text-center">{t('budgets.table.columns.actions')}</TableHead>
+                      <SortableTableHead field="is_active">{t('budgets.table.columns.status')}</SortableTableHead>
+                      <SortableTableHead field="budget_name">{t('budgets.table.columns.budgetName')}</SortableTableHead>
+                      <SortableTableHead field="provider_name">{t('budgets.table.columns.provider')}</SortableTableHead>
+                      <SortableTableHead field="service_name">{t('budgets.table.columns.service')}</SortableTableHead>
+                      <SortableTableHead field="budget_amount">{t('budgets.table.columns.budgetAmount')}</SortableTableHead>
+                      <SortableTableHead field="budget_period">{t('budgets.table.columns.period')}</SortableTableHead>
+                      <SortableTableHead field="created_at">{t('budgets.table.columns.created')}</SortableTableHead>
+                      <SortableTableHead>{t('budgets.table.columns.actions')}</SortableTableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -413,7 +552,12 @@ const Budgets = () => {
                           <TableCell className="text-center">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm">
+                                <Button 
+                                  variant="default" 
+                                  size="sm"
+                                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+                                >
+                                  <Edit className="mr-1 h-3 w-3" />
                                   {t('budgets.table.manageButton')}
                                 </Button>
                               </DropdownMenuTrigger>

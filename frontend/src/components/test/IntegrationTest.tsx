@@ -91,7 +91,7 @@ export function IntegrationTest({ timeFilter }: IntegrationTestProps) {
               <p><strong>Dados:</strong> {dashboardData ? 'Carregados' : 'Não carregados'}</p>
               <p><strong>Última Atualização:</strong> {formatTime(dashboardLastUpdated)}</p>
               {dashboardData && (
-                <p><strong>Total Cost:</strong> R$ {dashboardData.metrics.total_cost.toLocaleString()}</p>
+                <p><strong>Total Cost:</strong> $ {dashboardData.metrics.total_cost.toLocaleString()}</p>
               )}
             </div>
             <Button 
@@ -117,7 +117,7 @@ export function IntegrationTest({ timeFilter }: IntegrationTestProps) {
               <p><strong>Has Credentials:</strong> {hasCredentials ? 'Sim' : 'Não'}</p>
               <p><strong>Spend Summary:</strong> {spendSummary ? 'Carregado' : 'Não carregado'}</p>
               {spendSummary && (
-                <p><strong>Total Spend:</strong> R$ {spendSummary.totalSpend.toLocaleString()}</p>
+                <p><strong>Total Spend:</strong> $ {spendSummary.totalSpend.toLocaleString()}</p>
               )}
             </div>
           </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { DateRange } from 'react-day-picker';
 import { TimeFilter } from '@/components/dashboard/TimeFilter';
 import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
@@ -17,6 +18,7 @@ interface PageHeaderProps {
   actions?: React.ReactNode;
   timeFilter?: string;
   onTimeFilterChange?: (value: string) => void;
+  onCustomDateRange?: (range: DateRange | undefined) => void;
 }
 
 export const PageHeader: React.FC<PageHeaderProps> = ({
@@ -27,7 +29,8 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   showTimeFilter = true,
   actions,
   timeFilter = '30d',
-  onTimeFilterChange = () => {}
+  onTimeFilterChange = () => {},
+  onCustomDateRange
 }) => {
   const { isDark } = useTheme();
   const isMobile = useIsMobile();
@@ -58,6 +61,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
             <TimeFilter
               value={timeFilter}
               onChange={onTimeFilterChange}
+              onCustomDateRange={onCustomDateRange}
             />
           )}
           

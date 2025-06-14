@@ -29,7 +29,9 @@
     "noNotifications": "No notifications",
     "markAllAsRead": "Mark all as read",
     "cloudCostManagementDashboard": "Cloud cost management dashboard",
-    "all": "All"
+    "all": "All",
+    "apply": "Apply",
+    "cancel": "Cancel"
   },
   "spendSummary": {
     "title": "Spend Summary",
@@ -202,8 +204,13 @@
     "last30days": "Last 30 days",
     "last90days": "Last 90 days",
     "lastYear": "Last year",
+    "previousYear": "Previous year",
+    "thisYear": "This year",
     "custom": "Custom range",
-    "selectPeriod": "Select period"
+    "selectPeriod": "Select period",
+    "selectDateRange": "Select date range",
+    "selectCustomPeriod": "Select custom period",
+    "selectStartAndEndDate": "Select start and end dates"
   },
   "mockData": {
     "categories": {
@@ -598,6 +605,7 @@
         "budgetNamePlaceholder": "e.g., Engineering Team Q2, Production AWS",
         "budgetAmount": "Budget Amount",
         "budgetAmountPlaceholder": "0.00",
+        "budgetAmountHelp": "Enter the value in format: 1,000.00",
         "period": "Period",
         "alertThreshold": "Alert Threshold (%)",
         "alertThresholdHelp": "Alert when budget consumption reaches this percentage",

@@ -596,7 +596,7 @@ class BudgetAnalyzer:
         self.db = db
     
     def check_budget_alerts(self) -> List[Dict[str, Any]]:
-        """Verifica alertas de orçamento"""
+        """Verifica alertas de orçamento com cálculos detalhados"""
         try:
             from app.models import Budget
             
@@ -604,59 +604,211 @@ class BudgetAnalyzer:
             alerts = []
             
             for budget in active_budgets:
-                # Calcular período atual baseado no tipo de orçamento
-                if budget.budget_period == 'monthly':
-                    period_start = date.today().replace(day=1)
-                    next_month = period_start.replace(month=period_start.month + 1) if period_start.month < 12 else period_start.replace(year=period_start.year + 1, month=1)
-                    period_end = next_month - timedelta(days=1)
-                elif budget.budget_period == 'quarterly':
-                    # Lógica para trimestre
-                    current_quarter = (date.today().month - 1) // 3 + 1
-                    period_start = date(date.today().year, (current_quarter - 1) * 3 + 1, 1)
-                    period_end = date(date.today().year, current_quarter * 3, 1) + timedelta(days=31)
-                    period_end = period_end.replace(day=1) - timedelta(days=1)
-                else:  # yearly
-                    period_start = date(date.today().year, 1, 1)
-                    period_end = date(date.today().year, 12, 31)
+                alert_data = self._calculate_budget_alert_data(budget)
                 
-                # Consultar custo atual
-                cost_query = self.db.query(func.sum(FocusCostData.effective_cost)).filter(
-                    and_(
-                        FocusCostData.billing_period_start >= period_start,
-                        FocusCostData.billing_period_end <= period_end
-                    )
-                )
-                
-                if budget.provider_name:
-                    cost_query = cost_query.filter(FocusCostData.provider_name == budget.provider_name)
-                if budget.service_name:
-                    cost_query = cost_query.filter(FocusCostData.service_name == budget.service_name)
-                
-                current_spend = float(cost_query.scalar() or 0)
-                budget_amount = float(budget.budget_amount)
-                usage_percentage = (current_spend / budget_amount * 100) if budget_amount > 0 else 0
-                
-                if usage_percentage >= float(budget.alert_threshold):
-                    alerts.append({
-                        'budget_id': budget.id,
-                        'budget_name': budget.budget_name,
-                        'provider_name': budget.provider_name,
-                        'service_name': budget.service_name,
-                        'budget_amount': budget_amount,
-                        'current_spend': current_spend,
-                        'usage_percentage': usage_percentage,
-                        'threshold': float(budget.alert_threshold),
-                        'period_start': period_start,
-                        'period_end': period_end,
-                        'alert_level': 'critical' if usage_percentage >= 100 else 'warning'
-                    })
+                # Só adicionar se excedeu o threshold ou está próximo (acima de 80% do threshold)
+                if alert_data and (
+                    alert_data['usage_percentage'] >= alert_data['threshold'] or
+                    alert_data['usage_percentage'] >= (alert_data['threshold'] * 0.8)
+                ):
+                    alerts.append(alert_data)
+            
+            # Ordenar por severidade (maior percentual primeiro)
+            alerts.sort(key=lambda x: x['usage_percentage'], reverse=True)
             
             return alerts
             
         except Exception as e:
             logger.error(f"Error checking budget alerts: {str(e)}")
             return []
-
+    
+    def _calculate_budget_alert_data(self, budget) -> Optional[Dict[str, Any]]:
+        """Calcula dados detalhados de alerta para um budget específico"""
+        try:
+            # Calcular período atual baseado no tipo de orçamento
+            today = date.today()
+            
+            if budget.budget_period == 'monthly':
+                period_start = today.replace(day=1)
+                if today.month == 12:
+                    next_month = date(today.year + 1, 1, 1)
+                else:
+                    next_month = date(today.year, today.month + 1, 1)
+                period_end = next_month - timedelta(days=1)
+            elif budget.budget_period == 'quarterly':
+                # Lógica para trimestre
+                current_quarter = (today.month - 1) // 3 + 1
+                period_start = date(today.year, (current_quarter - 1) * 3 + 1, 1)
+                if current_quarter == 4:
+                    period_end = date(today.year, 12, 31)
+                else:
+                    next_quarter_start = date(today.year, current_quarter * 3 + 1, 1)
+                    period_end = next_quarter_start - timedelta(days=1)
+            else:  # yearly
+                period_start = date(today.year, 1, 1)
+                period_end = date(today.year, 12, 31)
+            
+            # Consultar custo atual
+            cost_query = self.db.query(func.sum(FocusCostData.effective_cost)).filter(
+                and_(
+                    FocusCostData.billing_period_start >= period_start,
+                    FocusCostData.billing_period_end <= period_end
+                )
+            )
+            
+            if budget.provider_name:
+                cost_query = cost_query.filter(FocusCostData.provider_name == budget.provider_name)
+            if budget.service_name:
+                cost_query = cost_query.filter(FocusCostData.service_name == budget.service_name)
+            
+            current_spend = float(cost_query.scalar() or 0)
+            budget_amount = float(budget.budget_amount)
+            threshold = float(budget.alert_threshold)
+            
+            # Cálculos de percentuais
+            usage_percentage = (current_spend / budget_amount * 100) if budget_amount > 0 else 0
+            threshold_amount = budget_amount * (threshold / 100)
+            amount_over_threshold = max(0, current_spend - threshold_amount)
+            remaining_budget = budget_amount - current_spend
+            
+            # Cálculos de tempo
+            total_days = (period_end - period_start).days + 1
+            elapsed_days = (today - period_start).days + 1
+            remaining_days = max(0, (period_end - today).days)
+            
+            # Projeção baseada na taxa atual
+            if elapsed_days > 0:
+                daily_rate = current_spend / elapsed_days
+                projected_spend = daily_rate * total_days
+                projected_percentage = (projected_spend / budget_amount * 100) if budget_amount > 0 else 0
+            else:
+                projected_spend = current_spend
+                projected_percentage = usage_percentage
+            
+            # Determinar nível de alerta
+            if usage_percentage >= 100:
+                alert_level = 'critical'
+                alert_message = f"Orçamento excedido em {usage_percentage - 100:.1f}%"
+            elif usage_percentage >= threshold:
+                alert_level = 'warning'
+                alert_message = f"Orçamento {usage_percentage:.1f}% consumido (limite: {threshold}%)"
+            elif usage_percentage >= (threshold * 0.8):
+                alert_level = 'info'
+                alert_message = f"Aproximando do limite: {usage_percentage:.1f}% consumido"
+            else:
+                return None
+            
+            # Calcular velocidade de queima (burn rate)
+            burn_rate_monthly = (current_spend / elapsed_days) * 30 if elapsed_days > 0 else 0
+            
+            return {
+                'budget_id': budget.id,
+                'budget_name': budget.budget_name,
+                'provider_name': budget.provider_name,
+                'service_name': budget.service_name,
+                'budget_amount': str(budget_amount),
+                'current_spend': str(current_spend),
+                'usage_percentage': round(usage_percentage, 2),
+                'threshold': threshold,
+                'threshold_amount': str(threshold_amount),
+                'amount_over_threshold': str(amount_over_threshold),
+                'remaining_budget': str(remaining_budget),
+                'projected_spend': str(projected_spend),
+                'projected_percentage': round(projected_percentage, 2),
+                'period_start': period_start.isoformat(),
+                'period_end': period_end.isoformat(),
+                'total_days': total_days,
+                'elapsed_days': elapsed_days,
+                'remaining_days': remaining_days,
+                'daily_burn_rate': str(round(daily_rate, 2)) if elapsed_days > 0 else "0",
+                'monthly_burn_rate': str(round(burn_rate_monthly, 2)),
+                'alert_level': alert_level,
+                'alert_message': alert_message,
+                'created_at': datetime.utcnow().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Error calculating alert data for budget {budget.id}: {str(e)}")
+            return None
+    
+    def get_budget_consumption(self, budget_id: int, period_days: int = 30) -> Optional[Dict[str, Any]]:
+        """
+        Calcula o consumo de um budget específico baseado no período
+        """
+        try:
+            from app.models import Budget
+            
+            # Buscar o budget específico
+            budget = self.db.query(Budget).filter(Budget.id == budget_id).first()
+            if not budget:
+                logger.warning(f"Budget {budget_id} not found")
+                return None
+            
+            # Definir período de análise baseado no tipo de budget
+            end_date = date.today()
+            
+            if budget.budget_period == 'monthly':
+                # Para orçamento mensal, usar o mês atual
+                start_date = end_date.replace(day=1)
+            elif budget.budget_period == 'quarterly':
+                # Para orçamento trimestral, usar o trimestre atual
+                current_quarter = (end_date.month - 1) // 3 + 1
+                start_date = date(end_date.year, (current_quarter - 1) * 3 + 1, 1)
+            elif budget.budget_period == 'annual':
+                # Para orçamento anual, usar o ano atual
+                start_date = date(end_date.year, 1, 1)
+            else:
+                # Fallback para período personalizado
+                start_date = end_date - timedelta(days=period_days)
+            
+            # Consultar custo atual do período
+            cost_query = self.db.query(func.sum(FocusCostData.effective_cost)).filter(
+                and_(
+                    FocusCostData.billing_period_start >= start_date,
+                    FocusCostData.billing_period_end <= end_date
+                )
+            )
+            
+            # Aplicar filtros do budget
+            if budget.provider_name:
+                cost_query = cost_query.filter(FocusCostData.provider_name == budget.provider_name)
+            if budget.service_name:
+                cost_query = cost_query.filter(FocusCostData.service_name == budget.service_name)
+            
+            current_consumption = float(cost_query.scalar() or 0)
+            budget_amount = float(budget.budget_amount)
+            
+            # Calcular percentual de consumo
+            consumption_percentage = (current_consumption / budget_amount * 100) if budget_amount > 0 else 0
+            
+            # Projeção para o final do período (se aplicável)
+            days_in_period = (end_date - start_date).days + 1
+            days_elapsed = (date.today() - start_date).days + 1
+            
+            projected_consumption = 0
+            if days_elapsed > 0 and days_in_period > days_elapsed:
+                daily_rate = current_consumption / days_elapsed
+                projected_consumption = daily_rate * days_in_period
+            else:
+                projected_consumption = current_consumption
+            
+            logger.info(f"Budget {budget_id} consumption - Current: {current_consumption:.2f}, Budget: {budget_amount:.2f}, Percentage: {consumption_percentage:.1f}%")
+            
+            return {
+                'budget_id': budget_id,
+                'budget_name': budget.budget_name,
+                'budget_amount': str(budget_amount),
+                'current_consumption': str(current_consumption),
+                'projected_consumption': str(projected_consumption),
+                'consumption_percentage': f"{consumption_percentage:.2f}",
+                'period_start': start_date.isoformat(),
+                'period_end': end_date.isoformat(),
+                'remaining_budget': str(budget_amount - current_consumption)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error calculating consumption for budget {budget_id}: {str(e)}")
+            return None
 
 class DashboardAnalyzer:
     """Classe especializada para análises do dashboard"""

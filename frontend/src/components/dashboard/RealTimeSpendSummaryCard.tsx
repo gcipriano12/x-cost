@@ -146,16 +146,21 @@ function mapApiDataToSpendSummary(data: DashboardSummary) {
     color: getProviderColor(provider.provider_name)
   }));
 
-  // Calculate top provider based on total cost
-  const topProviderData = data.provider_distribution.reduce((top, current) => {
-    const currentCost = (parseFloat(current.percentage) / 100) * totalCost;
-    const topCost = (parseFloat(top.percentage) / 100) * totalCost;
-    return currentCost > topCost ? current : top;
-  });
+  // Calculate top provider based on total cost - com verificação de array vazio
+  const topProviderData = data.provider_distribution.length > 0 
+    ? data.provider_distribution.reduce((top, current) => {
+        const currentCost = (parseFloat(current.percentage) / 100) * totalCost;
+        const topCost = (parseFloat(top.percentage) / 100) * totalCost;
+        return currentCost > topCost ? current : top;
+      })
+    : null;
 
-  const topProvider = {
+  const topProvider = topProviderData ? {
     name: topProviderData.provider_name,
     cost: (parseFloat(topProviderData.percentage) / 100) * totalCost
+  } : {
+    name: 'N/A',
+    cost: 0
   };
 
   return {

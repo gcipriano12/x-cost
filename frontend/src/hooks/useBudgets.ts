@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
+import { apiClient } from '../api/client';
 
 // Types baseados na API documentation
 export interface BudgetCreate {
@@ -120,30 +121,28 @@ export const useBudgets = (options: UseBudgetsOptions = {}): UseBudgetsReturn =>
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated } = useAuth();
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
-  const apiCall = async (url: string, requestOptions: RequestInit = {}) => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      throw new Error('No authentication token available');
+  const apiCall = async (url: string, options: { method?: string; body?: any } = {}) => {
+    const { method = 'GET', body } = options;
+    
+    try {
+      let response;
+      switch (method.toUpperCase()) {
+        case 'POST':
+          response = await apiClient.post(url, body);
+          break;
+        case 'PUT':
+          response = await apiClient.put(url, body);
+          break;
+        case 'DELETE':
+          response = await apiClient.delete(url);
+          break;
+        default:
+          response = await apiClient.get(url);
+      }
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || error.message || 'Network error');
     }
-
-    const response = await fetch(`${API_BASE_URL}${url}`, {
-      ...requestOptions,
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        ...requestOptions.headers,
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ detail: 'Network error' }));
-      throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    if (response.status === 204) return null;
-    return response.json();
   };
 
   const refreshBudgets = async () => {
@@ -161,7 +160,7 @@ export const useBudgets = (options: UseBudgetsOptions = {}): UseBudgetsReturn =>
       const queryString = params.toString();
       const url = `/api/v1/budgets${queryString ? `?${queryString}` : ''}`;
       
-      console.log('🌐 [useBudgets] Making API call to:', `${API_BASE_URL}${url}`);
+      console.log('🌐 [useBudgets] Making API call to:', url);
       console.log('🔑 [useBudgets] Authentication available:', isAuthenticated);
       
       const data: BudgetListResponse = await apiCall(url);
@@ -169,11 +168,11 @@ export const useBudgets = (options: UseBudgetsOptions = {}): UseBudgetsReturn =>
       console.log('✅ [useBudgets] API response received:', data);
       console.log('📋 [useBudgets] Budgets count:', data?.budgets?.length || 0);
       
-      setBudgets(data.budgets);
-      setTotalCount(data.total_count);
-      setTotalBudgetAmount(data.total_budget_amount);
-      setTotalConsumption(data.total_consumption);
-      setOverallConsumptionPercentage(data.overall_consumption_percentage);
+      setBudgets(data?.budgets || []);
+      setTotalCount(data?.total_count || 0);
+      setTotalBudgetAmount(data?.total_budget_amount || '0');
+      setTotalConsumption(data?.total_consumption || '0');
+      setOverallConsumptionPercentage(data?.overall_consumption_percentage || '0');
     } catch (err) {
       console.error('❌ [useBudgets] Error loading budgets:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -185,7 +184,7 @@ export const useBudgets = (options: UseBudgetsOptions = {}): UseBudgetsReturn =>
   const createBudget = async (data: BudgetCreate): Promise<BudgetResponse> => {
     const result = await apiCall('/api/v1/budgets', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: data,
     });
     await refreshBudgets(); // Refresh list
     return result;
@@ -194,7 +193,7 @@ export const useBudgets = (options: UseBudgetsOptions = {}): UseBudgetsReturn =>
   const updateBudget = async (id: number, data: BudgetUpdate): Promise<BudgetResponse> => {
     const result = await apiCall(`/api/v1/budgets/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: data,
     });
     await refreshBudgets(); // Refresh list
     return result;

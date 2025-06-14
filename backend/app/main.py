@@ -26,6 +26,7 @@ from app.data_ingestion import DataIngestionService
 from app.credential_models import User, CloudCredentialConfig
 from app.auth_security import get_current_active_user, security_manager
 from app.credentials_api import credentials_router, auth_router, audit_router, get_provider_credentials
+from app.budget_api import budget_router
 from app.secrets_manager import get_secrets_manager_hybrid
 
 # Configuração de logging
@@ -121,6 +122,7 @@ async def security_middleware(request, call_next):
 app.include_router(auth_router)
 app.include_router(credentials_router)
 app.include_router(audit_router)
+app.include_router(budget_router)
 
 # Middleware para logging de requisições
 @app.middleware("http")

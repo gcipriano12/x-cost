@@ -1,0 +1,161 @@
+import React from 'react';
+import { SpendSummaryCard } from './SpendSummaryCard';
+import { useDashboard, useDashboardFormatters } from '@/hooks/useDashboard';
+import { DashboardSummary } from '@/types/api';
+import { Card, CardContent } from '@/components/ui/card';
+import { AlertCircle, RefreshCw, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
+import { useTheme } from '@/hooks/useTheme';
+
+interface RealTimeSpendSummaryCardProps {
+  periodDays?: number;
+  timeFilter?: string; // Adicionar suporte ao timeFilter
+  credentialId?: string;
+}
+
+export function RealTimeSpendSummaryCard({ 
+  periodDays = 30,
+  timeFilter, 
+  credentialId 
+}: RealTimeSpendSummaryCardProps) {
+  const { data, loading, error, refetch, lastUpdated } = useDashboard({
+    periodDays,
+    timeFilter, // Passar timeFilter para o hook
+    credentialId,
+    autoRefresh: false, // Desabilitar auto-refresh automático
+    refreshInterval: 5 * 60 * 1000 // 5 minutos (não usado quando autoRefresh = false)
+  });
+  const { formatRelativeTime, getProviderColor } = useDashboardFormatters();
+  const { t } = useTranslation();
+  const { isDark } = useTheme();
+
+  // Loading state - só mostrar se não há dados E está carregando
+  if (loading && !data) {
+    return (
+      <Card className="h-full">
+        <CardContent className="flex items-center justify-center h-[400px]">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <p className="text-sm text-muted-foreground">Carregando dados do dashboard...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Error state
+  if (error && !data) {
+    return (
+      <Card className="h-full">
+        <CardContent className="flex flex-col items-center justify-center h-[400px] space-y-4">
+          <AlertCircle className="h-12 w-12 text-destructive" />
+          <div className="text-center space-y-2">
+            <h3 className="font-semibold">Erro ao carregar dados</h3>
+            <p className="text-sm text-muted-foreground">{error}</p>
+            <Button onClick={refetch} variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Tentar novamente
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Se não há dados, mostrar estado vazio
+  if (!data) {
+    return (
+      <Card className="h-full">
+        <CardContent className="flex items-center justify-center h-[400px]">
+          <p className="text-muted-foreground">Nenhum dado disponível</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Mapear dados da API para o formato esperado pelo SpendSummaryCard
+  const mappedData = mapApiDataToSpendSummary(data, getProviderColor);
+
+  return (
+    <div className="space-y-2">
+      {/* Indicador de última atualização - só mostrar se há dados */}
+      {lastUpdated && data && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center text-xs text-muted-foreground">
+            <Clock className="h-3 w-3 mr-1" />
+            Atualizado {formatRelativeTime(lastUpdated)}
+          </div>
+          {/* Só mostrar "Atualizando..." durante carregamentos explícitos */}
+          {loading && (
+            <div className="flex items-center text-xs text-muted-foreground">
+              <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+              Atualizando...
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* Card principal com dados reais */}
+      <SpendSummaryCard
+        totalSpend={mappedData.totalSpend}
+        currency={mappedData.currency}
+        previousPeriodChange={mappedData.previousPeriodChange}
+        sparklineData={mappedData.sparklineData}
+        providerBreakdown={mappedData.providerBreakdown}
+        wastedSpend={mappedData.wastedSpend}
+        budgetLimit={mappedData.budgetLimit}
+        budgetConsumed={mappedData.budgetConsumed}
+        savingsRealized={mappedData.savingsRealized}
+        topService={mappedData.topService}
+        monthlyAverage={mappedData.monthlyAverage}
+        annualProjection={mappedData.annualProjection}
+        nextMonthForecast={mappedData.nextMonthForecast}
+      />
+    </div>
+  );
+}
+
+// Função para mapear dados da API para o formato do SpendSummaryCard
+function mapApiDataToSpendSummary(
+  data: DashboardSummary, 
+  getProviderColor: (provider: string) => string
+) {
+  // Calcular sparkline baseado nos dados históricos (simulado)
+  const baseValue = data.metrics.total_cost;
+  const changePercent = data.metrics.cost_change_percentage / 100;
+  const sparklineData = [
+    baseValue * (1 - changePercent * 1.5),
+    baseValue * (1 - changePercent * 1.2),
+    baseValue * (1 - changePercent * 0.8),
+    baseValue * (1 - changePercent * 0.5),
+    baseValue * (1 - changePercent * 0.2),
+    baseValue
+  ];
+
+  return {
+    totalSpend: data.metrics.total_cost,
+    currency: 'R$',
+    previousPeriodChange: data.metrics.cost_change_percentage,
+    sparklineData: sparklineData,
+    providerBreakdown: data.provider_distribution.map(provider => ({
+      name: provider.provider_name,
+      value: provider.percentage,
+      color: getProviderColor(provider.provider_name)
+    })),
+    wastedSpend: data.highlights.estimated_waste.amount,
+    budgetLimit: data.metrics.budget_consumption?.total_budget || data.metrics.total_cost * 1.2,
+    budgetConsumed: data.metrics.budget_consumption?.percentage || 75,
+    savingsRealized: data.highlights.savings_achieved.amount,
+    // Dados adicionais para enriquecer o SpendSummaryCard
+    topService: {
+      name: data.metrics.top_service.service_name,
+      provider: data.metrics.top_service.provider_name,
+      cost: data.metrics.top_service.total_cost
+    },
+    monthlyAverage: data.metrics.monthly_average,
+    annualProjection: data.metrics.annual_projection,
+    nextMonthForecast: data.highlights.next_month_forecast
+  };
+}

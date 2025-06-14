@@ -1,0 +1,535 @@
+
+{
+  "common": {
+    "megabill": "MegaBill",
+    "virtualTags": "Tags Virtuais",
+    "dashboard": "Painel de Controle",
+    "costGuard": "Guardião de Custos",
+    "anomalies": "Anomalias",
+    "period": "Período",
+    "lightMode": "Modo Claro",
+    "darkMode": "Modo Escuro",
+    "switchToLightMode": "Mudar para Modo Claro",
+    "switchToDarkMode": "Mudar para Modo Escuro",
+    "budgets": "Orçamentos",
+    "financialPlans": "Planos Financeiros",
+    "resources": "Recursos",
+    "dataExplorer": "Explorador de Dados",
+    "myCommitments": "Meus Compromissos",
+    "commitmentsLog": "Log de Compromissos",
+    "reports": "Relatórios",
+    "governance": "Governança",
+    "new": "Novo",
+    "notifications": "Notificações",
+    "myAccount": "Minha Conta",
+    "profile": "Perfil",
+    "settings": "Configurações",
+    "support": "Suporte",
+    "logout": "Sair",
+    "noNotifications": "Nenhuma notificação",
+    "markAllAsRead": "Marcar todas como lidas",
+    "cloudCostManagementDashboard": "Painel de gerenciamento de custos na nuvem"
+  },
+  "spendSummary": {
+    "title": "Resumo de Gastos",
+    "totalSpend": "Gasto Total",
+    "vsPreviousPeriod": "vs período anterior",
+    "monthlyAverage": "Média Mensal",
+    "averageMobile": "Média",
+    "highestSpend": "Maior Gasto",
+    "highestMobile": "Maior",
+    "annualProjection": "Projeção Anual",
+    "projectionMobile": "Projeção",
+    "currentYear": "Ano corrente",
+    "budgetLimit": "Limite Orçamentário",
+    "budgetMobile": "Orçamento",
+    "consumed": "Consumido",
+    "providerDistribution": "Distribuição por Provedor",
+    "percentOfTotal": "% do total",
+    "highlights": "Highlights",
+    "nextMonthForecast": "Previsão Próximo Mês",
+    "estimatedWaste": "Desperdício Estimado",
+    "realizedSavings": "Economias Realizadas",
+    "ofTotal": "do total"
+  },
+  "spendingForecast": {
+    "title": "Previsão de Gastos",
+    "forecastExceedsBudget": "Previsão acima do orçamento",
+    "budget": "Orçamento",
+    "actualSpend": "Gasto real",
+    "forecast": "Previsão",
+    "actualSpendChart": "Gasto Real",
+    "forecastChart": "Previsão"
+  },
+  "spendingTeams": {
+    "title": "Gastos por Equipe"
+  },
+  "regionHeatmap": {
+    "title": "Heatmap de Custos por Região"
+  },
+  "newServices": {
+    "title": "Novos Serviços"
+  },
+  "environmentComparison": {
+    "title": "Comparação de Ambientes",
+    "efficiency": "Eficiência:"
+  },
+  "finOpsCompliance": {
+    "title": "Conformidade FinOps",
+    "practicesInCompliance": "práticas em conformidade"
+  },
+  "resourceUtilization": {
+    "title": "Utilização de Recursos",
+    "averageUtilization": "Utilização média dos recursos"
+  },
+  "savingsOpportunities": {
+    "title": "Oportunidades de Economia",
+    "opportunities": "Oportunidades",
+    "noOpportunitiesFound": "Nenhuma oportunidade de economia encontrada.",
+    "effortLow": "Baixo",
+    "effortMedium": "Médio", 
+    "effortHigh": "Alto",
+    "contribution": "Contribuição",
+    "implement": "Implementar",
+    "perMonth": "/mês"
+  },
+  "topServices": {
+    "title": "Top Serviços",
+    "service": "Serviço",
+    "provider": "Provedor",
+    "currentSpend": "Gasto Atual",
+    "variation": "Variação",
+    "details": "Detalhes"
+  },
+  
+  "categoryDistribution": {
+    "title": "Distribuição por Categoria",
+    "percentOfTotal": "% do total"
+  },
+  
+  "sections": {
+    "servicesAndForecasts": "Serviços e Previsões",
+    "trendsAndUtilization": "Tendências e Utilização", 
+    "indicatorsAndEvents": "Indicadores e Eventos",
+    "comparisonsAndReferences": "Comparativos e Referências",
+    "kpis": "Indicadores Chave de Performance",
+    "eficiencia": "Eficiência",
+    "tarifacao": "Tarifação",
+    "planejamento": "Planejamento",
+    "governanca": "Governança",
+    "noKpisForCategory": "Nenhum KPI disponível para esta categoria"
+  },
+  
+  "kpis": {
+    "target": "Meta",
+    "names": {
+      "resourceUtilizationRate": "Taxa de utilização de recursos",
+      "cloudWastePercentage": "Percentual de desperdício na nuvem",
+      "powerScheduleAdherence": "Taxa de adesão ao power-schedule",
+      "legacyResourcesPercentage": "Percentual de recursos legados",
+      "reservedInstancesCoverage": "Cobertura de instâncias reservadas",
+      "costEfficiencyPerService": "Eficiência de custos por serviço",
+      "containerDensity": "Densidade de contêineres",
+      "costPerWorkload": "Custo por workload",
+      "effectiveSavingsRate": "Taxa de economia efetiva (ESR)",
+      "commitmentDiscountWaste": "Desperdício de desconto por compromisso",
+      "computeCoveredByCommitments": "Gastos computacionais cobertos por compromissos",
+      "costPerVcpuGpuHour": "Custo por hora de vCPU/GPU",
+      "budgetVsForecastVariation": "Variação orçamento vs. previsão",
+      "cloudSpendVariation": "Variação de gasto na nuvem",
+      "forecastAccuracyRate": "Taxa de precisão da previsão",
+      "unallocatedCostPercentage": "Percentual de custo não alocado",
+      "tagPolicyComplianceRate": "Taxa de conformidade com política de tags",
+      "anomalyDetectionSavings": "Economia por detecção de anomalias"
+    },
+    "descriptions": {
+      "resourceUtilizationRate": "Quanto da CPU, memória, GPU, etc. você realmente utiliza em relação ao que provisionou. Mantém o super-provisionamento visível.",
+      "cloudWastePercentage": "Parcela gasta em VMs ociosas, volumes destacados, snapshots zumbis. Impulsiona ações de interrupção/encerramento.",
+      "powerScheduleAdherence": "Se a automação de iniciar/parar funciona conforme planejado para cargas de trabalho não produtivas (noites/fins de semana).",
+      "legacyResourcesPercentage": "Quantas instâncias ainda estão em famílias antigas e menos eficientes. Útil antes de ondas de migração.",
+      "reservedInstancesCoverage": "Percentual de instâncias cobertas por compromissos de longo prazo como RIs ou Savings Plans.",
+      "costEfficiencyPerService": "Custo normalizado por unidade de serviço entregue (transação, requisição, etc).",
+      "containerDensity": "Número médio de pods/contêineres por nó em clusters Kubernetes. Indica eficiência de empacotamento.",
+      "costPerWorkload": "Custo médio por aplicação ou carga de trabalho, ajuda a identificar aplicações com gastos desproporcionais.",
+      "effectiveSavingsRate": "Economia líquida em comparação com preços sob demanda puros — unifica cobertura e utilização de RI/SP/CUD em um único número.",
+      "commitmentDiscountWaste": "Quanto da capacidade de RI/SP/CUD comprada permanece não utilizada — destaca excesso de compromissos.",
+      "computeCoveredByCommitments": "Profundidade da cobertura de tarifas; valores baixos sinalizam vazamento de instâncias sob demanda.",
+      "costPerVcpuGpuHour": "Normaliza o custo para uma unidade técnica, ideal para comparações de preços entre provedores.",
+      "budgetVsForecastVariation": "Quão próxima sua previsão contínua está do orçamento ano a data. Variância ajustada prova disciplina de planejamento.",
+      "cloudSpendVariation": "O sinal clássico de gasto acima/abaixo do orçado; combina com análises detalhadas de causa raiz.",
+      "forecastAccuracyRate": "Precisão preditiva para capacidade ou valores; orienta ajustes no modelo de previsão.",
+      "unallocatedCostPercentage": "Quanto do gasto ainda não possui uma tag ou proprietário — mantém o chargeback transparente.",
+      "tagPolicyComplianceRate": "Saúde da sua disciplina de tagueamento; valores baixos comprometem todos os outros KPIs.",
+      "anomalyDetectionSavings": "Economia obtida ao detectar picos de gastos antecipadamente com alertas."
+    },
+    "formulas": {
+      "resourceUtilizationRate": "(Capacidade consumida ÷ Capacidade alocada) × 100",
+      "cloudWastePercentage": "(Custo de recursos ociosos ÷ Gasto total na nuvem) × 100",
+      "powerScheduleAdherence": "(Horas de execução planejadas ÷ Horas de execução reais) × 100",
+      "legacyResourcesPercentage": "(Contagem de instâncias legadas ÷ Total de instâncias) × 100",
+      "reservedInstancesCoverage": "(Horas cobertas por reservas ÷ Horas totais de instâncias) × 100",
+      "costEfficiencyPerService": "Custo total do serviço ÷ Número de unidades processadas",
+      "containerDensity": "Total de pods em execução ÷ Total de nós no cluster",
+      "costPerWorkload": "Custo total da infraestrutura ÷ Número de workloads",
+      "effectiveSavingsRate": "(Economias de todos os instrumentos de desconto ÷ Gasto equivalente sob demanda)",
+      "commitmentDiscountWaste": "(Custo de compromisso não utilizado ÷ Custo total de compromisso) × 100",
+      "computeCoveredByCommitments": "(Gastos computacionais com desconto por compromisso ÷ Gastos computacionais totais) × 100",
+      "costPerVcpuGpuHour": "(Custo computacional por hora ÷ Número de vCPUs ou GPUs)",
+      "budgetVsForecastVariation": "((Orçado - Previsto) ÷ Orçado) × 100",
+      "cloudSpendVariation": "((Orçado - Real) ÷ Orçado) × 100",
+      "forecastAccuracyRate": "100 - abs((Previsão - Real) ÷ Previsão) × 100",
+      "unallocatedCostPercentage": "(Custos não alocados ÷ Gasto total na nuvem) × 100",
+      "tagPolicyComplianceRate": "(Recursos corretamente tagueados ÷ Total de recursos) × 100",
+      "anomalyDetectionSavings": "Soma de (Custo previsto do pico - Custo no desligamento)"
+    }
+  },
+  
+  "categories": {
+    "inform": "Informar",
+    "optimize": "Otimizar",
+    "operate": "Operar"
+  },
+  "benchmarks": {
+    "title": "Benchmarks de Custo",
+    "top": "Top",
+    "bottom": "Bottom",
+    "best": "Melhor",
+    "you": "Você",
+    "average": "Média"
+  },
+  "timeFilter": {
+    "last7days": "Últimos 7 dias",
+    "last30days": "Últimos 30 dias",
+    "last90days": "Últimos 90 dias",
+    "lastYear": "Último ano",
+    "custom": "Período personalizado",
+    "selectPeriod": "Selecione o período"
+  },
+  "mockData": {
+    "categories": {
+      "computation": "Computação",
+      "storage": "Armazenamento",
+      "network": "Rede",
+      "database": "Banco de Dados",
+      "others": "Outros"
+    },
+    "anomalyTitles": {
+      "vmCostIncrease": "Aumento de Custo de VMs",
+      "idleResources": "Recursos Ociosos",
+      "expiredSnapshots": "Snapshots Expirados",
+      "unoptimizedGPUs": "GPUs Não Otimizadas",
+      "idleBalancers": "Load Balancers Ociosos",
+      "oversizedDatabase": "Banco de Dados Superdimensionado",
+      "unassociatedIPs": "IPs Não Associados"
+    },
+    "notificationTitles": {
+      "costAnomaly": "Nova anomalia de custo",
+      "budgetExceeded": "Orçamento excedido",
+      "savingsOpportunity": "Oportunidade de economia"
+    },
+    "anomalyDescriptions": {
+      "vmCostIncrease": "Aumento significativo detectado nos custos de VMs no ambiente de produção",
+      "idleResources": "Múltiplos recursos executando com baixa utilização",
+      "expiredSnapshots": "Snapshots antigos consumindo armazenamento desnecessário",
+      "unoptimizedGPUs": "Instâncias GPU executando sem carga de trabalho",
+      "idleBalancers": "Load balancers sem targets ativos",
+      "oversizedDatabase": "Instância de banco de dados superdimensionada para a carga atual",
+      "unassociatedIPs": "IPs elásticos não associados a nenhum recurso"
+    },
+    "savingsOpportunities": {
+      "reservedInstances": "Instâncias Reservadas",
+      "rightsizing": "Recomendações de Dimensionamento",
+      "storageLifecycle": "Políticas de Ciclo de Vida",
+      "savingsPlans": "Planos de Economia",
+      "unusedVolumes": "Volumes EBS Não Utilizados",
+      "kubernetesClusters": "Otimização Kubernetes",
+      "storageTiers": "Otimização de Camadas de Armazenamento"
+    },
+    "savingsDescriptions": {
+      "reservedInstances": "Migre para instâncias reservadas para cargas previsíveis",
+      "rightsizing": "Otimize tamanhos de instância baseado em padrões de uso",
+      "storageLifecycle": "Implemente gerenciamento automatizado de ciclo de vida",
+      "savingsPlans": "Comprometa-se com planos de economia para descontos flexíveis",
+      "unusedVolumes": "Remova volumes EBS não anexados",
+      "kubernetesClusters": "Otimize alocação de recursos do cluster Kubernetes",
+      "storageTiers": "Mova dados acessados raramente para armazenamento mais barato"
+    },
+    "teams": {
+      "development": "Desenvolvimento",
+      "infrastructure": "Infraestrutura",
+      "dataScience": "Ciência de Dados",
+      "marketing": "Marketing"
+    },
+    "months": {
+      "jan": "Jan",
+      "feb": "Fev",
+      "mar": "Mar", 
+      "apr": "Abr",
+      "may": "Mai",
+      "jun": "Jun",
+      "jul": "Jul"
+    },
+    "resources": {
+      "vcpus": "vCPUs",
+      "ram": "RAM (GB)",
+      "storage": "Armazenamento (TB)",
+      "sqlLicenses": "Licenças SQL",
+      "ebsVolumes": "Volumes EBS",
+      "bandwidth": "Largura de Banda (GB/s)"
+    },
+    "compliance": {
+      "instanceTags": "Tagueamento de Instâncias",
+      "encryptedVolumes": "Volumes Criptografados",
+      "costReports": "Relatórios de Custo",
+      "retentionPolicies": "Políticas de Retenção",
+      "costAllocation": "Alocação de Custos"
+    },
+    "complianceDescriptions": {
+      "instanceTags": "Todas as instâncias devidamente tagueadas",
+      "encryptedVolumes": "Todos os volumes criptografados em repouso",
+      "costReports": "Relatórios mensais de custo gerados",
+      "retentionPolicies": "Políticas de retenção de dados não configuradas",
+      "costAllocation": "Tags de alocação de custo ausentes"
+    },
+    "environments": {
+      "production": "Produção",
+      "staging": "Homologação",
+      "development": "Desenvolvimento"
+    },
+    "benchmarks": {
+      "computeInstances": "Instâncias de Computação",
+      "storagePerGB": "Armazenamento por GB",
+      "database": "Banco de Dados"
+    }
+  },
+  "severities": {
+    "high": "Alta",
+    "medium": "Média",
+    "low": "Baixa",
+    "unknown": "Desconhecida"
+  },
+  "anomalies": {
+    "detected": "Anomalias Detectadas",
+    "anomalies": "anomalias",
+    "impact": "Impacto",
+    "investigate": "Investigar",
+    "noAnomaliesDetected": "Nenhuma anomalia detectada"
+  },
+  "calendar": {
+    "title": "Calendário de Eventos de Custo",
+    "months": [
+      "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", 
+      "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+    ],
+    "month": "Mês",
+    "year": "Ano",
+    "previousMonth": "Mês Anterior",
+    "nextMonth": "Próximo Mês",
+    "noEvents": "Sem eventos para {{month}} {{year}}",
+    "impact": "Impacto",
+    "eventTypes": {
+      "billing": "Faturamento",
+      "contract": "Contrato",
+      "budget": "Orçamento",
+      "other": "Outro"
+    }
+  },
+  "landing": {
+    "login": "Entrar",
+    "nav": {
+      "solution": "Solução",
+      "integrations": "Integrações",
+      "pricing": "Preços",
+      "customerStories": "Histórias de Clientes",
+      "resources": "Recursos",
+      "company": "Empresa",
+      "dropdown": {
+        "mainFeatures": "RECURSOS PRINCIPAIS",
+        "costOptimization": "OTIMIZAÇÃO DE CUSTOS",
+        "finopsFeatures": "RECURSOS DE FINOPS",
+        "cloudIntegrations": "PROVEDORES DE NUVEM",
+        "featuredStories": "HISTÓRIAS EM DESTAQUE",
+        "resources": "RECURSOS",
+        "company": "EMPRESA",
+        "megabill": "Um painel para gerenciar tudo",
+        "virtualTags": "Alocação de custos FinOps resolvida",
+        "sharedCost": "Custo Compartilhado",
+        "sharedCostDesc": "Realocação refinada de despesas compartilhadas",
+        "costGuard": "Detecte e reduza desperdícios desde o primeiro dia",
+        "costGuardScans": "Verificações CostGuard",
+        "costGuardScansDesc": "Verificações de economia de custos na nuvem",
+        "aws": "Integração com Amazon Web Services",
+        "azure": "Integração com Microsoft Azure",
+        "gcp": "Integração com Google Cloud Platform",
+        "storyDesc1": "34% de redução em gastos na nuvem",
+        "storyDesc2": "Evitou surpresas na fatura",
+        "blog": "Blog",
+        "blogDesc": "Últimas dicas e informações",
+        "reports": "Relatórios",
+        "reportsDesc": "Benchmarks e análises da indústria",
+        "about": "Sobre Nós",
+        "aboutDesc": "Nossa missão e equipe",
+        "careers": "Carreiras",
+        "careersDesc": "Junte-se à nossa equipe"
+      }
+    },
+    "cta": {
+      "bookDemo": "Agende uma demo",
+      "getStarted": "Começar Agora",
+      "watchDemo": "Assistir Demo",
+      "title": "Comece a Otimizar Seus Custos na Nuvem Hoje",
+      "subtitle": "Junte-se a milhares de empresas que confiam no Cost para gerenciar seus gastos na nuvem"
+    },
+    "hero": {
+      "title": "Otimize Seus Custos na Nuvem com Precisão",
+      "subtitle": "Obtenha visibilidade completa em todos os seus provedores de nuvem e economize com recomendações acionáveis.",
+      "cta": "Começar Agora",
+      "imageAlt": "Visualização do painel de análise de custos na nuvem",
+      "feature1": "Sem necessidade de cartão de crédito",
+      "feature2": "Teste gratuito de 14 dias",
+      "feature3": "Cancele quando quiser"
+    },
+    "stats": {
+      "reduction": "Redução média de custos",
+      "companies": "Empresas otimizadas",
+      "saved": "Total economizado na nuvem"
+    },
+    "features": {
+      "title": "Recursos Principais",
+      "subtitle": "Descubra como o Cost ajuda você a gerenciar e otimizar seus gastos na nuvem de forma eficaz.",
+      "analytics": {
+        "title": "Análise de Custos",
+        "description": "Insights profundos sobre seus gastos na nuvem em todos os provedores com análise de tendências e previsões."
+      },
+      "optimization": {
+        "title": "Otimização de Custos",
+        "description": "Identifique oportunidades de economia e obtenha recomendações personalizadas para reduzir gastos desnecessários."
+      },
+      "governance": {
+        "title": "Governança de FinOps",
+        "description": "Estabeleça políticas, orçamentos e alertas para manter o controle financeiro de seus recursos na nuvem."
+      }
+    },
+    "process": {
+      "title": "Como Funciona",
+      "subtitle": "Comece em minutos e economize nos seus custos de nuvem",
+      "connect": {
+        "title": "Conecte Suas Contas",
+        "description": "Conecte facilmente suas contas AWS, Azure, GCP e outros provedores de nuvem em minutos."
+      },
+      "analyze": {
+        "title": "Analise Seus Gastos",
+        "description": "Nossa plataforma analisa automaticamente seus padrões de gasto na nuvem e identifica ineficiências."
+      },
+      "save": {
+        "title": "Economize Dinheiro",
+        "description": "Implemente nossas recomendações para reduzir custos enquanto mantém ou melhora o desempenho na nuvem."
+      }
+    },
+    "useCases": {
+      "title": "Para Empresas de Todos os Tamanhos",
+      "subtitle": "Soluções personalizadas para diferentes necessidades de negócios",
+      "enterprise": {
+        "title": "Empresas",
+        "description": "Gerencie ambientes multi-nuvem complexos com faturamento consolidado e alocação de custos por departamento."
+      },
+      "startups": {
+        "title": "Startups",
+        "description": "Otimize seus gastos na nuvem enquanto você escala para estender seu capital e focar no crescimento."
+      },
+      "agencies": {
+        "title": "Agências",
+        "description": "Gerencie custos de nuvem de clientes com contas separadas e relatórios detalhados para faturamento."
+      }
+    },
+    "integrations": {
+      "title": "Integrações Perfeitas",
+      "subtitle": "Conecte-se com todos os seus provedores de nuvem e ferramentas favoritas"
+    },
+    "testimonials": {
+      "title": "O Que Nossos Clientes Dizem",
+      "subtitle": "Ouça empresas que transformaram seu gerenciamento de custos na nuvem",
+      "quote1": "O Cost nos ajudou a reduzir nossos gastos na nuvem em 34% em apenas três meses, melhorando a utilização de recursos.",
+      "quote2": "O recurso de detecção de anomalias nos salvou de uma surpresa enorme na fatura do último trimestre. Vale cada centavo."
+    },
+    "faq": {
+      "title": "Perguntas Frequentes",
+      "subtitle": "Tem perguntas? Temos respostas",
+      "q1": "Quanto tempo leva para configurar?",
+      "a1": "A configuração leva apenas alguns minutos. Conecte suas contas na nuvem através de nossas integrações de API seguras e começará a ver insights imediatamente.",
+      "q2": "Vocês suportam todos os provedores de nuvem?",
+      "a2": "Suportamos AWS, Azure, Google Cloud, Oracle Cloud e outros. Nossa plataforma está em constante expansão para incluir provedores adicionais.",
+      "q3": "Quanto posso esperar economizar?",
+      "a3": "Em média, nossos clientes economizam de 23 a 37% em suas contas de nuvem. Seus resultados podem variar com base na configuração atual da sua nuvem e no nível de otimização.",
+      "q4": "Meus dados estão seguros?",
+      "a4": "Absolutamente. Usamos criptografia e práticas de segurança padrão da indústria. Nunca armazenamos suas credenciais de nuvem e acessamos apenas os dados de faturamento necessários para análise."
+    },
+    "footer": {
+      "copyright": "© 2025 Cost. Todos os direitos reservados.",
+      "privacy": "Política de Privacidade",
+      "terms": "Termos de Serviço",
+      "contact": "Fale Conosco",
+      "tagline": "Otimização de custos na nuvem de forma simples e eficaz",
+      "product": "Produto",
+      "company": "Empresa", 
+      "legal": "Jurídico",
+      "features": "Funcionalidades",
+      "pricing": "Preços",
+      "integrations": "Integrações",
+      "changelog": "Changelog",
+      "about": "Sobre",
+      "careers": "Carreiras",
+      "blog": "Blog",
+      "privacyPolicy": "Política de Privacidade",
+      "termsOfService": "Termos de Serviço",
+      "security": "Segurança",
+      "gdpr": "GDPR"
+    }
+  },
+  "login": {
+    "backToHome": "Voltar para início",
+    "title": "Bem-vindo de volta",
+    "subtitle": "Digite suas credenciais para acessar sua conta",
+    "form": {
+      "username": "Usuário",
+      "email": "E-mail",
+      "password": "Senha",
+      "login": "Entrar",
+      "loggingIn": "Entrando..."
+    },
+    "forgotPassword": "Esqueceu sua senha?",
+    "noAccount": "Não tem uma conta?",
+    "signUp": "Cadastre-se",
+    "success": {
+      "title": "Login bem-sucedido",
+      "description": "Bem-vindo de volta ao Cost!"
+    },
+    "error": {
+      "title": "Falha no login",
+      "description": "E-mail ou senha inválidos. Por favor, tente novamente."
+    }
+  },
+  "signup": {
+    "backToHome": "Voltar para início",
+    "title": "Criar uma conta",
+    "subtitle": "Digite seus dados para começar a usar o Cost",
+    "form": {
+      "name": "Nome Completo",
+      "email": "E-mail",
+      "password": "Senha",
+      "confirmPassword": "Confirmar Senha",
+      "signUp": "Criar Conta",
+      "signingUp": "Criando conta..."
+    },
+    "haveAccount": "Já tem uma conta?",
+    "login": "Entrar",
+    "success": {
+      "title": "Conta criada",
+      "description": "Bem-vindo ao Cost!"
+    },
+    "error": {
+      "title": "Falha no cadastro",
+      "description": "Houve um problema ao criar sua conta. Por favor, tente novamente."
+    }
+  }
+}

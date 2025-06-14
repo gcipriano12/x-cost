@@ -1,0 +1,690 @@
+
+{
+  "common": {
+    "megabill": "MegaBill",
+    "virtualTags": "Virtual Tags",
+    "dashboard": "Dashboard",
+    "costGuard": "Cost Guard",
+    "anomalies": "Anomalies",
+    "period": "Period",
+    "lightMode": "Light Mode",
+    "darkMode": "Dark Mode",
+    "switchToLightMode": "Switch to Light Mode",
+    "switchToDarkMode": "Switch to Dark Mode",
+    "budgets": "Budgets",
+    "financialPlans": "Financial Plans",
+    "resources": "Resources",
+    "dataExplorer": "Data Explorer",
+    "myCommitments": "My Commitments",
+    "commitmentsLog": "Commitments Log",
+    "reports": "Reports",
+    "governance": "Governance",
+    "new": "New",
+    "notifications": "Notifications",
+    "myAccount": "My Account",
+    "profile": "Profile",
+    "settings": "Settings",
+    "support": "Support",
+    "logout": "Logout",
+    "noNotifications": "No notifications",
+    "markAllAsRead": "Mark all as read",
+    "cloudCostManagementDashboard": "Cloud cost management dashboard",
+    "all": "All"
+  },
+  "spendSummary": {
+    "title": "Spend Summary",
+    "totalSpend": "Total Spend",
+    "vsPreviousPeriod": "vs previous period",
+    "monthlyAverage": "Monthly Average",
+    "averageMobile": "Average",
+    "highestSpend": "Highest Spend",
+    "highestMobile": "Highest",
+    "annualProjection": "Annual Projection",
+    "projectionMobile": "Projection",
+    "currentYear": "Current year",
+    "lastSixMonths": "Last 6 months",
+    "budgetLimit": "Budget Limit",
+    "budgetMobile": "Budget",
+    "consumed": "Consumed",
+    "providerDistribution": "Provider Distribution",
+    "percentOfTotal": "% of total",
+    "highlights": "Highlights",
+    "nextMonthForecast": "Next Month Forecast",
+    "estimatedWaste": "Estimated Waste",
+    "realizedSavings": "Realized Savings",
+    "ofTotal": "of total"
+  },
+  "spendingForecast": {
+    "title": "Spending Forecast",
+    "forecastExceedsBudget": "Forecast exceeds budget",
+    "budget": "Budget",
+    "actualSpend": "Actual spend",
+    "forecast": "Forecast",
+    "actualSpendChart": "Actual Spend",
+    "forecastChart": "Forecast"
+  },
+  "spendingTeams": {
+    "title": "Spending by Team"
+  },
+  "regionHeatmap": {
+    "title": "Cost Heatmap by Region"
+  },
+  "newServices": {
+    "title": "New Services"
+  },
+  "environmentComparison": {
+    "title": "Environment Comparison",
+    "efficiency": "Efficiency:"
+  },
+  "finOpsCompliance": {
+    "title": "FinOps Compliance",
+    "practicesInCompliance": "practices in compliance"
+  },
+  "resourceUtilization": {
+    "title": "Resource Utilization",
+    "averageUtilization": "Average resource utilization"
+  },
+  "savingsOpportunities": {
+    "title": "Savings Opportunities",
+    "opportunities": "Opportunities",
+    "noOpportunitiesFound": "No savings opportunities found.",
+    "effortLow": "Low",
+    "effortMedium": "Medium", 
+    "effortHigh": "High",
+    "contribution": "Contribution",
+    "implement": "Implement",
+    "perMonth": "/month"
+  },
+  "topServices": {
+    "title": "Top Services",
+    "service": "Service",
+    "provider": "Provider",
+    "currentSpend": "Current Spend",
+    "variation": "Variation",
+    "details": "Details"
+  },
+  
+  "categoryDistribution": {
+    "title": "Category Distribution",
+    "percentOfTotal": "% of total"
+  },
+  "categories": {
+    "inform": "Inform",
+    "optimize": "Optimize",
+    "operate": "Operate"
+  },
+  "sections": {
+    "kpis": "Key Performance Indicators",
+    "eficiencia": "Efficiency",
+    "tarifacao": "Pricing",
+    "planejamento": "Planning",
+    "governanca": "Governance",
+    "noKpisForCategory": "No KPIs available for this category",
+    "servicesAndForecasts": "Services and Forecasts",
+    "trendsAndUtilization": "Trends and Utilization", 
+    "indicatorsAndEvents": "Indicators and Events",
+    "comparisonsAndReferences": "Comparisons and References"
+  },
+  
+  "kpis": {
+    "target": "Target",
+    "names": {
+      "resourceUtilizationRate": "Resource Utilization Rate",
+      "cloudWastePercentage": "Cloud Waste Percentage",
+      "powerScheduleAdherence": "Power Schedule Adherence Rate",
+      "legacyResourcesPercentage": "Legacy Resources Percentage",
+      "reservedInstancesCoverage": "Reserved Instances Coverage",
+      "costEfficiencyPerService": "Cost Efficiency per Service",
+      "containerDensity": "Container Density",
+      "costPerWorkload": "Cost per Workload",
+      "effectiveSavingsRate": "Effective Savings Rate (ESR)",
+      "commitmentDiscountWaste": "Commitment Discount Waste",
+      "computeCoveredByCommitments": "Compute Covered by Commitments",
+      "costPerVcpuGpuHour": "Cost per vCPU/GPU Hour",
+      "budgetVsForecastVariation": "Budget vs. Forecast Variation",
+      "cloudSpendVariation": "Cloud Spend Variation",
+      "forecastAccuracyRate": "Forecast Accuracy Rate",
+      "unallocatedCostPercentage": "Unallocated Cost Percentage",
+      "tagPolicyComplianceRate": "Tag Policy Compliance Rate",
+      "anomalyDetectionSavings": "Anomaly Detection Savings"
+    },
+    "descriptions": {
+      "resourceUtilizationRate": "How much of CPU, memory, GPU, etc. you actually use relative to what you provisioned. Keeps over-provisioning visible.",
+      "cloudWastePercentage": "Portion spent on idle VMs, detached volumes, zombie snapshots. Drives shutdown/termination actions.",
+      "powerScheduleAdherence": "Whether start/stop automation works as planned for non-production workloads (nights/weekends).",
+      "legacyResourcesPercentage": "How many instances are still on old, less efficient families. Useful before migration waves.",
+      "reservedInstancesCoverage": "Percentage of instances covered by long-term commitments like RIs or Savings Plans.",
+      "costEfficiencyPerService": "Cost normalized per unit of service delivered (transaction, request, etc).",
+      "containerDensity": "Average number of pods/containers per node in Kubernetes clusters. Indicates packing efficiency.",
+      "costPerWorkload": "Average cost per application or workload, helps identify applications with disproportionate spending.",
+      "effectiveSavingsRate": "Net savings compared to pure on-demand pricing — unifies RI/SP/CUD coverage and utilization into a single number.",
+      "commitmentDiscountWaste": "How much of purchased RI/SP/CUD capacity remains unused — highlights over-commitment.",
+      "computeCoveredByCommitments": "Depth of rate coverage; low values signal on-demand instance leakage.",
+      "costPerVcpuGpuHour": "Normalizes cost to a technical unit, ideal for cross-provider price comparisons.",
+      "budgetVsForecastVariation": "How close your rolling forecast is to year-to-date budget. Adjusted variance proves planning discipline.",
+      "cloudSpendVariation": "The classic signal of over/under-budget spending; combines with detailed root cause analysis.",
+      "forecastAccuracyRate": "Predictive accuracy for capacity or values; guides forecast model adjustments.",
+      "unallocatedCostPercentage": "How much spending still lacks a tag or owner — keeps chargeback transparent.",
+      "tagPolicyComplianceRate": "Health of your tagging discipline; low values compromise all other KPIs.",
+      "anomalyDetectionSavings": "Savings achieved by detecting spending spikes early with alerts."
+    },
+    "formulas": {
+      "resourceUtilizationRate": "(Consumed Capacity ÷ Allocated Capacity) × 100",
+      "cloudWastePercentage": "(Idle Resource Cost ÷ Total Cloud Spend) × 100",
+      "powerScheduleAdherence": "(Planned Runtime Hours ÷ Actual Runtime Hours) × 100",
+      "legacyResourcesPercentage": "(Legacy Instance Count ÷ Total Instances) × 100",
+      "reservedInstancesCoverage": "(Reserved Hours ÷ Total Instance Hours) × 100",
+      "costEfficiencyPerService": "Total Service Cost ÷ Number of Units Processed",
+      "containerDensity": "Total Running Pods ÷ Total Cluster Nodes",
+      "costPerWorkload": "Total Infrastructure Cost ÷ Number of Workloads",
+      "effectiveSavingsRate": "(Savings from All Discount Instruments ÷ Equivalent On-Demand Spend)",
+      "commitmentDiscountWaste": "(Unused Commitment Cost ÷ Total Commitment Cost) × 100",
+      "computeCoveredByCommitments": "(Compute Spend with Commitment Discount ÷ Total Compute Spend) × 100",
+      "costPerVcpuGpuHour": "(Compute Cost per Hour ÷ Number of vCPUs or GPUs)",
+      "budgetVsForecastVariation": "((Budgeted - Forecasted) ÷ Budgeted) × 100",
+      "cloudSpendVariation": "((Budgeted - Actual) ÷ Budgeted) × 100",
+      "forecastAccuracyRate": "100 - abs((Forecast - Actual) ÷ Forecast) × 100",
+      "unallocatedCostPercentage": "(Unallocated Costs ÷ Total Cloud Spend) × 100",
+      "tagPolicyComplianceRate": "(Properly Tagged Resources ÷ Total Resources) × 100",
+      "anomalyDetectionSavings": "Sum of (Predicted Spike Cost - Cost at Shutdown)"
+    }
+  },
+  "benchmarks": {
+    "title": "Cost Benchmarks",
+    "top": "Top",
+    "bottom": "Bottom",
+    "best": "Best",
+    "you": "You",
+    "average": "Average"
+  },
+  "timeFilter": {
+    "last7days": "Last 7 days",
+    "last30days": "Last 30 days",
+    "last90days": "Last 90 days",
+    "lastYear": "Last year",
+    "custom": "Custom range",
+    "selectPeriod": "Select period"
+  },
+  "mockData": {
+    "categories": {
+      "computation": "Computation",
+      "storage": "Storage",
+      "network": "Network",
+      "database": "Database",
+      "others": "Others"
+    },
+    "anomalyTitles": {
+      "vmCostIncrease": "VM Cost Increase",
+      "idleResources": "Idle Resources",
+      "expiredSnapshots": "Expired Snapshots",
+      "unoptimizedGPUs": "Unoptimized GPUs",
+      "idleBalancers": "Idle Load Balancers",
+      "oversizedDatabase": "Oversized Database",
+      "unassociatedIPs": "Unassociated IP Addresses"
+    },
+    "notificationTitles": {
+      "costAnomaly": "New cost anomaly",
+      "budgetExceeded": "Budget exceeded",
+      "savingsOpportunity": "Savings opportunity"
+    },
+    "anomalyDescriptions": {
+      "vmCostIncrease": "Significant increase in VM costs detected in production environment",
+      "idleResources": "Multiple resources running with low utilization",
+      "expiredSnapshots": "Old snapshots consuming unnecessary storage",
+      "unoptimizedGPUs": "GPU instances running without workload",
+      "idleBalancers": "Load balancers with no active targets",
+      "oversizedDatabase": "Database instance oversized for current workload",
+      "unassociatedIPs": "Elastic IPs not associated with any resource"
+    },
+    "savingsOpportunities": {
+      "reservedInstances": "Reserved Instances",
+      "rightsizing": "Right-sizing Recommendations",
+      "storageLifecycle": "Storage Lifecycle Policies",
+      "savingsPlans": "Savings Plans",
+      "unusedVolumes": "Unused EBS Volumes",
+      "kubernetesClusters": "Kubernetes Optimization",
+      "storageTiers": "Storage Tier Optimization"
+    },
+    "savingsDescriptions": {
+      "reservedInstances": "Switch to reserved instances for predictable workloads",
+      "rightsizing": "Optimize instance sizes based on usage patterns",
+      "storageLifecycle": "Implement automated storage lifecycle management",
+      "savingsPlans": "Commit to compute savings plans for flexible discounts",
+      "unusedVolumes": "Remove unattached EBS volumes",
+      "kubernetesClusters": "Optimize Kubernetes cluster resource allocation",
+      "storageTiers": "Move infrequently accessed data to cheaper storage tiers"
+    },
+    "teams": {
+      "development": "Development",
+      "infrastructure": "Infrastructure", 
+      "dataScience": "Data Science",
+      "marketing": "Marketing"
+    },
+    "months": {
+      "jan": "Jan",
+      "feb": "Feb", 
+      "mar": "Mar",
+      "apr": "Apr",
+      "may": "May",
+      "jun": "Jun",
+      "jul": "Jul"
+    },
+    "resources": {
+      "vcpus": "vCPUs",
+      "ram": "RAM (GB)",
+      "storage": "Storage (TB)",
+      "sqlLicenses": "SQL Licenses",
+      "ebsVolumes": "EBS Volumes",
+      "bandwidth": "Bandwidth (GB/s)"
+    },
+    "compliance": {
+      "instanceTags": "Instance Tagging",
+      "encryptedVolumes": "Encrypted Volumes",
+      "costReports": "Cost Reports",
+      "retentionPolicies": "Retention Policies",
+      "costAllocation": "Cost Allocation"
+    },
+    "complianceDescriptions": {
+      "instanceTags": "All instances properly tagged",
+      "encryptedVolumes": "All volumes encrypted at rest",
+      "costReports": "Monthly cost reports generated",
+      "retentionPolicies": "Data retention policies not configured",
+      "costAllocation": "Cost allocation tags missing"
+    },
+    "environments": {
+      "production": "Production",
+      "staging": "Staging", 
+      "development": "Development"
+    },
+    "benchmarks": {
+      "computeInstances": "Compute Instances",
+      "storagePerGB": "Storage per GB",
+      "database": "Database"
+    }
+  },
+  "severities": {
+    "high": "High",
+    "medium": "Medium", 
+    "low": "Low",
+    "unknown": "Unknown"
+  },
+  "anomalies": {
+    "detected": "Anomalies Detected",
+    "anomalies": "anomalies",
+    "impact": "Impact",
+    "investigate": "Investigate",
+    "noAnomaliesDetected": "No anomalies detected"
+  },
+  "calendar": {
+    "title": "Cost Events Calendar",
+    "months": [
+      "January", "February", "March", "April", "May", "June", 
+      "July", "August", "September", "October", "November", "December"
+    ],
+    "month": "Month",
+    "year": "Year",
+    "previousMonth": "Previous Month",
+    "nextMonth": "Next Month",
+    "noEvents": "No events for {{month}} {{year}}",
+    "impact": "Impact",
+    "eventTypes": {
+      "billing": "Billing",
+      "contract": "Contract",
+      "budget": "Budget",
+      "other": "Other"
+    }
+  },
+  "landing": {
+    "login": "Login",
+    "nav": {
+      "solution": "Solution",
+      "integrations": "Integrations",
+      "pricing": "Pricing",
+      "customerStories": "Customer Stories",
+      "resources": "Resources",
+      "company": "Company",
+      "dropdown": {
+        "mainFeatures": "MAIN FEATURES",
+        "costOptimization": "COST OPTIMIZATION",
+        "finopsFeatures": "FINOPS FEATURES",
+        "cloudIntegrations": "CLOUD PROVIDERS",
+        "featuredStories": "FEATURED STORIES",
+        "resources": "RESOURCES",
+        "company": "COMPANY",
+        "megabill": "One dashboard to manage them all",
+        "virtualTags": "FinOps cost allocation solved",
+        "sharedCost": "Shared Cost",
+        "sharedCostDesc": "Refined reallocation of shared expenses",
+        "costGuard": "Detect and reduce waste from day one",
+        "costGuardScans": "CostGuard Scans",
+        "costGuardScansDesc": "Cloud cost-saving scans",
+        "aws": "Amazon Web Services integration",
+        "azure": "Microsoft Azure integration",
+        "gcp": "Google Cloud Platform integration",
+        "storyDesc1": "34% reduction in cloud spend",
+        "storyDesc2": "Avoided billing surprises",
+        "blog": "Blog",
+        "blogDesc": "Latest insights and tips",
+        "reports": "Reports",
+        "reportsDesc": "Industry benchmarks and analyses",
+        "about": "About Us",
+        "aboutDesc": "Our mission and team",
+        "careers": "Careers",
+        "careersDesc": "Join our team"
+      }
+    },
+    "cta": {
+      "bookDemo": "Book a demo",
+      "getStarted": "Get Started",
+      "watchDemo": "Watch Demo",
+      "title": "Start Optimizing Your Cloud Costs Today",
+      "subtitle": "Join thousands of companies that trust X Cost to manage their cloud spending"
+    },
+    "hero": {
+      "title": "Optimize Your Cloud Costs with Precision",
+      "subtitle": "Get complete visibility across all your cloud providers and start saving with actionable recommendations.",
+      "cta": "Get Started",
+      "imageAlt": "Dashboard visualization of cloud cost analytics",
+      "feature1": "No credit card required",
+      "feature2": "14-day free trial",
+      "feature3": "Cancel anytime"
+    },
+    "stats": {
+      "reduction": "Average cost reduction",
+      "companies": "Companies optimized",
+      "saved": "Total cloud spend saved"
+    },
+    "features": {
+      "title": "Key Features",
+      "subtitle": "Discover how X Cost helps you manage and optimize your cloud expenditure effectively.",
+      "analytics": {
+        "title": "Cost Analytics",
+        "description": "Deep insights into your cloud spending across providers with trend analysis and forecasting."
+      },
+      "optimization": {
+        "title": "Cost Optimization",
+        "description": "Identify savings opportunities and get tailored recommendations to reduce unnecessary spending."
+      },
+      "governance": {
+        "title": "FinOps Governance",
+        "description": "Establish policies, budgets and alerts to maintain financial control of your cloud resources."
+      }
+    },
+    "process": {
+      "title": "How It Works",
+      "subtitle": "Get started in minutes and start saving on your cloud costs",
+      "connect": {
+        "title": "Connect Accounts",
+        "description": "Easily connect your AWS, Azure, GCP and other cloud provider accounts in minutes."
+      },
+      "analyze": {
+        "title": "Analyze Spending",
+        "description": "Our platform automatically analyzes your cloud spending patterns and identifies inefficiencies."
+      },
+      "save": {
+        "title": "Save Money",
+        "description": "Implement our recommendations to reduce costs while maintaining or improving your cloud performance."
+      }
+    },
+    "useCases": {
+      "title": "For Businesses of All Sizes",
+      "subtitle": "Tailored solutions for different business needs",
+      "enterprise": {
+        "title": "Enterprise",
+        "description": "Manage complex multi-cloud environments with consolidated billing and department-level cost allocation."
+      },
+      "startups": {
+        "title": "Startups",
+        "description": "Optimize your cloud spending as you scale to extend your runway and focus on growth."
+      },
+      "agencies": {
+        "title": "Agencies",
+        "description": "Manage client cloud costs with separate accounts and detailed reporting for client billing."
+      }
+    },
+    "integrations": {
+      "title": "Seamless Integrations",
+      "subtitle": "Connect with all your favorite cloud providers and tools"
+    },
+    "testimonials": {
+      "title": "What Our Customers Say",
+      "subtitle": "Hear from businesses that have transformed their cloud cost management",
+      "quote1": "X Cost helped us reduce our cloud spend by 34% in just three months while improving resource utilization.",
+      "quote2": "The anomaly detection feature saved us from a massive billing surprise last quarter. Worth every penny."
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "subtitle": "Got questions? We have answers",
+      "q1": "How long does it take to set up?",
+      "a1": "Setting up takes just minutes. Connect your cloud accounts through our secure API integrations, and you'll start seeing insights right away.",
+      "q2": "Do you support all cloud providers?",
+      "a2": "We support AWS, Azure, Google Cloud, Oracle Cloud, and more. Our platform is constantly expanding to include additional providers.",
+      "q3": "How much can I expect to save?",
+      "a3": "On average, our customers save 23-37% on their cloud bills. Your results may vary based on your current cloud setup and optimization level.",
+      "q4": "Is my data secure?",
+      "a4": "Absolutely. We use industry-standard encryption and security practices. We never store your cloud credentials and only access the billing data needed for analysis."
+    },
+    "footer": {
+      "copyright": "© 2025 X Cost. All rights reserved.",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service",
+      "contact": "Contact Us",
+      "tagline": "Cloud cost optimization made simple and effective",
+      "product": "Product",
+      "company": "Company", 
+      "legal": "Legal",
+      "features": "Features",
+      "pricing": "Pricing",
+      "integrations": "Integrations",
+      "changelog": "Changelog",
+      "about": "About",
+      "careers": "Careers",
+      "blog": "Blog",
+      "privacyPolicy": "Privacy Policy",
+      "termsOfService": "Terms of Service",
+      "security": "Security",
+      "gdpr": "GDPR"
+    }
+  },
+  "login": {
+    "backToHome": "Back to home",
+    "title": "Welcome back",
+    "subtitle": "Enter your credentials to access your account",
+    "form": {
+      "username": "Username",
+      "email": "Email",
+      "password": "Password",
+      "login": "Login",
+      "loggingIn": "Logging in..."
+    },
+    "forgotPassword": "Forgot your password?",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign up",
+    "success": {
+      "title": "Login successful",
+      "description": "Welcome back to X Cost!"
+    },
+    "error": {
+      "title": "Login failed",
+      "description": "Invalid email or password. Please try again."
+    }
+  },
+  "signup": {
+    "backToHome": "Back to home",
+    "title": "Create an account",
+    "subtitle": "Enter your details to get started with X Cost",
+    "form": {
+      "name": "Full Name",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "signUp": "Create Account",
+      "signingUp": "Creating account..."
+    },
+    "haveAccount": "Already have an account?",
+    "login": "Login",
+    "success": {
+      "title": "Account created",
+      "description": "Welcome to X Cost!"
+    },
+    "error": {
+      "title": "Signup failed",
+      "description": "There was a problem creating your account. Please try again."
+    }
+  },
+  "budgets": {
+    "page": {
+      "title": "Budgets",
+      "description": "Define and monitor cloud budget allocations.",
+      "newBudget": "New Budget",
+      "refresh": "Refresh"
+    },
+    "summary": {
+      "totalBudgets": "Total Budgets",
+      "totalBudgetAmount": "Total Budget Amount",
+      "totalConsumption": "Total Consumption",
+      "overallProgress": "Overall Progress"
+    },
+    "table": {
+      "title": "Budget Management",
+      "search": "Search budgets...",
+      "filters": {
+        "allProviders": "All Providers",
+        "allStatus": "All Status",
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "columns": {
+        "status": "Status",
+        "budgetName": "Budget Name", 
+        "provider": "Provider",
+        "service": "Service",
+        "budgetAmount": "Budget Amount",
+        "period": "Period",
+        "created": "Created",
+        "actions": "Actions"
+      },
+      "noResults": "No budgets found matching the current filters.",
+      "noData": "No budgets created yet. Create your first budget to get started.",
+      "manageButton": "Manage",
+      "periods": {
+        "monthly": "Monthly",
+        "annual": "Annual"
+      },
+      "actions": {
+        "viewDetails": "View Details",
+        "edit": "Edit",
+        "activate": "Activate",
+        "deactivate": "Deactivate",
+        "delete": "Delete"
+      }
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "form": {
+      "createTitle": "Create New Budget",
+      "editTitle": "Edit Budget",
+      "createDescription": "Define a budget and set up alerts for cost monitoring.",
+      "editDescription": "Update budget settings and configuration.",
+      "sections": {
+        "basicInfo": "Basic Information",
+        "scopeConfig": "Scope Configuration", 
+        "advancedSettings": "Advanced Settings"
+      },
+      "fields": {
+        "budgetName": "Budget Name",
+        "budgetNamePlaceholder": "e.g., Engineering Team Q2, Production AWS",
+        "budgetAmount": "Budget Amount",
+        "budgetAmountPlaceholder": "0.00",
+        "period": "Period",
+        "alertThreshold": "Alert Threshold (%)",
+        "alertThresholdHelp": "Alert when budget consumption reaches this percentage",
+        "cloudProvider": "Cloud Provider",
+        "allProviders": "All Providers",
+        "service": "Service",
+        "servicePlaceholder": "e.g., EC2, S3, Virtual Machines (optional)",
+        "activeBudget": "Active Budget",
+        "activeBudgetHelp": "Whether this budget should actively monitor costs",
+        "tags": "Tags (JSON)",
+        "tagsPlaceholder": "{\"department\": \"engineering\", \"team\": \"platform\"}",
+        "tagsHelp": "Optional JSON object for additional metadata and filtering"
+      },
+      "periods": {
+        "monthly": "Monthly",
+        "annual": "Annual"
+      },
+      "providers": {
+        "aws": "AWS",
+        "azure": "Azure",
+        "gcp": "Google Cloud Platform",
+        "oracleCloud": "Oracle Cloud"
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "create": "Create Budget",
+        "update": "Update Budget"
+      },
+      "validation": {
+        "budgetNameRequired": "Budget name is required",
+        "budgetAmountInvalid": "Budget amount must be greater than 0",
+        "alertThresholdInvalid": "Alert threshold must be between 0 and 100",
+        "tagsInvalidJson": "Tags must be valid JSON format"
+      }
+    },
+    "deleteConfirm": "Are you sure you want to delete \"{budgetName}\"?",
+    "details": {
+      "title": "Complete budget details and consumption",
+      "budgetAmount": "Budget Amount",
+      "period": "Period",
+      "alertThreshold": "Alert Threshold",
+      "budgetStatus": "Budget Status",
+      "provider": "Provider",
+      "service": "Service",
+      "created": "Created",
+      "budgetId": "Budget ID",
+      "currentConsumption": "Current Consumption",
+      "budgetProgress": "Budget Progress",
+      "currentSpend": "Current Spend",
+      "remainingBudget": "Remaining Budget",
+      "daysRemaining": "Days Remaining",
+      "projectedTotal": "Projected Total",
+      "currentPeriod": "Current Period",
+      "from": "From",
+      "to": "To",
+      "allProviders": "All Providers",
+      "allServices": "All Services",
+      "status": {
+        "underBudget": "Under budget",
+        "warning": "Warning",
+        "overBudget": "Over budget"
+      },
+      "buttons": {
+        "activate": "Activate",
+        "deactivate": "Deactivate"
+      },
+      "alerts": {
+        "title": "Active Alerts",
+        "noActiveAlerts": "No active alerts",
+        "lastChecked": "Last checked",
+        "types": {
+          "threshold_exceeded": "Threshold Exceeded",
+          "projected_overspend": "Projected Overspend"
+        },
+        "severity": {
+          "critical": "critical",
+          "warning": "warning"
+        }
+      },
+      "loading": {
+        "consumption": "Loading consumption data...",
+        "alerts": "Loading alerts..."
+      },
+      "noData": {
+        "consumption": "No consumption data available",
+        "alerts": "No active alerts"
+      }
+    }
+  }
+}

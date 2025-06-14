@@ -1,0 +1,44 @@
+FROM python:3.11-slim
+
+# Definir diretório de trabalho
+WORKDIR /app
+
+# Instalar dependências do sistema
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    postgresql-client \
+    curl \
+    wget \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalar dependências Python
+COPY requirements-dev.txt .
+RUN pip install --no-cache-dir -r requirements-dev.txt
+
+# Criar usuário não-root
+RUN groupadd -r finops && useradd -r -g finops finops
+
+# Criar diretórios necessários
+RUN mkdir -p /app/logs /app/uploads /app/exports && \
+    chown -R finops:finops /app
+
+# Copiar código da aplicação
+COPY . .
+
+# Configurar permissões
+RUN chown -R finops:finops /app
+
+# Mudar para usuário não-root
+USER finops
+
+# Expor porta
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/api/v1/health || exit 1
+
+# Comando padrão
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

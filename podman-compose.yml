@@ -1,0 +1,182 @@
+version: '3.8'
+
+services:
+  # Banco de dados PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: finops_postgres
+    environment:
+      POSTGRES_DB: finops_db
+      POSTGRES_USER: finops_user
+      POSTGRES_PASSWORD: finops_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finops_user -d finops_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - finops_network
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: finops_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    networks:
+      - finops_network
+    restart: unless-stopped
+
+  # LocalStack (CONFIGURAÇÃO MÍNIMA PARA PODMAN)
+  localstack:
+    image: localstack/localstack:3.0
+    container_name: finops_localstack
+    ports:
+      - "4566:4566"
+    environment:
+      # Serviços necessários
+      - SERVICES=secretsmanager,kms,sts,s3
+      - DEBUG=0
+      
+      # Configuração sem persistência e sem volumes problemáticos
+      - PERSISTENCE=0
+      - DATA_DIR=/tmp/localstack-data
+      - TMPDIR=/tmp/localstack-tmp
+      
+      # Configurações de rede
+      - HOSTNAME_EXTERNAL=localhost
+      - EDGE_PORT=4566
+      
+      # Configurações específicas para Podman
+      - SKIP_INFRA_DOWNLOADS=1
+      - DISABLE_EVENTS=1
+      - LOCALSTACK_HOST=localhost
+      - DISABLE_CORS_HEADERS=1
+      
+    # SEM VOLUMES para evitar problemas de mount
+    tmpfs:
+      - /tmp/localstack-data
+      - /tmp/localstack-tmp
+      
+    networks:
+      - finops_network
+    restart: unless-stopped
+    
+    # Configurações de segurança específicas para Podman
+    security_opt:
+      - label:disable
+    
+    # Privileged desabilitado para segurança
+    privileged: false
+    
+    # Healthcheck personalizado
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4566/_localstack/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+
+  # API FinOps
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: finops_api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://finops_user:finops_password@postgres:5432/finops_db
+      - REDIS_URL=redis://redis:6379/0
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+      - FINOPS_SECRET_KEY=dev-secret-key-not-for-production-use-only
+      
+      # LocalStack configuration
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_REGION=us-east-1
+      
+    volumes:
+      - .:/app
+      - ./logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+    networks:
+      - finops_network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Adminer (interface web para PostgreSQL)
+  adminer:
+    image: adminer:latest
+    container_name: finops_adminer
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DESIGN: nette
+    depends_on:
+      - postgres
+    networks:
+      - finops_network
+    restart: unless-stopped
+
+  # Redis Commander (interface web para Redis)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: finops_redis_commander
+    ports:
+      - "8081:8081"
+    environment:
+      REDIS_HOSTS: local:redis:6379
+      HTTP_USER: admin
+      HTTP_PASSWORD: finops123
+    depends_on:
+      - redis
+    networks:
+      - finops_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  localstack_data:
+    driver: local
+
+networks:
+  finops_network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: finops-bridge

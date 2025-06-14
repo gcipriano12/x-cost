@@ -456,28 +456,34 @@ async def get_budget_usage(
         daily_burn_rate = current_spend / days_elapsed if days_elapsed > 0 else 0
         projected_spend = daily_burn_rate * days_in_period
         
+        # Determinar status baseado no consumo
+        if usage_percentage >= float(budget.alert_threshold):
+            if usage_percentage >= 100:
+                status = "over_budget"
+            else:
+                status = "warning"
+        else:
+            status = "under_budget"
+        
         result = {
-            "budget_id": budget.id,
+            "id": budget.id,
             "budget_name": budget.budget_name,
-            "budget_amount": budget_amount,
-            "current_spend": current_spend,
-            "remaining_budget": remaining_budget,
-            "usage_percentage": round(usage_percentage, 2),
-            "alert_threshold": float(budget.alert_threshold),
-            "is_over_threshold": usage_percentage >= float(budget.alert_threshold),
-            "period": {
-                "type": budget.budget_period,
-                "start": period_start,
-                "end": period_end,
-                "days_total": days_in_period,
-                "days_elapsed": days_elapsed,
-                "days_remaining": days_remaining
-            },
-            "projections": {
-                "daily_burn_rate": round(daily_burn_rate, 2),
-                "projected_total_spend": round(projected_spend, 2),
-                "projected_overspend": max(0, projected_spend - budget_amount)
-            }
+            "provider_name": budget.provider_name,
+            "service_name": budget.service_name,
+            "budget_amount": str(budget_amount),
+            "budget_period": budget.budget_period,
+            "alert_threshold": str(budget.alert_threshold),
+            "is_active": budget.is_active,
+            "created_at": budget.created_at.isoformat() if budget.created_at else None,
+            "tags": budget.tags or {},
+            "current_consumption": str(current_spend),
+            "consumption_percentage": str(round(usage_percentage, 2)),
+            "remaining_budget": str(remaining_budget),
+            "period_start": period_start.isoformat(),
+            "period_end": period_end.isoformat(),
+            "status": status,
+            "days_remaining": days_remaining,
+            "projected_consumption": str(round(projected_spend, 2)) if projected_spend > 0 else None
         }
         
         logger.info(f"User {current_user.username} retrieved usage for budget: {budget.budget_name}")

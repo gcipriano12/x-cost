@@ -38,9 +38,9 @@ class CostAnalyzer:
             if service_name:
                 query = query.filter(FocusCostData.service_name == service_name)
             if start_date:
-                query = query.filter(FocusCostData.billing_period_start >= start_date)
+                query = query.filter(FocusCostData.charge_period_start >= start_date)
             if end_date:
-                query = query.filter(FocusCostData.billing_period_end <= end_date)
+                query = query.filter(FocusCostData.charge_period_start <= end_date)
             
             # Agrupar por período
             if period == "daily":
@@ -100,16 +100,16 @@ class CostAnalyzer:
             # Custo do período atual
             current_query = self.db.query(func.sum(FocusCostData.effective_cost)).filter(
                 and_(
-                    FocusCostData.billing_period_start >= current_period_start,
-                    FocusCostData.billing_period_end <= current_period_end
+                    FocusCostData.charge_period_start >= current_period_start,
+                    FocusCostData.charge_period_start <= current_period_end
                 )
             )
             
             # Custo do período de comparação
             comparison_query = self.db.query(func.sum(FocusCostData.effective_cost)).filter(
                 and_(
-                    FocusCostData.billing_period_start >= comparison_period_start,
-                    FocusCostData.billing_period_end <= comparison_period_end
+                    FocusCostData.charge_period_start >= comparison_period_start,
+                    FocusCostData.charge_period_start <= comparison_period_end
                 )
             )
             
@@ -165,9 +165,9 @@ class CostAnalyzer:
             if service_name:
                 query = query.filter(FocusCostData.service_name == service_name)
             if start_date:
-                query = query.filter(FocusCostData.billing_period_start >= start_date)
+                query = query.filter(FocusCostData.charge_period_start >= start_date)
             if end_date:
-                query = query.filter(FocusCostData.billing_period_end <= end_date)
+                query = query.filter(FocusCostData.charge_period_start <= end_date)
             
             results = query.all()
             
@@ -234,9 +234,9 @@ class CostAnalyzer:
             if provider_name:
                 query = query.filter(FocusCostData.provider_name == provider_name)
             if start_date:
-                query = query.filter(FocusCostData.billing_period_start >= start_date)
+                query = query.filter(FocusCostData.charge_period_start >= start_date)
             if end_date:
-                query = query.filter(FocusCostData.billing_period_end <= end_date)
+                query = query.filter(FocusCostData.charge_period_start <= end_date)
             
             results = query.group_by(
                 FocusCostData.service_name,
@@ -287,9 +287,9 @@ class CostAnalyzer:
             if provider_name:
                 query = query.filter(FocusCostData.provider_name == provider_name)
             if start_date:
-                query = query.filter(FocusCostData.billing_period_start >= start_date)
+                query = query.filter(FocusCostData.charge_period_start >= start_date)
             if end_date:
-                query = query.filter(FocusCostData.billing_period_end <= end_date)
+                query = query.filter(FocusCostData.charge_period_start <= end_date)
             
             # Filtrar regiões não nulas
             query = query.filter(FocusCostData.region.isnot(None))
@@ -347,8 +347,8 @@ class CostAnalyzer:
             
             query = query.filter(
                 and_(
-                    FocusCostData.billing_period_start >= start_date,
-                    FocusCostData.billing_period_end <= end_date
+                    FocusCostData.charge_period_start >= start_date,
+                    FocusCostData.charge_period_start <= end_date
                 )
             ).group_by(
                 func.date(FocusCostData.charge_period_start)
@@ -450,8 +450,8 @@ class CostAnalyzer:
             
             query = query.filter(
                 and_(
-                    FocusCostData.billing_period_start >= start_date,
-                    FocusCostData.billing_period_end <= end_date
+                    FocusCostData.charge_period_start >= start_date,
+                    FocusCostData.charge_period_start <= end_date
                 )
             ).group_by(
                 func.date(FocusCostData.charge_period_start)
@@ -518,8 +518,8 @@ class CostAnalyzer:
             
             total_cost_query = total_cost_query.filter(
                 and_(
-                    FocusCostData.billing_period_start >= start_date,
-                    FocusCostData.billing_period_end <= end_date
+                    FocusCostData.charge_period_start >= start_date,
+                    FocusCostData.charge_period_start <= end_date
                 )
             )
             
@@ -651,8 +651,8 @@ class BudgetAnalyzer:
             # Consultar custo atual
             cost_query = self.db.query(func.sum(FocusCostData.effective_cost)).filter(
                 and_(
-                    FocusCostData.billing_period_start >= period_start,
-                    FocusCostData.billing_period_end <= period_end
+                    FocusCostData.charge_period_start >= period_start,
+                    FocusCostData.charge_period_start <= period_end
                 )
             )
             
@@ -764,8 +764,8 @@ class BudgetAnalyzer:
             # Consultar custo atual do período
             cost_query = self.db.query(func.sum(FocusCostData.effective_cost)).filter(
                 and_(
-                    FocusCostData.billing_period_start >= start_date,
-                    FocusCostData.billing_period_end <= end_date
+                    FocusCostData.charge_period_start >= start_date,
+                    FocusCostData.charge_period_start <= end_date
                 )
             )
             
@@ -861,8 +861,8 @@ class DashboardAnalyzer:
         # Custo total do período atual
         current_cost_query = self.db.query(func.sum(FocusCostData.effective_cost)).filter(
             and_(
-                FocusCostData.billing_period_start >= start_date,
-                FocusCostData.billing_period_end <= end_date
+                FocusCostData.charge_period_start >= start_date,
+                FocusCostData.charge_period_start <= end_date
             )
         )
         total_cost = float(current_cost_query.scalar() or 0)
@@ -870,8 +870,8 @@ class DashboardAnalyzer:
         # Custo do período anterior
         previous_cost_query = self.db.query(func.sum(FocusCostData.effective_cost)).filter(
             and_(
-                FocusCostData.billing_period_start >= previous_start,
-                FocusCostData.billing_period_end <= previous_end
+                FocusCostData.charge_period_start >= previous_start,
+                FocusCostData.charge_period_start <= previous_end
             )
         )
         previous_cost = float(previous_cost_query.scalar() or 0)
@@ -911,8 +911,8 @@ class DashboardAnalyzer:
             func.sum(FocusCostData.effective_cost).label('total_cost')
         ).filter(
             and_(
-                FocusCostData.billing_period_start >= start_date,
-                FocusCostData.billing_period_end <= end_date
+                FocusCostData.charge_period_start >= start_date,
+                FocusCostData.charge_period_start <= end_date
             )
         ).group_by(
             FocusCostData.service_name,
@@ -970,8 +970,8 @@ class DashboardAnalyzer:
             # Calcular gasto real no período especificado
             current_spend_query = self.db.query(func.sum(FocusCostData.effective_cost)).filter(
                 and_(
-                    FocusCostData.billing_period_start >= start_date,
-                    FocusCostData.billing_period_end <= end_date
+                    FocusCostData.charge_period_start >= start_date,
+                    FocusCostData.charge_period_start <= end_date
                 )
             )
             current_spend = float(current_spend_query.scalar() or 0)
@@ -999,8 +999,8 @@ class DashboardAnalyzer:
             func.sum(FocusCostData.effective_cost).label('total_cost')
         ).filter(
             and_(
-                FocusCostData.billing_period_start >= start_date,
-                FocusCostData.billing_period_end <= end_date
+                FocusCostData.charge_period_start >= start_date,
+                FocusCostData.charge_period_start <= end_date
             )
         ).group_by(
             FocusCostData.provider_name
@@ -1063,8 +1063,8 @@ class DashboardAnalyzer:
         # Calcular custo total para percentual
         total_cost_query = self.db.query(func.sum(FocusCostData.effective_cost)).filter(
             and_(
-                FocusCostData.billing_period_start >= start_date,
-                FocusCostData.billing_period_end <= end_date
+                FocusCostData.charge_period_start >= start_date,
+                FocusCostData.charge_period_start <= end_date
             )
         )
         total_cost = float(total_cost_query.scalar() or 0)

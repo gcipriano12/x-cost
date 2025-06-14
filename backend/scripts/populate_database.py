@@ -206,24 +206,32 @@ def create_focus_cost_data(session):
         "Compute Engine": ["n1-standard-1", "n1-standard-2", "n1-standard-4", "e2-medium"]
     }
     
-    # Gerar dados para os últimos 90 dias
-    start_date = date.today() - timedelta(days=90)
+    # Gerar dados para os últimos 90 dias, com mais concentração nos últimos 30 dias
+    start_date = date(2025, 3, 15)  # Começar em 15/03/2025 para ter dados até hoje (14/06/2025)
+    end_date = date(2025, 6, 14)    # Até hoje
     
     cost_records = []
-    for day in range(90):
-        current_date = start_date + timedelta(days=day)
-        
-        # Gerar 20-50 registros por dia
-        daily_records = random.randint(20, 50)
+    current_date = start_date
+    
+    while current_date <= end_date:
+        # Mais registros nos últimos 30 dias
+        days_from_today = (end_date - current_date).days
+        if days_from_today <= 30:
+            daily_records = random.randint(50, 100)  # Mais dados recentes
+        elif days_from_today <= 60:
+            daily_records = random.randint(30, 60)
+        else:
+            daily_records = random.randint(15, 30)
         
         for _ in range(daily_records):
             provider = random.choice(providers)
             service = random.choice(services[provider])
             region = random.choice(regions[provider])
             
-            # Gerar custos realistas
-            base_cost = random.uniform(1.0, 500.0)
-            usage_quantity = random.uniform(1.0, 100.0)
+            # Gerar custos realistas com tendência crescente para dados mais recentes
+            base_multiplier = 1.0 + (90 - days_from_today) * 0.01  # Crescimento gradual
+            base_cost = random.uniform(5.0, 1500.0) * base_multiplier
+            usage_quantity = random.uniform(1.0, 200.0)
             
             cost_record = FocusCostData(
                 billing_account_id=f"123456789{random.randint(100, 999)}",
@@ -268,6 +276,8 @@ def create_focus_cost_data(session):
                 data_source="billing_api"
             )
             cost_records.append(cost_record)
+        
+        current_date += timedelta(days=1)  # Incrementar a data
     
     print(f"Criando {len(cost_records)} registros de custo FOCUS...")
     session.add_all(cost_records)
@@ -282,22 +292,28 @@ def create_cost_analysis(session):
     services = ["EC2", "S3", "RDS", "Virtual Machines", "Storage Account", "Compute Engine"]
     
     analyses = []
-    for i in range(30):  # 30 análises
+    for i in range(50):  # 50 análises (mais análises)
+        # Períodos variados, com foco nos últimos dias
+        period_days = random.choice([7, 14, 30, 60])
+        end_date = date(2025, 6, 14)  # Hoje
+        start_date = end_date - timedelta(days=period_days)
+        
         analysis = CostAnalysis(
             analysis_type=random.choice(["trend", "delta", "forecast"]),
             provider_name=random.choice(providers),
             service_name=random.choice(services),
             resource_type=random.choice(["compute", "storage", "network"]),
-            period_start=date.today() - timedelta(days=30),
-            period_end=date.today(),
-            total_cost=Decimal(str(round(random.uniform(1000, 50000), 2))),
-            average_daily_cost=Decimal(str(round(random.uniform(30, 1500), 2))),
-            cost_trend=Decimal(str(round(random.uniform(-20, 30), 2))),  # -20% a +30%
-            cost_delta=Decimal(str(round(random.uniform(-5000, 10000), 2))),
-            forecasted_cost=Decimal(str(round(random.uniform(1200, 60000), 2))),
+            period_start=start_date,
+            period_end=end_date,
+            total_cost=Decimal(str(round(random.uniform(5000, 80000), 2))),  # Custos maiores
+            average_daily_cost=Decimal(str(round(random.uniform(100, 3000), 2))),
+            cost_trend=Decimal(str(round(random.uniform(-15, 25), 2))),  # -15% a +25%
+            cost_delta=Decimal(str(round(random.uniform(-8000, 15000), 2))),
+            forecasted_cost=Decimal(str(round(random.uniform(6000, 100000), 2))),
             tags={
                 "analysis_version": "v1.0",
-                "confidence": random.choice(["high", "medium", "low"])
+                "confidence": random.choice(["high", "medium", "low"]),
+                "generated_at": "2025-06-14"
             }
         )
         analyses.append(analysis)

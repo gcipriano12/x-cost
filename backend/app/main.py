@@ -663,15 +663,28 @@ async def get_cost_trend(
 async def get_cost_by_service(
     credential_id: Optional[str] = None,
     days: Optional[int] = 30,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
     top_n: Optional[int] = 10,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_database)
 ):
     """Obtém breakdown de custos por serviço AWS"""
     try:
-        # Calcular período baseado nos dias
-        end_date = date.today()
-        start_date = end_date - timedelta(days=days)
+        # Determinar período: usar start_date/end_date se fornecidos, senão usar 'days'
+        if start_date and end_date:
+            # Validar que end_date > start_date
+            if end_date <= start_date:
+                raise HTTPException(status_code=400, detail="end_date must be greater than start_date")
+            
+            period_start = start_date
+            period_end = end_date
+            period_days = (end_date - start_date).days + 1
+        else:
+            # Usar lógica existente baseada em 'days'
+            period_end = date.today()
+            period_start = period_end - timedelta(days=days-1)  # -1 para incluir o dia atual
+            period_days = days
         
         analyzer = CostAnalyzer(db)
         
@@ -685,17 +698,17 @@ async def get_cost_by_service(
         
         service_data = analyzer.analyze_by_service(
             provider_name=provider_name,
-            start_date=start_date,
-            end_date=end_date,
+            start_date=period_start,
+            end_date=period_end,
             top_n=top_n
         )
         
         return {
             "service_breakdown": service_data,
             "period": {
-                "start_date": start_date,
-                "end_date": end_date,
-                "days": days
+                "start_date": period_start,
+                "end_date": period_end,
+                "days": period_days
             },
             "filters": {
                 "credential_id": credential_id,
@@ -710,7 +723,9 @@ async def get_cost_by_service(
 
 @app.get("/api/v1/dashboard/summary", response_model=DashboardSummary)
 async def get_dashboard_summary(
-    period_days: int = 30,
+    period_days: Optional[int] = 30,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_database)
 ):
@@ -718,8 +733,19 @@ async def get_dashboard_summary(
     try:
         from app.cost_analytics import DashboardAnalyzer
         
+        # Determinar período: usar start_date/end_date se fornecidos, senão usar 'period_days'
+        if start_date and end_date:
+            # Validar que end_date > start_date
+            if end_date <= start_date:
+                raise HTTPException(status_code=400, detail="end_date must be greater than start_date")
+            
+            calculated_days = (end_date - start_date).days + 1
+        else:
+            # Usar lógica existente baseada em 'period_days'
+            calculated_days = period_days
+        
         dashboard_analyzer = DashboardAnalyzer(db)
-        summary = dashboard_analyzer.get_dashboard_summary(period_days=period_days)
+        summary = dashboard_analyzer.get_dashboard_summary(period_days=calculated_days)
         
         return summary
         
@@ -731,15 +757,28 @@ async def get_dashboard_summary(
 async def get_cost_by_region(
     credential_id: Optional[str] = None,
     days: Optional[int] = 30,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
     top_n: Optional[int] = 10,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_database)
 ):
     """Obtém breakdown de custos por região AWS"""
     try:
-        # Calcular período baseado nos dias
-        end_date = date.today()
-        start_date = end_date - timedelta(days=days)
+        # Determinar período: usar start_date/end_date se fornecidos, senão usar 'days'
+        if start_date and end_date:
+            # Validar que end_date > start_date
+            if end_date <= start_date:
+                raise HTTPException(status_code=400, detail="end_date must be greater than start_date")
+            
+            period_start = start_date
+            period_end = end_date
+            period_days = (end_date - start_date).days + 1
+        else:
+            # Usar lógica existente baseada em 'days'
+            period_end = date.today()
+            period_start = period_end - timedelta(days=days-1)  # -1 para incluir o dia atual
+            period_days = days
         
         analyzer = CostAnalyzer(db)
         
@@ -753,17 +792,17 @@ async def get_cost_by_region(
         
         region_data = analyzer.analyze_by_region(
             provider_name=provider_name,
-            start_date=start_date,
-            end_date=end_date,
+            start_date=period_start,
+            end_date=period_end,
             top_n=top_n
         )
         
         return {
             "region_breakdown": region_data,
             "period": {
-                "start_date": start_date,
-                "end_date": end_date,
-                "days": days
+                "start_date": period_start,
+                "end_date": period_end,
+                "days": period_days
             },
             "filters": {
                 "credential_id": credential_id,

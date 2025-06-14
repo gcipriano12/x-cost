@@ -634,6 +634,12 @@
       }
     },
     "deleteConfirm": "Are you sure you want to delete \"{budgetName}\"?",
+    "deleteDialog": {
+      "title": "Confirm Deletion",
+      "description": "Are you sure you want to delete the budget \"{budgetName}\"? This action cannot be undone.",
+      "confirmButton": "Delete",
+      "cancelButton": "Cancel"
+    },
     "details": {
       "title": "Complete budget details and consumption",
       "budgetAmount": "Budget Amount",

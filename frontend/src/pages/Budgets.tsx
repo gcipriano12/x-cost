@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Dashboard from '@/components/dashboard/Dashboard';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -12,6 +12,17 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/hooks/useTheme';
 import { useBudgets, BudgetResponse, BudgetCreate, BudgetUpdate } from '@/hooks/useBudgets';
@@ -123,7 +134,9 @@ const Budgets = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<BudgetResponse | null>(null);
+  const [budgetToDelete, setBudgetToDelete] = useState<BudgetResponse | null>(null);
 
   // Filter and search budgets
   const filteredBudgets = useMemo(() => {
@@ -148,10 +161,22 @@ const Budgets = () => {
     }
   };
 
-  const handleDeleteBudget = async (budget: BudgetResponse) => {
-    if (confirm(t('budgets.deleteConfirm', { budgetName: budget.budget_name }))) {
-      await deleteBudget(budget.id);
+  const handleDeleteBudget = (budget: BudgetResponse) => {
+    setBudgetToDelete(budget);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteBudget = async () => {
+    if (budgetToDelete) {
+      await deleteBudget(budgetToDelete.id);
+      setBudgetToDelete(null);
+      setDeleteDialogOpen(false);
     }
+  };
+
+  const cancelDeleteBudget = () => {
+    setBudgetToDelete(null);
+    setDeleteDialogOpen(false);
   };
 
   const handleToggleBudgetStatus = async (budget: BudgetResponse) => {
@@ -178,6 +203,16 @@ const Budgets = () => {
       [key]: value === 'all' ? undefined : value
     }));
   };
+
+  // Update selectedBudget when budgets list changes (after activate/deactivate)
+  useEffect(() => {
+    if (selectedBudget && budgets.length > 0) {
+      const updatedBudget = budgets.find(b => b.id === selectedBudget.id);
+      if (updatedBudget) {
+        setSelectedBudget(updatedBudget);
+      }
+    }
+  }, [budgets, selectedBudget]);
 
   const overallProgress = parseFloat(overallConsumptionPercentage) || 0;
 
@@ -449,6 +484,51 @@ const Budgets = () => {
           onActivate={activateBudget}
           onDeactivate={deactivateBudget}
         />
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-destructive" />
+                {t('budgets.deleteDialog.title')}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {budgetToDelete && (
+                  <>
+                    <div className="mb-3">
+                      {t('budgets.deleteDialog.description').split('{budgetName}').join(budgetToDelete.budget_name)}
+                    </div>
+                    <div className="mt-3 p-3 bg-muted rounded-lg">
+                      <div className="text-sm font-medium">{budgetToDelete.budget_name}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {budgetToDelete.provider_name && (
+                          <span>{t('budgets.form.fields.cloudProvider')}: {budgetToDelete.provider_name} • </span>
+                        )}
+                        {budgetToDelete.service_name && (
+                          <span>{t('budgets.form.fields.service')}: {budgetToDelete.service_name} • </span>
+                        )}
+                        <span>{t('budgets.form.fields.budgetAmount')}: {formatCurrency(budgetToDelete.budget_amount)}</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={cancelDeleteBudget}>
+                {t('budgets.deleteDialog.cancelButton')}
+              </AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={confirmDeleteBudget}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {t('budgets.deleteDialog.confirmButton')}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Dashboard>
   );

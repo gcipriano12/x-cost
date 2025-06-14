@@ -95,7 +95,10 @@ export function BudgetDetailsDialog({
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -270,7 +273,8 @@ export function BudgetDetailsDialog({
                       {consumption.status === 'under_budget' && t('budgets.details.status.underBudget')}
                       {consumption.status === 'warning' && t('budgets.details.status.warning')}
                       {consumption.status === 'over_budget' && t('budgets.details.status.overBudget')}
-                      {!['under_budget', 'warning', 'over_budget'].includes(consumption.status) && consumption.status.replace('_', ' ')}
+                      {consumption.status && !['under_budget', 'warning', 'over_budget'].includes(consumption.status) && consumption.status.replace('_', ' ')}
+                      {!consumption.status && 'Unknown Status'}
                     </span>
                   </Badge>
                 </CardTitle>
@@ -282,11 +286,11 @@ export function BudgetDetailsDialog({
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm font-medium">{t('budgets.details.budgetProgress')}</span>
                       <span className="text-sm text-muted-foreground">
-                        {parseFloat(consumption.consumption_percentage).toFixed(1)}%
+                        {consumption.consumption_percentage ? parseFloat(consumption.consumption_percentage).toFixed(1) : '0.0'}%
                       </span>
                     </div>
                     <Progress 
-                      value={parseFloat(consumption.consumption_percentage)} 
+                      value={consumption.consumption_percentage ? parseFloat(consumption.consumption_percentage) : 0} 
                       className="h-3"
                       progressColor={getProgressColor(consumption.status)}
                     />
@@ -297,18 +301,18 @@ export function BudgetDetailsDialog({
                     <div>
                       <p className="text-sm text-muted-foreground">{t('budgets.details.currentSpend')}</p>
                       <p className="text-lg font-bold text-blue-600">
-                        {formatCurrency(consumption.current_consumption)}
+                        {formatCurrency(consumption.current_consumption || 0)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">{t('budgets.details.remainingBudget')}</p>
                       <p className="text-lg font-bold text-green-600">
-                        {formatCurrency(consumption.remaining_budget)}
+                        {formatCurrency(consumption.remaining_budget || 0)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">{t('budgets.details.daysRemaining')}</p>
-                      <p className="text-lg font-bold">{consumption.days_remaining}</p>
+                      <p className="text-lg font-bold">{consumption.days_remaining || 0}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">{t('budgets.details.projectedTotal')}</p>
@@ -325,8 +329,8 @@ export function BudgetDetailsDialog({
                   <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                     <p className="text-sm font-medium mb-2">{t('budgets.details.currentPeriod')}</p>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>{t('budgets.details.from')}: {formatDate(consumption.period_start)}</span>
-                      <span>{t('budgets.details.to')}: {formatDate(consumption.period_end)}</span>
+                      <span>{t('budgets.details.from')}: {consumption.period_start ? formatDate(consumption.period_start) : 'N/A'}</span>
+                      <span>{t('budgets.details.to')}: {consumption.period_end ? formatDate(consumption.period_end) : 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -359,7 +363,7 @@ export function BudgetDetailsDialog({
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {alerts.alerts.map((alert, index) => (
+                  {alerts.alerts.filter(alert => alert && (alert.type || alert.message)).map((alert, index) => (
                     <div 
                       key={index}
                       className={cn(
@@ -377,9 +381,9 @@ export function BudgetDetailsDialog({
                         )}
                         <div className="flex-1">
                           <p className="font-medium capitalize">
-                            {t(`budgets.details.alerts.types.${alert.type}`) || alert.type.replace('_', ' ')} - {t(`budgets.details.alerts.severity.${alert.severity}`)}
+                            {alert.type ? (t(`budgets.details.alerts.types.${alert.type}`) || alert.type.replace('_', ' ')) : 'Unknown Type'} - {alert.severity ? t(`budgets.details.alerts.severity.${alert.severity}`) : 'Unknown Severity'}
                           </p>
-                          <p className="text-sm mt-1">{alert.message}</p>
+                          <p className="text-sm mt-1">{alert.message || 'No message available'}</p>
                         </div>
                       </div>
                     </div>

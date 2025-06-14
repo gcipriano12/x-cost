@@ -207,7 +207,7 @@ export const useBudgets = (options: UseBudgetsOptions = {}): UseBudgetsReturn =>
   };
 
   const getBudgetConsumption = async (id: number, periodDays = 30): Promise<BudgetConsumption> => {
-    return apiCall(`/api/v1/budgets/${id}/consumption?period_days=${periodDays}`);
+    return apiCall(`/api/v1/budgets/${id}/usage?period_days=${periodDays}`);
   };
 
   const getBudgetAlerts = async (id: number): Promise<BudgetAlertsResponse> => {

@@ -636,6 +636,12 @@
       }
     },
     "deleteConfirm": "Tem certeza que deseja excluir \"{budgetName}\"?",
+    "deleteDialog": {
+      "title": "Confirmar Exclusão",
+      "description": "Tem certeza que deseja excluir o orçamento \"{budgetName}\"? Esta ação não pode ser desfeita.",
+      "confirmButton": "Excluir",
+      "cancelButton": "Cancelar"
+    },
     "details": {
       "title": "Detalhes completos e consumo do budget",
       "budgetAmount": "Valor do Orçamento",

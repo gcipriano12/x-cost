@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks, Response
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
 from datetime import datetime
@@ -443,7 +443,7 @@ async def delete_credential(
         except Exception as audit_error:
             logger.warning(f"Failed to log credential deletion: {audit_error}")
         
-        return {"message": "Credential deleted successfully"}
+        return Response(status_code=204)
         
     except HTTPException:
         raise

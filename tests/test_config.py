@@ -60,14 +60,23 @@ test_app = FastAPI(
     lifespan=app_lifespan
 )
 
+# Função para incluir routers (será chamada após a definição dos routers)
+def register_test_routers():
+    """Registrar routers de teste na aplicação"""
+    from tests.test_credentials_api import credentials_router_test, auth_router_test, audit_router_test
+    test_app.include_router(credentials_router_test, tags=["credentials"])
+    test_app.include_router(auth_router_test, tags=["auth"])
+    test_app.include_router(audit_router_test, tags=["audit"])
+
 # Override das dependências para usar banco de teste
 from app.database import get_database
 test_app.dependency_overrides[get_database] = get_test_database
 
-# Importações para criar as rotas de teste
-from tests.test_credentials_api import credentials_router_test, auth_router_test, audit_router_test
 # Usar versão de teste do SecurityManager no lugar do original
 from tests.test_auth_security import security_manager_test as security_manager
+
+# Importação e registro dos routers (após sua definição)
+from tests.test_credentials_api import credentials_router_test, auth_router_test, audit_router_test
 
 # Adicionar rotas de teste
 test_app.include_router(credentials_router_test, tags=["credentials"])

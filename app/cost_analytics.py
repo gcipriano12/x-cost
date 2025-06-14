@@ -266,6 +266,62 @@ class CostAnalyzer:
             logger.error(f"Error analyzing by service: {str(e)}")
             return []
     
+    def analyze_by_region(
+        self,
+        provider_name: Optional[str] = None,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+        top_n: int = 10
+    ) -> List[Dict[str, Any]]:
+        """Analisa custos por região"""
+        try:
+            query = self.db.query(
+                FocusCostData.region,
+                FocusCostData.provider_name,
+                func.sum(FocusCostData.effective_cost).label('total_cost'),
+                func.avg(FocusCostData.effective_cost).label('avg_cost'),
+                func.count(FocusCostData.id).label('record_count')
+            )
+            
+            # Aplicar filtros
+            if provider_name:
+                query = query.filter(FocusCostData.provider_name == provider_name)
+            if start_date:
+                query = query.filter(FocusCostData.billing_period_start >= start_date)
+            if end_date:
+                query = query.filter(FocusCostData.billing_period_end <= end_date)
+            
+            # Filtrar regiões não nulas
+            query = query.filter(FocusCostData.region.isnot(None))
+            
+            results = query.group_by(
+                FocusCostData.region,
+                FocusCostData.provider_name
+            ).order_by(
+                func.sum(FocusCostData.effective_cost).desc()
+            ).limit(top_n).all()
+            
+            region_analysis = []
+            total_cost = sum(float(r.total_cost or 0) for r in results)
+            
+            for result in results:
+                cost = float(result.total_cost or 0)
+                region_analysis.append({
+                    'region': result.region,
+                    'provider_name': result.provider_name,
+                    'total_cost': cost,
+                    'avg_cost': float(result.avg_cost or 0),
+                    'record_count': result.record_count,
+                    'percentage_of_total': (cost / total_cost * 100) if total_cost > 0 else 0
+                })
+            
+            logger.info(f"Analyzed top {len(region_analysis)} regions")
+            return region_analysis
+            
+        except Exception as e:
+            logger.error(f"Error analyzing by region: {str(e)}")
+            return []
+
     def forecast_costs(
         self,
         provider_name: Optional[str] = None,
@@ -600,3 +656,302 @@ class BudgetAnalyzer:
         except Exception as e:
             logger.error(f"Error checking budget alerts: {str(e)}")
             return []
+
+
+class DashboardAnalyzer:
+    """Classe especializada para análises do dashboard"""
+    
+    def __init__(self, db: Session):
+        self.db = db
+        self.cost_analyzer = CostAnalyzer(db)
+        self.budget_analyzer = BudgetAnalyzer(db)
+    
+    @cached(ttl=900, key_prefix="dashboard_summary")  # Cache por 15 minutos
+    def get_dashboard_summary(self, period_days: int = 30) -> Dict[str, Any]:
+        """Gera resumo completo para o dashboard"""
+        try:
+            end_date = date.today()
+            start_date = end_date - timedelta(days=period_days)
+            
+            # Período anterior para comparação
+            previous_start = start_date - timedelta(days=period_days)
+            previous_end = start_date
+            
+            # 1. Métricas principais
+            metrics = self._calculate_main_metrics(start_date, end_date, previous_start, previous_end, period_days)
+            
+            # 2. Distribuição por provedor
+            provider_distribution = self._calculate_provider_distribution(start_date, end_date)
+            
+            # 3. Highlights especiais
+            highlights = self._calculate_highlights(start_date, end_date)
+            
+            return {
+                'metrics': metrics,
+                'provider_distribution': provider_distribution,
+                'highlights': highlights,
+                'generated_at': datetime.utcnow(),
+                'period': {
+                    'start_date': start_date,
+                    'end_date': end_date,
+                    'days': period_days
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Error generating dashboard summary: {str(e)}")
+            return {'error': str(e)}
+    
+    def _calculate_main_metrics(self, start_date: date, end_date: date, 
+                               previous_start: date, previous_end: date, period_days: int) -> Dict[str, Any]:
+        """Calcula métricas principais do dashboard"""
+        
+        # Custo total do período atual
+        current_cost_query = self.db.query(func.sum(FocusCostData.effective_cost)).filter(
+            and_(
+                FocusCostData.billing_period_start >= start_date,
+                FocusCostData.billing_period_end <= end_date
+            )
+        )
+        total_cost = float(current_cost_query.scalar() or 0)
+        
+        # Custo do período anterior
+        previous_cost_query = self.db.query(func.sum(FocusCostData.effective_cost)).filter(
+            and_(
+                FocusCostData.billing_period_start >= previous_start,
+                FocusCostData.billing_period_end <= previous_end
+            )
+        )
+        previous_cost = float(previous_cost_query.scalar() or 0)
+        
+        # Variação percentual
+        cost_change_percentage = 0
+        if previous_cost > 0:
+            cost_change_percentage = ((total_cost - previous_cost) / previous_cost) * 100
+        
+        # Média mensal (aproximada)
+        days_in_period = (end_date - start_date).days
+        monthly_average = (total_cost / days_in_period) * 30 if days_in_period > 0 else 0
+        
+        # Maior gasto por serviço
+        top_service = self._get_top_service(start_date, end_date)
+        
+        # Projeção anual
+        annual_projection = monthly_average * 12
+        
+        # Consumo de orçamento
+        budget_consumption = self._get_budget_consumption(period_days)
+        
+        return {
+            'total_cost': total_cost,
+            'cost_change_percentage': cost_change_percentage,
+            'monthly_average': monthly_average,
+            'top_service': top_service,
+            'annual_projection': annual_projection,
+            'budget_consumption': budget_consumption
+        }
+    
+    def _get_top_service(self, start_date: date, end_date: date) -> Dict[str, Any]:
+        """Encontra o serviço com maior gasto"""
+        query = self.db.query(
+            FocusCostData.service_name,
+            FocusCostData.provider_name,
+            func.sum(FocusCostData.effective_cost).label('total_cost')
+        ).filter(
+            and_(
+                FocusCostData.billing_period_start >= start_date,
+                FocusCostData.billing_period_end <= end_date
+            )
+        ).group_by(
+            FocusCostData.service_name,
+            FocusCostData.provider_name
+        ).order_by(
+            func.sum(FocusCostData.effective_cost).desc()
+        ).first()
+        
+        if query:
+            return {
+                'service_name': query.service_name,
+                'provider_name': query.provider_name,
+                'total_cost': float(query.total_cost or 0)
+            }
+        
+        return {'service_name': 'N/A', 'provider_name': 'N/A', 'total_cost': 0}
+    
+    def _get_budget_consumption(self, period_days: int = 30) -> Optional[Dict[str, Any]]:
+        """Calcula o consumo total de orçamento baseado no período selecionado"""
+        try:
+            from app.models import Budget
+            
+            # Definir período de análise
+            end_date = date.today()
+            start_date = end_date - timedelta(days=period_days)
+            
+            # Buscar orçamentos ativos
+            active_budgets = self.db.query(Budget).filter(
+                Budget.is_active == True
+            ).all()
+            
+            if not active_budgets:
+                logger.info("No active budgets found")
+                return None
+            
+            # Calcular orçamento total (proporcional ao período se necessário)
+            total_budget = 0
+            for budget in active_budgets:
+                budget_amount = float(budget.budget_amount)
+                
+                # Ajustar orçamento baseado no período
+                if budget.budget_period == 'monthly':
+                    # Orçamento mensal - calcular proporcional aos dias
+                    days_in_month = 30  # Simplificado
+                    proportion = min(period_days / days_in_month, 1.0)
+                    total_budget += budget_amount * proportion
+                elif budget.budget_period == 'annual':
+                    # Orçamento anual - calcular proporcional aos dias
+                    proportion = period_days / 365
+                    total_budget += budget_amount * proportion
+                else:
+                    # Para outros períodos, usar valor integral
+                    total_budget += budget_amount
+            
+            # Calcular gasto real no período especificado
+            current_spend_query = self.db.query(func.sum(FocusCostData.effective_cost)).filter(
+                and_(
+                    FocusCostData.billing_period_start >= start_date,
+                    FocusCostData.billing_period_end <= end_date
+                )
+            )
+            current_spend = float(current_spend_query.scalar() or 0)
+            
+            consumption_percentage = (current_spend / total_budget * 100) if total_budget > 0 else 0
+            remaining_budget = total_budget - current_spend
+            
+            logger.info(f"Budget calculation - Period: {period_days} days, Total Budget: {total_budget:.2f}, Spent: {current_spend:.2f}, Consumption: {consumption_percentage:.1f}%")
+            
+            return {
+                'total_budget': round(total_budget, 2),
+                'current_spend': round(current_spend, 2),
+                'consumption_percentage': round(consumption_percentage, 1),
+                'remaining_budget': round(remaining_budget, 2)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error calculating budget consumption: {str(e)}")
+            return None
+    
+    def _calculate_provider_distribution(self, start_date: date, end_date: date) -> List[Dict[str, Any]]:
+        """Calcula distribuição de custos por provedor"""
+        query = self.db.query(
+            FocusCostData.provider_name,
+            func.sum(FocusCostData.effective_cost).label('total_cost')
+        ).filter(
+            and_(
+                FocusCostData.billing_period_start >= start_date,
+                FocusCostData.billing_period_end <= end_date
+            )
+        ).group_by(
+            FocusCostData.provider_name
+        ).order_by(
+            func.sum(FocusCostData.effective_cost).desc()
+        ).all()
+        
+        total_cost = sum(float(r.total_cost or 0) for r in query)
+        
+        distribution = []
+        for result in query:
+            cost = float(result.total_cost or 0)
+            percentage = (cost / total_cost * 100) if total_cost > 0 else 0
+            
+            distribution.append({
+                'provider_name': result.provider_name,
+                'total_cost': cost,
+                'percentage': percentage
+            })
+        
+        return distribution
+    
+    def _calculate_highlights(self, start_date: date, end_date: date) -> Dict[str, Any]:
+        """Calcula highlights especiais do dashboard"""
+        
+        # 1. Previsão próximo mês
+        forecast_data = self.cost_analyzer.forecast_costs(forecast_days=30, historical_days=60)
+        next_month_forecast = {
+            'amount': forecast_data.get('total_forecasted_cost', 0),
+            'change_percentage': 0  # Será calculado baseado na tendência
+        }
+        
+        # 2. Desperdício estimado (recursos com baixa utilização)
+        estimated_waste = self._calculate_estimated_waste(start_date, end_date)
+        
+        # 3. Economias realizadas (comparação com período anterior)
+        savings_achieved = self._calculate_savings_achieved(start_date, end_date)
+        
+        return {
+            'next_month_forecast': next_month_forecast,
+            'estimated_waste': estimated_waste,
+            'savings_achieved': savings_achieved
+        }
+    
+    def _calculate_estimated_waste(self, start_date: date, end_date: date) -> Dict[str, Any]:
+        """Calcula desperdício estimado baseado em anomalias e padrões"""
+        
+        # Detectar anomalias como indicador de desperdício
+        anomalies = self.cost_analyzer.calculate_anomalies(lookback_days=30)
+        
+        # Calcular desperdício baseado em anomalias de alta (spikes não explicados)
+        waste_amount = 0
+        for anomaly in anomalies:
+            if anomaly.get('type') == 'spike' and anomaly.get('severity', 0) > 2:
+                # Considerar parte do spike como desperdício
+                deviation = anomaly.get('deviation', 0)
+                if deviation > 0:
+                    waste_amount += deviation * 0.7  # 70% do spike como desperdício estimado
+        
+        # Calcular custo total para percentual
+        total_cost_query = self.db.query(func.sum(FocusCostData.effective_cost)).filter(
+            and_(
+                FocusCostData.billing_period_start >= start_date,
+                FocusCostData.billing_period_end <= end_date
+            )
+        )
+        total_cost = float(total_cost_query.scalar() or 0)
+        
+        waste_percentage = (waste_amount / total_cost * 100) if total_cost > 0 else 0
+        
+        return {
+            'amount': waste_amount,
+            'percentage': waste_percentage,
+            'total_cost': total_cost
+        }
+    
+    def _calculate_savings_achieved(self, start_date: date, end_date: date) -> Dict[str, Any]:
+        """Calcula economias realizadas comparando com período anterior"""
+        
+        # Período anterior
+        period_length = (end_date - start_date).days
+        previous_start = start_date - timedelta(days=period_length)
+        previous_end = start_date
+        
+        # Usar delta já existente
+        delta_data = self.cost_analyzer.calculate_cost_delta(
+            current_period_start=start_date,
+            current_period_end=end_date,
+            comparison_period_start=previous_start,
+            comparison_period_end=previous_end
+        )
+        
+        savings_amount = 0
+        savings_percentage = 0
+        
+        if delta_data:
+            delta = delta_data.get('delta', 0)
+            if delta < 0:  # Custo diminuiu = economia
+                savings_amount = abs(delta)
+                current_cost = delta_data.get('current_period', {}).get('cost', 0)
+                savings_percentage = (savings_amount / current_cost * 100) if current_cost > 0 else 0
+        
+        return {
+            'amount': savings_amount,
+            'percentage': savings_percentage
+        }

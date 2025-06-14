@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
-from datetime import datetime
+from datetime import datetime, timedelta, date
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -15,7 +15,8 @@ from app.database import get_database, get_cache, db_manager, cache_manager, ini
 from app.models import (
     FocusCostDataResponse, CostAnalysisResponse, BudgetResponse,
     CostQueryParams, AnalysisQueryParams, FocusCostDataCreate,
-    BudgetCreate, CostSummary, MonthlyCostResponse, CostForecast
+    BudgetCreate, CostSummary, MonthlyCostResponse, CostForecast,
+    DashboardSummary
 )
 from app.cost_analytics import CostAnalyzer, BudgetAnalyzer
 from app.cloud_connectors import CloudConnectorFactory, extract_all_providers_data
@@ -438,7 +439,7 @@ async def health_check_endpoint():
                 health["secrets_manager"] = False
                 health["overall"] = False
         
-        status_code = 200 if health["overall"] else 503
+        status_code = 200 if health["overall"] else 503;
         
         return JSONResponse(
             status_code=status_code,
@@ -654,6 +655,123 @@ async def get_cost_trend(
         
     except Exception as e:
         logger.error(f"Error calculating trend: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/analytics/by-service")
+async def get_cost_by_service(
+    credential_id: Optional[str] = None,
+    days: Optional[int] = 30,
+    top_n: Optional[int] = 10,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_database)
+):
+    """Obtém breakdown de custos por serviço AWS"""
+    try:
+        # Calcular período baseado nos dias
+        end_date = date.today()
+        start_date = end_date - timedelta(days=days)
+        
+        analyzer = CostAnalyzer(db)
+        
+        # Por enquanto, vamos usar provider_name como None se credential_id for fornecido
+        # Em uma implementação completa, você mapearia credential_id para provider_name
+        provider_name = None
+        if credential_id:
+            # Aqui você poderia buscar o provider_name baseado no credential_id
+            # Por enquanto, vamos simular com dados existentes
+            pass
+        
+        service_data = analyzer.analyze_by_service(
+            provider_name=provider_name,
+            start_date=start_date,
+            end_date=end_date,
+            top_n=top_n
+        )
+        
+        return {
+            "service_breakdown": service_data,
+            "period": {
+                "start_date": start_date,
+                "end_date": end_date,
+                "days": days
+            },
+            "filters": {
+                "credential_id": credential_id,
+                "top_n": top_n
+            },
+            "requested_by": current_user.username
+        }
+        
+    except Exception as e:
+        logger.error(f"Error calculating service breakdown: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/dashboard/summary", response_model=DashboardSummary)
+async def get_dashboard_summary(
+    period_days: int = 30,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_database)
+):
+    """Obtém resumo consolidado para o dashboard"""
+    try:
+        from app.cost_analytics import DashboardAnalyzer
+        
+        dashboard_analyzer = DashboardAnalyzer(db)
+        summary = dashboard_analyzer.get_dashboard_summary(period_days=period_days)
+        
+        return summary
+        
+    except Exception as e:
+        logger.error(f"Error generating dashboard summary: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/analytics/by-region")
+async def get_cost_by_region(
+    credential_id: Optional[str] = None,
+    days: Optional[int] = 30,
+    top_n: Optional[int] = 10,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_database)
+):
+    """Obtém breakdown de custos por região AWS"""
+    try:
+        # Calcular período baseado nos dias
+        end_date = date.today()
+        start_date = end_date - timedelta(days=days)
+        
+        analyzer = CostAnalyzer(db)
+        
+        # Por enquanto, vamos usar provider_name como None se credential_id for fornecido
+        # Em uma implementação completa, você mapearia credential_id para provider_name
+        provider_name = None
+        if credential_id:
+            # Aqui você poderia buscar o provider_name baseado no credential_id
+            # Por enquanto, vamos simular com dados existentes
+            pass
+        
+        region_data = analyzer.analyze_by_region(
+            provider_name=provider_name,
+            start_date=start_date,
+            end_date=end_date,
+            top_n=top_n
+        )
+        
+        return {
+            "region_breakdown": region_data,
+            "period": {
+                "start_date": start_date,
+                "end_date": end_date,
+                "days": days
+            },
+            "filters": {
+                "credential_id": credential_id,
+                "top_n": top_n
+            },
+            "requested_by": current_user.username
+        }
+        
+    except Exception as e:
+        logger.error(f"Error calculating region breakdown: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # === MIDDLEWARE DE TRATAMENTO DE ERROS ATUALIZADO ===

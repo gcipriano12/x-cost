@@ -1,16 +1,32 @@
 """
 Versão de teste do credentials_api.py sem referência a schema para uso com SQLite
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks, Header
+from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks, Header, Response
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 import logging
 from pydantic import BaseModel, Field, validator, SecretStr
 
+# Definir os routers antes de fazer qualquer importação circular
+# Routers para testes
+credentials_router_test = APIRouter(prefix="/api/v1/credentials", tags=["Credentials Management"])
+auth_router_test = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
+audit_router_test = APIRouter(prefix="/api/v1/audit", tags=["Audit"])
+
+# Agora podemos importar com segurança
 from tests.test_models import User, UserRole, CloudProvider, CloudCredential
-from tests.test_config import get_test_database
 from tests.test_auth_security import security_manager_test
+
+# Função para obter sessão de banco de dados para testes
+def get_test_database():
+    """Dependency para obter sessão de banco de testes"""
+    from tests.test_config import TestSessionLocal
+    db = TestSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 # Modelos Pydantic para API
 class LoginRequest(BaseModel):
@@ -55,15 +71,19 @@ class UserResponse(BaseModel):
 
 class CredentialConfigResponse(BaseModel):
     """Resposta de configuração de credenciais"""
-    id: int
+    id: str
     name: str
     provider_type: str
     description: Optional[str] = None
+    account_id: Optional[str] = None
+    region_preference: Optional[str] = None
     status: str
+    last_validated: Optional[datetime] = None
+    validation_error: Optional[str] = None
+    expires_at: Optional[datetime] = None
+    created_by: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
-    last_validated: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
 
 class CredentialCreate(BaseModel):
     """Modelo para criação de credenciais"""
@@ -308,18 +328,28 @@ async def create_credential(
         
         # Verificar se o provedor existe, senão criar
         provider = db.query(CloudProvider).filter(
-            CloudProvider.provider_name == credential_data.provider_type
+            CloudProvider.name == credential_data.provider_type
         ).first()
         
         if not provider:
             provider = CloudProvider(
-                provider_name=credential_data.provider_type,
-                api_endpoint=None,
+                name=credential_data.provider_type,
+                provider_type=credential_data.provider_type,
+                description="Provedor criado automaticamente",
                 is_active=True
             )
             db.add(provider)
             db.commit()
         
+        # Extrair account_id se disponível
+        account_id = None
+        if credential_data.provider_type == "AWS" and hasattr(credential_data, "credentials"):
+            account_id = credential_data.credentials.get("account_id")
+        elif credential_data.provider_type == "Azure" and hasattr(credential_data, "credentials"):
+            account_id = credential_data.credentials.get("subscription_id")
+        elif credential_data.provider_type == "GCP" and hasattr(credential_data, "credentials"):
+            account_id = credential_data.credentials.get("project_id")
+            
         # Criar credencial
         new_credential = CloudCredential(
             name=credential_data.name,
@@ -327,7 +357,9 @@ async def create_credential(
             provider_id=provider.id,
             description=credential_data.description,
             status="active",
-            expires_at=credential_data.expires_at
+            expires_at=credential_data.expires_at,
+            account_id=account_id,
+            created_by=current_user.username
         )
         
         db.add(new_credential)
@@ -335,7 +367,7 @@ async def create_credential(
         db.refresh(new_credential)
         
         return CredentialConfigResponse(
-            id=new_credential.id,
+            id=str(new_credential.id),
             name=new_credential.name,
             provider_type=new_credential.provider_type,
             description=new_credential.description,
@@ -343,7 +375,11 @@ async def create_credential(
             created_at=new_credential.created_at,
             updated_at=new_credential.updated_at,
             last_validated=new_credential.last_validated,
-            expires_at=new_credential.expires_at
+            account_id=new_credential.account_id,
+            region_preference=new_credential.region_preference,
+            validation_error=new_credential.validation_error,
+            expires_at=new_credential.expires_at,
+            created_by=new_credential.created_by
         )
     
     except HTTPException:
@@ -374,7 +410,27 @@ async def list_credentials(
         query = query.filter(CloudCredential.status == status)
     
     credentials = query.all()
-    return credentials
+    
+    # Converter para formato compatível com o modelo de resposta
+    result = []
+    for cred in credentials:
+        result.append(CredentialConfigResponse(
+            id=str(cred.id),
+            name=cred.name,
+            provider_type=cred.provider_type,
+            description=cred.description,
+            status=cred.status,
+            account_id=getattr(cred, 'account_id', None),
+            region_preference=getattr(cred, 'region_preference', None),
+            validation_error=getattr(cred, 'validation_error', None),
+            created_by=getattr(cred, 'created_by', current_user.username),
+            created_at=cred.created_at,
+            updated_at=cred.updated_at,
+            last_validated=cred.last_validated,
+            expires_at=cred.expires_at
+        ))
+    
+    return result
 
 @credentials_router_test.get("/{credential_id}", response_model=CredentialConfigResponse)
 async def get_credential(
@@ -391,7 +447,21 @@ async def get_credential(
             detail="Credential not found"
         )
     
-    return credential
+    return CredentialConfigResponse(
+        id=str(credential.id),
+        name=credential.name,
+        provider_type=credential.provider_type,
+        description=credential.description,
+        status=credential.status,
+        account_id=getattr(credential, 'account_id', None),
+        region_preference=getattr(credential, 'region_preference', None),
+        validation_error=getattr(credential, 'validation_error', None),
+        created_by=getattr(credential, 'created_by', current_user.username),
+        created_at=credential.created_at,
+        updated_at=credential.updated_at,
+        last_validated=credential.last_validated,
+        expires_at=credential.expires_at
+    )
 
 @credentials_router_test.put("/{credential_id}", response_model=CredentialConfigResponse)
 async def update_credential(
@@ -422,9 +492,26 @@ async def update_credential(
     db.commit()
     db.refresh(credential)
     
+    return CredentialConfigResponse(
+        id=str(credential.id),
+        name=credential.name,
+        provider_type=credential.provider_type,
+        description=credential.description,
+        status=credential.status,
+        account_id=getattr(credential, 'account_id', None),
+        region_preference=getattr(credential, 'region_preference', None),
+        validation_error=getattr(credential, 'validation_error', None),
+        created_by=getattr(credential, 'created_by', current_user.username),
+        created_at=credential.created_at,
+        updated_at=credential.updated_at,
+        last_validated=credential.last_validated,
+        expires_at=credential.expires_at
+    )
+    db.refresh(credential)
+    
     return credential
 
-@credentials_router_test.delete("/{credential_id}")
+@credentials_router_test.delete("/{credential_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_credential(
     credential_id: int,
     db: Session = Depends(get_test_database),
@@ -452,7 +539,8 @@ async def delete_credential(
         db.delete(credential)
         db.commit()
         
-        return {"message": "Credential deleted successfully"}
+        # Retornar 204 No Content em vez de uma mensagem
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
     
     except HTTPException:
         raise

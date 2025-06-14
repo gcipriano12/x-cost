@@ -165,7 +165,7 @@ def test_delete_credential(client, finops_auth_headers, sample_aws_credentials, 
         f"/api/v1/credentials/{credential_id}",
         headers=finops_auth_headers
     )
-    assert response.status_code == 200
+    assert response.status_code == 204
     
     # Verificar que foi removida
     get_response = client.get(

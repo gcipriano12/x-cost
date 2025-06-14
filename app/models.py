@@ -288,3 +288,30 @@ class AnalysisQueryParams(BaseModel):
     period_end: Optional[date] = None
     limit: int = Field(default=100, ge=1, le=1000)
     offset: int = Field(default=0, ge=0)
+
+# Dashboard Models
+class DashboardMetrics(BaseModel):
+    total_cost: Decimal
+    cost_change_percentage: Decimal
+    monthly_average: Decimal
+    top_service: Dict[str, Any]
+    annual_projection: Decimal
+    budget_consumption: Optional[Dict[str, Any]] = None
+
+class ProviderDistribution(BaseModel):
+    provider_name: str
+    total_cost: Decimal
+    percentage: Decimal
+    cost_change: Optional[Decimal] = None
+
+class DashboardHighlights(BaseModel):
+    next_month_forecast: Dict[str, Any]
+    estimated_waste: Dict[str, Any]
+    savings_achieved: Dict[str, Any]
+
+class DashboardSummary(BaseModel):
+    metrics: DashboardMetrics
+    provider_distribution: List[ProviderDistribution]
+    highlights: DashboardHighlights
+    generated_at: datetime
+    period: Dict[str, Any]

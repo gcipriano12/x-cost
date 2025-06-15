@@ -31,7 +31,7 @@ export function RealTimeSpendSummaryCard({
     autoRefresh: false, // Desabilitar auto-refresh automático
     refreshInterval: 5 * 60 * 1000 // 5 minutos (não usado quando autoRefresh = false)
   });
-  const { formatRelativeTime } = useDashboardFormatters();
+  const { formatRelativeTime, formatUpdatedTime } = useDashboardFormatters();
   const { t } = useTranslation();
   const { isDark } = useTheme();
 
@@ -42,7 +42,7 @@ export function RealTimeSpendSummaryCard({
         <CardContent className="flex items-center justify-center h-[400px]">
           <div className="flex flex-col items-center space-y-4">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            <p className="text-sm text-muted-foreground">Carregando dados do dashboard...</p>
+            <p className="text-sm text-muted-foreground">{t('common.loadingDashboardData')}</p>
           </div>
         </CardContent>
       </Card>
@@ -89,13 +89,13 @@ export function RealTimeSpendSummaryCard({
         <div className="flex items-center justify-between">
           <div className="flex items-center text-xs text-muted-foreground">
             <Clock className="h-3 w-3 mr-1" />
-            Atualizado {formatRelativeTime(lastUpdated)}
+            {formatUpdatedTime(lastUpdated)}
           </div>
           {/* Só mostrar "Atualizando..." durante carregamentos explícitos */}
           {loading && (
             <div className="flex items-center text-xs text-muted-foreground">
               <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-              Atualizando...
+              {t('common.updating')}
             </div>
           )}
         </div>

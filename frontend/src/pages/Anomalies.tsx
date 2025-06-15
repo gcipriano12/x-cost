@@ -191,7 +191,6 @@ const Anomalies = () => {
         <PageHeader 
           icon={AlertTriangle} 
           title="Anomalies" 
-          description="Detect and resolve unexpected cost patterns."
           color="text-amber-500"
           timeFilter={timeFilter}
           onTimeFilterChange={setTimeFilter}

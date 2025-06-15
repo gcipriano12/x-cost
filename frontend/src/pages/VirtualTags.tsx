@@ -104,7 +104,6 @@ const VirtualTags = () => {
         <PageHeader 
           icon={Tags} 
           title="Virtual Tags" 
-          description="Create and manage virtual tags to organize and categorize resources."
           color="text-[#0080af]"
           timeFilter={timeFilter}
           onTimeFilterChange={setTimeFilter}

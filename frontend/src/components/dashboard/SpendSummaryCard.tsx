@@ -107,18 +107,80 @@ export function SpendSummaryCard({
     return isDark ? 'text-green-400' : 'text-XCost-green';
   };
 
+  // Função para converter hex para rgba com glassmorphism
+  const hexToRgba = (hex: string, alpha: number = 0.3) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+
   // Calcular valores absolutos para cada provedor
   const providerValues = providerBreakdown.map(provider => ({
     ...provider,
     absoluteValue: (provider.value / 100) * totalSpend
   }));
 
-  // Dados para o gráfico de pizza
+  // Função para intensificar cores mantendo a identidade de cada provedor
+  const intensifyColor = (color: string): string => {
+    // Mapeamento para intensificar cores mantendo identidade visual dos provedores
+    const intensifiedColors: { [key: string]: string } = {
+      // Oracle Cloud - manter vermelho mas intensificar
+      '#F87171': '#EF4444', // Vermelho Oracle -> vermelho mais vivo
+      
+      // Azure - manter azul mas intensificar  
+      '#4A9EF1': '#3B82F6', // Azul Azure -> azul mais vivo
+      
+      // GCP - manter azul claro mas intensificar
+      '#7BA7F7': '#60A5FA', // Azul GCP -> azul claro mais vivo
+      
+      // AWS - manter laranja mas intensificar
+      '#FBB040': '#F59E0B', // Laranja AWS -> laranja mais vivo
+      
+      // Outras cores para compatibilidade
+      '#34D399': '#10B981', // Verde -> verde vivo
+      '#A78BFA': '#8B5CF6', // Roxo -> roxo vivo
+      '#67E8F9': '#06B6D4', // Ciano -> ciano vivo
+      '#F472B6': '#EC4899', // Rosa -> rosa vivo
+      '#9CA3AF': '#6B7280', // Cinza -> cinza vivo
+    };
+    
+    return intensifiedColors[color] || color;
+  };
+
+  const getBorderColor = (originalColor: string): string => {
+    // Mapeamento para bordas mais intensas mantendo identidade de cada provedor
+    const borderColors: { [key: string]: string } = {
+      // Oracle Cloud - vermelho mais escuro (estilo Estimated Waste)
+      '#F87171': '#DC2626',
+      
+      // Azure - azul mais escuro  
+      '#4A9EF1': '#1D4ED8',
+      
+      // GCP - azul claro mais escuro
+      '#7BA7F7': '#2563EB',
+      
+      // AWS - laranja mais escuro
+      '#FBB040': '#D97706',
+      
+      // Cores adicionais para compatibilidade
+      '#34D399': '#059669', // Verde -> verde escuro
+      '#A78BFA': '#7C3AED', // Roxo -> roxo escuro
+      '#67E8F9': '#0891B2', // Ciano -> ciano escuro
+      '#F472B6': '#BE185D', // Rosa -> rosa escuro
+      '#9CA3AF': '#475569', // Cinza -> cinza escuro
+    };
+    
+    return borderColors[originalColor] || originalColor;
+  };
+
+  // Dados para o gráfico de pizza com cores originais dos provedores e glassmorphism
   const pieData = providerValues.map(provider => ({
     name: provider.name,
     value: provider.value,
     absoluteValue: provider.absoluteValue,
-    color: provider.color
+    color: hexToRgba(intensifyColor(provider.color), 0.4), // Usar cor intensificada do provedor com transparência
+    originalColor: provider.color // Manter cor original para borders
   }));
   
   const RADIAN = Math.PI / 180;
@@ -126,16 +188,20 @@ export function SpendSummaryCard({
     const radius = innerRadius + (outerRadius - innerRadius) * 0.6;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
+    
+    // Usar a cor intensificada específica do provedor
+    const providerColor = intensifyColor(pieData[index].originalColor);
 
     return (
       <text 
         x={x} 
         y={y} 
-        fill={isDark ? "#FFFFFF" : "#000000"} 
+        fill={providerColor} 
         textAnchor={x > cx ? 'start' : 'end'} 
         dominantBaseline="central"
-        fontSize={10}
+        fontSize={12}
         fontWeight="bold"
+        className="drop-shadow-sm"
         stroke={isDark ? "#333" : "#fff"}
         strokeWidth={0.5}
         paintOrder="stroke"
@@ -163,6 +229,49 @@ export function SpendSummaryCard({
           stroke={isDark ? "#fff" : "#000"}
         />
       </g>
+    );
+  };
+
+  // Componente de legenda customizado para replicar o estilo das fatias da pizza
+  const CustomLegend = (props: any) => {
+    const { payload } = props;
+    
+    return (
+      <div className={cn(
+        "flex flex-col space-y-2 text-sm",
+        isMobile ? "flex-row flex-wrap justify-center gap-4 space-y-0" : ""
+      )}>
+        {payload.map((entry: any, index: number) => {
+          // Encontrar os dados correspondentes do pieData
+          const pieEntry = pieData.find(item => item.name === entry.value);
+          const backgroundColor = pieEntry ? pieEntry.color : entry.color; // Cor transparente como na pizza
+          const borderColor = pieEntry ? getBorderColor(pieEntry.originalColor) : entry.color; // Borda vibrante como na pizza
+          
+          return (
+            <div key={`legend-${index}`} className="flex items-center space-x-2">
+              {/* Quadrado com mesmo estilo da pizza: fundo transparente + borda vibrante */}
+              <div
+                className="w-3 h-3 rounded-sm"
+                style={{
+                  backgroundColor: backgroundColor, // Cor transparente igual à pizza
+                  border: `1px solid ${borderColor}`, // Borda vibrante igual à pizza (mesma espessura das fatias)
+                  backdropFilter: 'blur(10px)', // Mesmo efeito glassmorphism da pizza
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' // Mesma sombra da pizza
+                }}
+              />
+              <span 
+                className="font-semibold" 
+                style={{ 
+                  color: isDark ? "#F8FAFC" : "#0F172A",
+                  textShadow: isDark ? "0 1px 2px rgba(0,0,0,0.8)" : "0 1px 2px rgba(0,0,0,0.1)"
+                }}
+              >
+                {entry.value}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     );
   };
 
@@ -350,18 +459,23 @@ export function SpendSummaryCard({
               <p className="text-sm text-muted-foreground">{t('spendSummary.providerDistribution')}</p>
             </div>
 
-            <div className="h-64 w-full">
+            <div className="h-64 w-full relative">
+              <div className="absolute inset-0 backdrop-blur-sm bg-white/5 dark:bg-black/5 rounded-lg"></div>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     activeIndex={activeIndex !== null ? activeIndex : undefined}
                     activeShape={renderActiveShape}
-                    data={pieData}
+                    data={pieData.map(entry => ({
+                      ...entry,
+                      // Adicionar propriedade legendColor para ser usada pela legenda
+                      legendColor: getBorderColor(entry.originalColor)
+                    }))}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
                     label={renderCustomizedLabel}
-                    outerRadius={80}
+                    outerRadius={100}
                     fill="#8884d8"
                     dataKey="value"
                     onMouseEnter={onPieEnter}
@@ -372,8 +486,12 @@ export function SpendSummaryCard({
                       <Cell 
                         key={`cell-${index}`} 
                         fill={entry.color} 
-                        stroke={isDark ? "#333" : "#fff"}
-                        strokeWidth={2}
+                        stroke={getBorderColor(entry.originalColor)}
+                        strokeWidth={1}
+                        style={{
+                          filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))',
+                          backdropFilter: 'blur(10px)'
+                        }}
                       />
                     ))}
                   </Pie>
@@ -381,10 +499,10 @@ export function SpendSummaryCard({
                     layout={isMobile ? "horizontal" : "vertical"}
                     verticalAlign={isMobile ? "bottom" : "middle"}
                     align={isMobile ? "center" : "right"}
-                    formatter={(value) => <span className="text-xs">{value}</span>}
+                    content={<CustomLegend />}
                     wrapperStyle={isMobile ? 
-                      { paddingTop: '10px', color: isDark ? "#E2E8F0" : undefined }
-                      : { color: isDark ? "#E2E8F0" : undefined }
+                      { paddingTop: '10px' }
+                      : {}
                     }
                   />
                   <RechartsTooltip 

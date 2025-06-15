@@ -153,8 +153,10 @@ export function CategoryDistributionCard({ data, currency }: CategoryDistributio
       </CardHeader>
       <CardContent className="flex-grow p-3">
         <div className={cn(
-          "h-[360px] rounded border",
-          isDark ? "border-slate-700" : "border-gray-100"
+          "h-[360px] rounded-lg border backdrop-blur-md shadow-xl",
+          isDark 
+            ? "bg-slate-800/20 border-slate-500/30" 
+            : "bg-white/20 border-white/30"
         )}>
           <ResponsiveContainer width="100%" height="100%">
             <Treemap

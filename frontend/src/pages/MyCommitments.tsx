@@ -143,7 +143,6 @@ const MyCommitments = () => {
         <PageHeader 
           icon={CalendarCheck} 
           title="My Commitments" 
-          description="Manage and optimize your cloud service commitments."
           color="text-[#bd3bfd]"
           actions={
             <Button>

@@ -81,7 +81,6 @@ const Credentials = () => {
         <PageHeader 
           icon={Key} 
           title="AWS Credentials" 
-          description="Manage your AWS account credentials for cost analysis."
           color="text-green-600"
           actions={
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

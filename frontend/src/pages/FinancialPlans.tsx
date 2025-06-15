@@ -127,7 +127,6 @@ const FinancialPlans = () => {
         <PageHeader 
           icon={Clock} 
           title="Financial Plans" 
-          description="Manage cloud budget planning and variance analysis."
           color="text-[#0080af]"
           actions={
             <Button>

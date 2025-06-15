@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { dashboardService } from '@/api/client';
 import { DashboardSummary } from '@/types/api';
 import { useToast } from '@/hooks/use-toast';
 import { timeFilterToDays } from '@/utils/timeFrame';
+import { getProviderColor as getChartProviderColor } from '@/utils/chartColors';
 
 interface UseDashboardOptions {
   periodDays?: number;
@@ -137,6 +139,7 @@ export const useDashboard = ({
 
 // Hook para formatação de valores
 export const useDashboardFormatters = () => {
+  const { t } = useTranslation();
   const formatCurrency = useCallback((value: number): string => {
     return new Intl.NumberFormat('en-US', { 
       style: 'currency', 
@@ -166,15 +169,7 @@ export const useDashboardFormatters = () => {
   }, [formatCurrency]);
 
   const getProviderColor = useCallback((providerName: string): string => {
-    const colors: { [key: string]: string } = {
-      'AWS': '#FF9900',
-      'Azure': '#0078D4', 
-      'GCP': '#4285F4',
-      'Oracle Cloud': '#F80000',
-      'Google Cloud': '#4285F4',
-      'Microsoft Azure': '#0078D4'
-    };
-    return colors[providerName] || '#6B7280';
+    return getChartProviderColor(providerName);
   }, []);
 
   const formatRelativeTime = useCallback((date: Date): string => {
@@ -182,20 +177,35 @@ export const useDashboardFormatters = () => {
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
     
     if (diffInMinutes < 1) {
-      return 'agora mesmo';
+      return t('common.timeRelative.justNow');
     } else if (diffInMinutes < 60) {
-      return `há ${diffInMinutes} minuto${diffInMinutes > 1 ? 's' : ''}`;
+      return t('common.timeRelative.minutesAgo', { count: diffInMinutes });
     } else {
       const diffInHours = Math.floor(diffInMinutes / 60);
-      return `há ${diffInHours} hora${diffInHours > 1 ? 's' : ''}`;
+      return t('common.timeRelative.hoursAgo', { count: diffInHours });
     }
-  }, []);
+  }, [t]);
+
+  const formatUpdatedTime = useCallback((date: Date): string => {
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) {
+      return t('common.timeRelative.updatedJustNow');
+    } else if (diffInMinutes < 60) {
+      return t('common.timeRelative.updatedMinutesAgo', { count: diffInMinutes });
+    } else {
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      return t('common.timeRelative.updatedHoursAgo', { count: diffInHours });
+    }
+  }, [t]);
 
   return {
     formatCurrency,
     formatPercentage,
     formatCompactCurrency,
     getProviderColor,
-    formatRelativeTime
+    formatRelativeTime,
+    formatUpdatedTime
   };
 };

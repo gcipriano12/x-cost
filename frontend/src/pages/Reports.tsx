@@ -138,7 +138,6 @@ const Reports = () => {
         <PageHeader 
           icon={FileText} 
           title="Reports" 
-          description="Generate and schedule customized cost and usage reports."
           color="text-[#00c693]"
           actions={
             <Dialog open={open} onOpenChange={setOpen}>

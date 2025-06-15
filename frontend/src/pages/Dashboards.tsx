@@ -105,7 +105,6 @@ const Dashboards = () => {
         <PageHeader 
           icon={LayoutDashboard} 
           title="Dashboards" 
-          description="Create and manage customizable dashboards with cost visualizations."
           color="text-[#0080af]"
           actions={
             <Dialog open={open} onOpenChange={setOpen}>

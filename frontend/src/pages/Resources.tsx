@@ -112,7 +112,6 @@ const Resources = () => {
         <PageHeader 
           icon={LayoutGrid} 
           title="Resources" 
-          description="Explore and manage cloud resources across your infrastructure."
           color="text-[#0080af]"
           actions={
             <Button>

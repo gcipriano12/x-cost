@@ -138,7 +138,6 @@ const Governance = () => {
         <PageHeader 
           icon={GanttChart} 
           title="Governance" 
-          description="Establish and enforce cloud cost policies and compliance standards."
           color="text-[#00c693]"
           actions={
             <Button>

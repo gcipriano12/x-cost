@@ -143,7 +143,6 @@ const CommitmentsLog = () => {
         <PageHeader 
           icon={ClipboardList} 
           title="Commitments Log" 
-          description="Track and analyze your cloud commitment history and performance."
           color="text-[#bd3bfd]"
           actions={
             <Button variant="outline">

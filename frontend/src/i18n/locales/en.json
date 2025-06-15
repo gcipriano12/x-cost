@@ -28,6 +28,21 @@
     "noNotifications": "No notifications",
     "markAllAsRead": "Mark all as read",
     "cloudCostManagementDashboard": "Cloud cost management dashboard",
+    "updated": "Updated",
+    "updating": "Updating...",
+    "loadingDashboardData": "Loading dashboard data...",
+    "timeRelative": {
+      "justNow": "just now",
+      "minutesAgo": "{{count}} minute ago",
+      "minutesAgo_plural": "{{count}} minutes ago",
+      "hoursAgo": "{{count}} hour ago", 
+      "hoursAgo_plural": "{{count}} hours ago",
+      "updatedJustNow": "Updated just now",
+      "updatedMinutesAgo": "Updated {{count}} minute ago",
+      "updatedMinutesAgo_plural": "Updated {{count}} minutes ago",
+      "updatedHoursAgo": "Updated {{count}} hour ago",
+      "updatedHoursAgo_plural": "Updated {{count}} hours ago"
+    },
     "all": "All",
     "apply": "Apply",
     "cancel": "Cancel"
@@ -108,7 +123,24 @@
   "categoryDistribution": {
     "title": "Category Distribution",
     "percentOfTotal": "% of total",
-    "noData": "No category data available"
+    "noData": "No category data available",
+    "categories": {
+      "Storage": "Storage",
+      "Computation": "Computation",
+      "Database": "Database",
+      "Networking": "Networking",
+      "Others": "Others",
+      "Security": "Security",
+      "Analytics": "Analytics",
+      "AI/ML": "AI/ML",
+      "IoT": "IoT",
+      "Monitoring": "Monitoring",
+      "Backup": "Backup",
+      "CDN": "CDN",
+      "API": "API",
+      "Containers": "Containers",
+      "Serverless": "Serverless"
+    }
   },
   "categories": {
     "inform": "Inform",

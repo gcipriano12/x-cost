@@ -331,7 +331,6 @@ const Budgets = () => {
           <PageHeader 
             icon={LineChart} 
             title="Budgets" 
-            description="Define and monitor cloud budget allocations."
             color="text-[#0080af]"
             showTimeFilter={false}
           />
@@ -349,7 +348,6 @@ const Budgets = () => {
         <PageHeader 
           icon={LineChart} 
           title={t('budgets.page.title')}
-          description={t('budgets.page.description')}
           color="text-[#0080af]"
           showTimeFilter={false}
           actions={

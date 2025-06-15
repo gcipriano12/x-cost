@@ -123,7 +123,6 @@ const DataExplorer = () => {
         <PageHeader 
           icon={Search} 
           title="Data Explorer" 
-          description="Build custom queries to explore your cloud cost and usage data."
           color="text-[#0080af]"
           actions={
             <Button variant="outline">

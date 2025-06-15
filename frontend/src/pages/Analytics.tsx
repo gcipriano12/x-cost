@@ -59,7 +59,6 @@ const Analytics = () => {
         <PageHeader 
           icon={BarChart3} 
           title="Cost Analytics" 
-          description="Detailed analysis of your AWS cloud spending."
           color="text-blue-600"
           actions={
             <Button onClick={loadAnalytics} disabled={loading || !selectedCredential}>

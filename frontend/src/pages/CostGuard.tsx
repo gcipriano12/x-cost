@@ -137,7 +137,6 @@ const CostGuard = () => {
         <PageHeader 
           icon={ShieldCheck} 
           title="CostGuard" 
-          description="Automated protection from cloud cost overruns and waste."
           color="text-[#bd3bfd]"
           actions={
             <Button>

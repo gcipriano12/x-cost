@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { analyticsService } from '@/api/client';
 import { CategoryDistribution } from './useDashboardData';
 import { format } from 'date-fns';
+import { getCategoryColor } from '@/utils/chartColors';
 
 interface UseCategoryDistributionParams {
   timeFilter: string;
@@ -10,18 +11,6 @@ interface UseCategoryDistributionParams {
   credentialId?: string;
   providerName?: string;
 }
-
-const CATEGORY_COLORS = {
-  'Computation': '#60A5FA',
-  'Storage': '#F97316', 
-  'Network': '#10B981',
-  'Database': '#8B5CF6',
-  'Security': '#EF4444',
-  'AI/ML': '#F59E0B',
-  'Monitoring': '#06B6D4',
-  'Analytics': '#84CC16',
-  'Others': '#EC4899'
-};
 
 export const useCategoryDistribution = ({
   timeFilter,
@@ -93,7 +82,7 @@ export const useCategoryDistribution = ({
           }) => ({
             name: item.name,
             value: item.total_cost || 0,
-            color: CATEGORY_COLORS[item.name as keyof typeof CATEGORY_COLORS] || CATEGORY_COLORS.Others
+            color: getCategoryColor(item.name)
           }));
 
           console.log('📊 Processed categories:', categories);

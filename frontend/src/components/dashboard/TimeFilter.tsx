@@ -1,7 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DateRange } from 'react-day-picker';
+import { format } from 'date-fns';
 import {
   Select,
   SelectContent,
@@ -16,16 +17,29 @@ interface TimeFilterProps {
   value: string;
   onChange: (value: string) => void;
   onCustomDateRange?: (range: DateRange | undefined) => void;
+  currentCustomRange?: DateRange;
 }
 
-export function TimeFilter({ value, onChange, onCustomDateRange }: TimeFilterProps) {
+export function TimeFilter({ value, onChange, onCustomDateRange, currentCustomRange }: TimeFilterProps) {
   const isMobile = useIsMobile();
   const { t } = useTranslation();
   const [showCustomPicker, setShowCustomPicker] = useState(false);
-  const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
+  const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>(currentCustomRange);
+
+  // Sync with external custom range
+  useEffect(() => {
+    setCustomDateRange(currentCustomRange);
+  }, [currentCustomRange]);
   
   // Function to map values to readable text using i18n
   const getTimeFilterLabel = (value: string): string => {
+    // Se for custom e temos um range, mostrar as datas
+    if (value === 'custom' && customDateRange?.from && customDateRange?.to) {
+      const fromFormatted = format(customDateRange.from, 'dd/MM/yyyy');
+      const toFormatted = format(customDateRange.to, 'dd/MM/yyyy');
+      return `${fromFormatted} - ${toFormatted}`;
+    }
+    
     const options: Record<string, string> = {
       '7d': t('timeFilter.last7days'),
       '30d': t('timeFilter.last30days'),
@@ -43,10 +57,20 @@ export function TimeFilter({ value, onChange, onCustomDateRange }: TimeFilterPro
 
   const handleSelectChange = (newValue: string) => {
     if (newValue === 'custom') {
+      // Sempre abrir o calendário ao selecionar período personalizado
       setShowCustomPicker(true);
+      onChange('custom');
     } else {
       setShowCustomPicker(false);
+      setCustomDateRange(undefined); // Limpar range customizado ao selecionar outro período
       onChange(newValue);
+    }
+  };
+
+  // Função para permitir re-seleção de período personalizado
+  const handleCustomReselect = () => {
+    if (value === 'custom') {
+      setShowCustomPicker(true);
     }
   };
 
@@ -54,8 +78,8 @@ export function TimeFilter({ value, onChange, onCustomDateRange }: TimeFilterPro
     if (customDateRange?.from && customDateRange?.to) {
       onCustomDateRange?.(customDateRange);
       onChange('custom');
+      setShowCustomPicker(false);
     }
-    setShowCustomPicker(false);
   };
 
   const handleCustomDateCancel = () => {
@@ -72,6 +96,7 @@ export function TimeFilter({ value, onChange, onCustomDateRange }: TimeFilterPro
           onDateRangeChange={setCustomDateRange}
           onApply={handleCustomDateApply}
           onCancel={handleCustomDateCancel}
+          autoOpen={true}
         />
       </div>
     );
@@ -81,7 +106,10 @@ export function TimeFilter({ value, onChange, onCustomDateRange }: TimeFilterPro
     <div className="flex items-center space-x-2">
       {!isMobile && <span className="text-sm text-XCost-gray-400">{t('common.period')}:</span>}
       <Select value={value} onValueChange={handleSelectChange}>
-        <SelectTrigger className={`${isMobile ? 'w-36' : 'w-40'} h-8 text-sm`}>
+        <SelectTrigger 
+          className={`${isMobile ? 'min-w-36 max-w-52' : 'min-w-44 max-w-64'} h-8 text-sm whitespace-nowrap`}
+          onClick={handleCustomReselect}
+        >
           <SelectValue>{getTimeFilterLabel(value)}</SelectValue>
         </SelectTrigger>
         <SelectContent>

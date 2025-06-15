@@ -8,6 +8,7 @@ interface UseDashboardOptions {
   periodDays?: number;
   timeFilter?: string; // Adicionar suporte a timeFilter
   credentialId?: string;
+  providerName?: string; // Adicionar suporte a filtro de provedor
   autoRefresh?: boolean;
   refreshInterval?: number; // em milissegundos
 }
@@ -24,6 +25,7 @@ export const useDashboard = ({
   periodDays,
   timeFilter,
   credentialId,
+  providerName,
   autoRefresh = false, // Definir como false por padrão para evitar excesso de requisições
   refreshInterval = 5 * 60 * 1000 // 5 minutos
 }: UseDashboardOptions = {}): UseDashboardReturn => {
@@ -44,7 +46,7 @@ export const useDashboard = ({
 
   const fetchDashboardData = useCallback(async (showLoadingState = true) => {
     // Criar chave única para os parâmetros atuais
-    const currentParams = `${calculatedPeriodDays}-${credentialId || 'default'}`;
+    const currentParams = `${calculatedPeriodDays}-${credentialId || 'default'}-${providerName || 'all'}`;
     
     // Evitar chamadas duplicadas
     if (isLoadingRef.current || (currentParams === lastParamsRef.current && data)) {
@@ -62,7 +64,7 @@ export const useDashboard = ({
       }
       setError(null);
 
-      const response = await dashboardService.getSummary(calculatedPeriodDays, credentialId);
+      const response = await dashboardService.getSummary(calculatedPeriodDays, credentialId, providerName);
       setData(response.data);
       setLastUpdated(new Date());
       
@@ -96,7 +98,7 @@ export const useDashboard = ({
         setLoading(false);
       }
     }
-  }, [calculatedPeriodDays, credentialId, data, toast]);
+  }, [calculatedPeriodDays, credentialId, providerName, data, toast]);
 
   const refetch = useCallback(async () => {
     // Forçar nova requisição resetando a referência
@@ -107,11 +109,11 @@ export const useDashboard = ({
   // Carregamento inicial - usar useEffect com dependências específicas
   useEffect(() => {
     // Só fazer requisição se os parâmetros mudaram significativamente
-    const currentParams = `${calculatedPeriodDays}-${credentialId || 'default'}`;
+    const currentParams = `${calculatedPeriodDays}-${credentialId || 'default'}-${providerName || 'all'}`;
     if (currentParams !== lastParamsRef.current) {
       fetchDashboardData(true);
     }
-  }, [calculatedPeriodDays, credentialId, fetchDashboardData]);
+  }, [calculatedPeriodDays, credentialId, providerName, fetchDashboardData]);
 
   // Auto-refresh - Desabilitado por padrão
   useEffect(() => {

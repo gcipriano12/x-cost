@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
@@ -18,6 +18,7 @@ interface CustomDateRangePickerProps {
   onDateRangeChange: (range: DateRange | undefined) => void;
   onApply: () => void;
   onCancel: () => void;
+  autoOpen?: boolean;
 }
 
 export function CustomDateRangePicker({
@@ -25,9 +26,17 @@ export function CustomDateRangePicker({
   onDateRangeChange,
   onApply,
   onCancel,
+  autoOpen = false,
 }: CustomDateRangePickerProps) {
   const { t } = useTranslation();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(autoOpen);
+
+  // Abrir automaticamente quando autoOpen for true
+  useEffect(() => {
+    if (autoOpen) {
+      setIsOpen(true);
+    }
+  }, [autoOpen]);
 
   const formatDateRange = (range: DateRange | undefined) => {
     if (!range?.from) {
@@ -71,9 +80,6 @@ export function CustomDateRangePicker({
             <h4 className="font-medium text-sm mb-2">
               {t('timeFilter.selectCustomPeriod')}
             </h4>
-            <p className="text-xs text-muted-foreground">
-              {t('timeFilter.selectStartAndEndDate')}
-            </p>
           </div>
           
           <Calendar

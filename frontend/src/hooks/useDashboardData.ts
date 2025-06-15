@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { DateRange } from 'react-day-picker';
 import { format, differenceInDays } from 'date-fns';
 import { useXCostData } from './useXCostData';
+import { useCategoryDistribution } from './useCategoryDistribution';
 
 // Types for dashboard data
 export type SpendSummary = {
@@ -179,6 +180,7 @@ export type DashboardData = {
 export const useDashboardData = () => {
   const [timeFilter, setTimeFilter] = useState('7d');
   const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
+  const [selectedProvider, setSelectedProvider] = useState<string>('all');
   const { t } = useTranslation();
   
   // Function to handle custom date range
@@ -200,11 +202,27 @@ export const useDashboardData = () => {
     serviceCosts: apiServiceCosts,
     regionCosts: apiRegionCosts,
     loading: apiLoading,
-    hasCredentials
+    hasCredentials,
+    activeCredential
   } = useXCostData({ 
     timeFilter,
     customStartDate: customDateRange?.from,
-    customEndDate: customDateRange?.to
+    customEndDate: customDateRange?.to,
+    providerName: selectedProvider === 'all' ? undefined : selectedProvider
+  });
+
+  // Hook para category distribution
+  const {
+    categoryData: apiCategoryData,
+    loading: categoryLoading,
+    error: categoryError,
+    hasData: hasCategoryData
+  } = useCategoryDistribution({
+    timeFilter,
+    customStartDate: customDateRange?.from,
+    customEndDate: customDateRange?.to,
+    credentialId: activeCredential?.id?.toString(),
+    providerName: selectedProvider === 'all' ? undefined : selectedProvider
   });
   
   // Mock data for the dashboard
@@ -704,13 +722,43 @@ export const useDashboardData = () => {
     ]
   };
 
-  // Usar dados reais quando disponíveis, senão usar mock data
+  // Filtrar dados mockados por provider se necessário
+  const getFilteredMockData = () => {
+    if (selectedProvider === 'all') return mockDashboardData;
+
+    // Filtrar providerDistribution
+    const filteredProviderDistribution = mockDashboardData.providerDistributionData.filter(
+      provider => provider.name === selectedProvider
+    );
+
+    // Calcular novo total baseado no provider selecionado
+    const providerTotal = filteredProviderDistribution.reduce((sum, provider) => sum + provider.value, 0);
+
+    // Filtrar topServices por provider (assumindo que existe um campo provider)
+    const filteredTopServices = mockDashboardData.topServicesData.filter(
+      service => service.provider === selectedProvider
+    );
+
+    return {
+      ...mockDashboardData,
+      spendSummaryData: {
+        ...mockDashboardData.spendSummaryData,
+        totalSpend: providerTotal,
+      },
+      providerDistributionData: filteredProviderDistribution,
+      topServicesData: filteredTopServices,
+    };
+  };
+
+  // Usar dados reais quando disponíveis, senão usar mock data filtrados
+  const filteredMockData = getFilteredMockData();
   const finalDashboardData: DashboardData = {
-    ...mockDashboardData,
-    // Substituir com dados reais da API quando disponíveis
-    spendSummaryData: apiSpendSummary || mockDashboardData.spendSummaryData,
-    providerDistributionData: apiProviderDistribution.length > 0 ? apiProviderDistribution : mockDashboardData.providerDistributionData,
-    topServicesData: apiTopServices.length > 0 ? apiTopServices : mockDashboardData.topServicesData,
+    ...filteredMockData,
+    // Substituir com dados reais da API quando disponíveis E quando não for zero
+    spendSummaryData: (apiSpendSummary && apiSpendSummary.totalSpend > 0) ? apiSpendSummary : filteredMockData.spendSummaryData,
+    providerDistributionData: apiProviderDistribution.length > 0 ? apiProviderDistribution : filteredMockData.providerDistributionData,
+    categoryDistributionData: hasCategoryData ? apiCategoryData : filteredMockData.categoryDistributionData,
+    topServicesData: apiTopServices.length > 0 ? apiTopServices : filteredMockData.topServicesData,
   };
 
   return {
@@ -718,8 +766,11 @@ export const useDashboardData = () => {
     setTimeFilter,
     customDateRange,
     handleCustomDateRange,
+    selectedProvider,
+    setSelectedProvider,
     ...finalDashboardData,
-    isLoadingRealData: apiLoading,
-    hasRealData: hasCredentials
+    isLoadingRealData: apiLoading || categoryLoading,
+    hasRealData: hasCredentials,
+    categoryError
   };
 };

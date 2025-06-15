@@ -35,6 +35,7 @@ import { cn } from '@/lib/utils';
 interface DashboardContentProps {
   timeFilter: string;
   onTimeFilterChange: (filter: string) => void;
+  providerFilter?: string; // Adicionar providerFilter como prop
   spendSummaryData: SpendSummary;
   providerDistributionData: ProviderDistribution[];
   categoryDistributionData: CategoryDistribution[];
@@ -52,11 +53,13 @@ interface DashboardContentProps {
   newServicesData: NewService[];
   regionHeatmapData: RegionData[];
   currency: string;
+  isLoadingRealData?: boolean;
 }
 
 export const DashboardContent: React.FC<DashboardContentProps> = ({
   timeFilter,
   onTimeFilterChange,
+  providerFilter,
   spendSummaryData,
   providerDistributionData,
   categoryDistributionData,
@@ -73,7 +76,8 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
   benchmarksData,
   newServicesData,
   regionHeatmapData,
-  currency
+  currency,
+  isLoadingRealData = false
 }) => {
   const { isDark } = useTheme();
   const isMobile = useIsMobile();
@@ -86,11 +90,13 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
       <div className="w-full">
         <SummarySection
           timeFilter={timeFilter}
+          providerFilter={providerFilter}
           spendSummaryData={spendSummaryData}
           providerDistributionData={providerDistributionData}
           categoryDistributionData={categoryDistributionData}
           anomaliesData={anomaliesData}
           savingsOpportunitiesData={savingsOpportunitiesData}
+          isLoadingRealData={isLoadingRealData}
         />
         
         <ServicesSection 

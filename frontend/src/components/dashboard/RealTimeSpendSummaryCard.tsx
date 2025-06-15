@@ -14,17 +14,20 @@ interface RealTimeSpendSummaryCardProps {
   periodDays?: number;
   timeFilter?: string; // Adicionar suporte ao timeFilter
   credentialId?: string;
+  providerName?: string; // Adicionar suporte ao filtro de provedor
 }
 
 export function RealTimeSpendSummaryCard({ 
   periodDays = 30,
   timeFilter, 
-  credentialId 
+  credentialId,
+  providerName
 }: RealTimeSpendSummaryCardProps) {
   const { data, loading, error, refetch, lastUpdated } = useDashboard({
     periodDays,
     timeFilter, // Passar timeFilter para o hook
     credentialId,
+    providerName, // Passar providerName para o hook
     autoRefresh: false, // Desabilitar auto-refresh automático
     refreshInterval: 5 * 60 * 1000 // 5 minutos (não usado quando autoRefresh = false)
   });

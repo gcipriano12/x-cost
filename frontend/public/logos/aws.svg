@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480">
+  <!-- AWS logo simplified -->
+  <g transform="translate(50, 100)">
+    <!-- aws text -->
+    <text x="50" y="100" font-family="Arial, sans-serif" font-size="120" font-weight="bold" fill="#232f3e">aws</text>
+    <!-- smile/arrow -->
+    <path d="M50 150 Q250 200, 450 150" stroke="#ff9900" stroke-width="12" fill="none" stroke-linecap="round"/>
+    <!-- arrow tip -->
+    <path d="M440 140 L460 150 L440 160" stroke="#ff9900" stroke-width="8" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300">
+  <rect width="800" height="300" fill="white"/>
+  <g transform="translate(50, 50)">
+    <!-- Oracle logo -->
+    <rect x="0" y="0" width="400" height="80" fill="#f80000" rx="40"/>
+    <text x="200" y="50" font-family="Arial, sans-serif" font-size="32" font-weight="bold" text-anchor="middle" fill="white">ORACLE</text>
+    
+    <!-- Cloud text -->
+    <rect x="0" y="120" width="700" height="4" fill="black"/>
+    <text x="350" y="200" font-family="Arial, sans-serif" font-size="80" font-weight="bold" text-anchor="middle" fill="black">CLOUD</text>
+  </g>
+</svg>

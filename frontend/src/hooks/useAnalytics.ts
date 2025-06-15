@@ -16,7 +16,8 @@ export const useAnalytics = () => {
   const getTrend = async (
     credentialId: number, 
     days: number = 30, 
-    dateRange?: DateRange
+    dateRange?: DateRange,
+    providerName?: string
   ): Promise<TrendData[]> => {
     setLoading(true);
     try {
@@ -28,6 +29,10 @@ export const useAnalytics = () => {
         url += `&start_date=${startDate}&end_date=${endDate}`;
       } else {
         url += `&days=${days}`;
+      }
+      
+      if (providerName) {
+        url += `&provider_name=${encodeURIComponent(providerName)}`;
       }
       
       const response = await apiClient.get<TrendData[]>(url);
@@ -47,7 +52,8 @@ export const useAnalytics = () => {
   const getServiceCosts = async (
     credentialId: number, 
     days: number = 30, 
-    dateRange?: DateRange
+    dateRange?: DateRange,
+    providerName?: string
   ): Promise<ServiceCost[]> => {
     setLoading(true);
     try {
@@ -59,6 +65,10 @@ export const useAnalytics = () => {
         url += `&start_date=${startDate}&end_date=${endDate}`;
       } else {
         url += `&days=${days}`;
+      }
+      
+      if (providerName) {
+        url += `&provider_name=${encodeURIComponent(providerName)}`;
       }
       
       const response = await apiClient.get<ServiceCost[]>(url);
@@ -78,7 +88,8 @@ export const useAnalytics = () => {
   const getRegionCosts = async (
     credentialId: number, 
     days: number = 30, 
-    dateRange?: DateRange
+    dateRange?: DateRange,
+    providerName?: string
   ): Promise<RegionCost[]> => {
     setLoading(true);
     try {
@@ -90,6 +101,10 @@ export const useAnalytics = () => {
         url += `&start_date=${startDate}&end_date=${endDate}`;
       } else {
         url += `&days=${days}`;
+      }
+      
+      if (providerName) {
+        url += `&provider_name=${encodeURIComponent(providerName)}`;
       }
       
       const response = await apiClient.get<RegionCost[]>(url);

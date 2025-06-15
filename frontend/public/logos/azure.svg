@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480">
+  <!-- Azure logo simplified -->
+  <g transform="translate(220, 140)">
+    <!-- Triangle -->
+    <path d="M100 0 L200 200 L0 200 Z" fill="#0078d4"/>
+  </g>
+</svg>

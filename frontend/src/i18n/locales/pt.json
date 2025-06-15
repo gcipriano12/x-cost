@@ -1,4 +1,3 @@
-
 {
   "common": {
     "megabill": "MegaBill",
@@ -108,7 +107,8 @@
   
   "categoryDistribution": {
     "title": "Distribuição por Categoria",
-    "percentOfTotal": "% do total"
+    "percentOfTotal": "% do total",
+    "noData": "Nenhum dado de categoria disponível"
   },
   
   "sections": {
@@ -213,6 +213,11 @@
     "selectDateRange": "Selecionar intervalo de datas",
     "selectCustomPeriod": "Selecionar período personalizado",
     "selectStartAndEndDate": "Selecione as datas de início e fim"
+  },
+  "filters": {
+    "cloudProvider": "Provedor de Nuvem",
+    "all": "Todos",
+    "showingDataFor": "Exibindo dados para"
   },
   "mockData": {
     "categories": {

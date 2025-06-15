@@ -36,7 +36,8 @@ export default function Dashboard({ children }: DashboardProps) {
     benchmarksData,
     newServicesData,
     regionHeatmapData,
-    currency
+    currency,
+    isLoadingRealData
   } = useDashboardData();
   
   return (
@@ -73,6 +74,7 @@ export default function Dashboard({ children }: DashboardProps) {
                 newServicesData={newServicesData}
                 regionHeatmapData={regionHeatmapData}
                 currency={currency}
+                isLoadingRealData={isLoadingRealData}
               />
             )}
             

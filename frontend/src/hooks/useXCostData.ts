@@ -1,16 +1,18 @@
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useCredentials } from './useCredentials';
-import { useAnalytics } from './useAnalytics';
-import { timeFilterToDays, getDateRangeFromTimeFilter } from '@/utils/timeFrame';
-import { getProviderFromRegion, getProviderColor } from '@/utils/providerColors';
+import { timeFilterToDays } from '@/utils/timeFrame';
+import { useDataLoadingControl } from './utils/useDataLoadingControl';
+import { useApiDataFetcher } from './utils/useApiDataFetcher';
+import { 
+  transformServiceCostsToTopServices,
+  calculateProviderDistribution,
+  calculateSpendSummary
+} from './utils/dataTransformers';
 import type { 
   SpendSummary,
   ProviderDistribution,
-  CategoryDistribution,
-  TopService,
-  Anomaly,
-  SavingsOpportunities
+  TopService
 } from './useDashboardData';
 import type {
   TrendData,
@@ -23,14 +25,16 @@ interface UseXCostDataOptions {
   credentialId?: number;
   customStartDate?: Date;
   customEndDate?: Date;
+  providerName?: string;
 }
 
 export const useXCostData = (options: UseXCostDataOptions = {}) => {
-  const { timeFilter, credentialId: optionsCredentialId, customStartDate, customEndDate } = options;
+  const { timeFilter, credentialId: optionsCredentialId, customStartDate, customEndDate, providerName } = options;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { credentials } = useCredentials();
-  const { getTrend, getServiceCosts, getRegionCosts } = useAnalytics();
+  const { fetchAllData } = useApiDataFetcher();
+  const loadingControl = useDataLoadingControl();
 
   // Estado para dados integrados
   const [spendSummary, setSpendSummary] = useState<SpendSummary | null>(null);
@@ -40,11 +44,7 @@ export const useXCostData = (options: UseXCostDataOptions = {}) => {
   const [serviceCosts, setServiceCosts] = useState<ServiceCost[]>([]);
   const [regionCosts, setRegionCosts] = useState<RegionCost[]>([]);
 
-  // Usar ref para evitar chamadas duplicadas
-  const lastParamsRef = useRef<string>('');
-  const isLoadingRef = useRef(false);
-
-  // Memorizar credencial ativa para evitar recálculo
+  // Memorizar credencial ativa
   const activeCredential = useMemo(() => {
     return optionsCredentialId 
       ? credentials.find(c => c.id === optionsCredentialId)
@@ -52,24 +52,22 @@ export const useXCostData = (options: UseXCostDataOptions = {}) => {
   }, [credentials, optionsCredentialId]);
 
   // Função para carregar dados de uma credencial específica
-  const loadDataForCredential = async (credentialId: number, timeFilterOrDays?: string | number) => {
-    // Criar chave única para os parâmetros atuais
+  const loadDataForCredential = async (credentialId: number, timeFilterOrDays?: string | number, provider?: string) => {
     const dateRangeKey = customStartDate && customEndDate 
       ? `${customStartDate.toISOString()}-${customEndDate.toISOString()}`
       : '';
-    const currentParams = `${credentialId}-${timeFilterOrDays || '30'}-${dateRangeKey}`;
     
-    // Evitar chamadas duplicadas
-    if (isLoadingRef.current || currentParams === lastParamsRef.current) {
+    const currentParams = loadingControl.createParamsKey(credentialId, timeFilterOrDays, provider, dateRangeKey);
+    
+    if (loadingControl.shouldSkipLoad(currentParams)) {
       return;
     }
     
-    isLoadingRef.current = true;
-    lastParamsRef.current = currentParams;
+    loadingControl.startLoading(currentParams);
     setLoading(true);
     setError(null);
 
-    // Determinar se usar data customizada ou calcular dias
+    // Determinar range de datas
     let dateRange: { startDate?: Date; endDate?: Date } | undefined;
     let days = 30;
 
@@ -82,122 +80,38 @@ export const useXCostData = (options: UseXCostDataOptions = {}) => {
     }
 
     try {
-      console.log(`🔄 X Cost API call: ${currentParams}`);
-      
-      const [trends, services, regions] = await Promise.all([
-        getTrend(credentialId, days, dateRange).catch(err => {
-          console.log('⚠️ Trend data not available:', err.message);
-          return [];
-        }),
-        getServiceCosts(credentialId, days, dateRange).catch(err => {
-          console.log('⚠️ Service costs not available:', err.message);
-          return [];
-        }),
-        getRegionCosts(credentialId, days, dateRange).catch(err => {
-          console.log('⚠️ Region costs not available:', err.message);
-          return [];
-        })
-      ]);
+      const { trends, services, regions } = await fetchAllData(credentialId, days, dateRange, provider);
 
-      // Converter dados da API para o formato do dashboard com verificações de segurança
-      const safeTrends = Array.isArray(trends) ? trends : [];
-      const safeServices = Array.isArray(services) ? services : [];
-      const safeRegions = Array.isArray(regions) ? regions : [];
+      // Atualizar estado com dados brutos
+      setTrendData(trends);
+      setServiceCosts(services);
+      setRegionCosts(regions);
 
-      setTrendData(safeTrends);
-      setServiceCosts(safeServices);
-      setRegionCosts(safeRegions);
+      // Transformar dados
+      const topServicesData = transformServiceCostsToTopServices(services);
+      const providerDist = calculateProviderDistribution(regions);
+      const sparklineData = trends.map(t => t.total_cost);
+      const summary = calculateSpendSummary(services, providerDist, sparklineData);
 
-      // Converter ServiceCost[] para TopService[]
-      const convertedTopServices: TopService[] = safeServices.slice(0, 5).map((service, index) => ({
-        id: `service-${index}`,
-        name: service.service_name,
-        provider: 'AWS', // Assumindo AWS por padrão
-        currentSpend: service.cost,
-        previousSpend: service.cost - (service.cost * service.change_from_previous / 100),
-        trend: service.change_from_previous
-      }));
-      setTopServices(convertedTopServices);
-
-      // Agrupar custos por provedor baseado nas regiões
-      const providerCosts = new Map<string, number>();
-      safeRegions.forEach(region => {
-        const provider = getProviderFromRegion(region.region);
-        const currentCost = providerCosts.get(provider) || 0;
-        providerCosts.set(provider, currentCost + region.cost);
-      });
-
-      // Encontrar o provedor com maior custo total
-      let highestSpendProvider = { name: 'AWS', cost: 0 };
-      for (const [provider, cost] of providerCosts.entries()) {
-        if (cost > highestSpendProvider.cost) {
-          highestSpendProvider = { name: provider, cost };
-        }
-      }
-
-      // Criar distribuição por provedor baseada nos custos agrupados
-      const providerDist: ProviderDistribution[] = Array.from(providerCosts.entries()).map(([provider, cost]) => ({
-        name: provider,
-        value: cost,
-        color: getProviderColor(provider)
-      }));
+      setTopServices(topServicesData);
       setProviderDistribution(providerDist);
-
-      // Criar resumo de gastos
-      const totalSpend = safeServices.reduce((total, service) => total + service.cost, 0);
-      const previousTotalSpend = safeServices.reduce((total, service) => {
-        const previousCost = service.cost - (service.cost * service.change_from_previous / 100);
-        return total + previousCost;
-      }, 0);
-      
-      const changePercentage = previousTotalSpend > 0 
-        ? ((totalSpend - previousTotalSpend) / previousTotalSpend) * 100
-        : 0;
-
-      // Criar sparkline data baseado nos trends ou dados simulados
-      const sparklineData = safeTrends.length > 0 
-        ? safeTrends.map(t => t.total_cost)
-        : [totalSpend * 0.9, totalSpend * 0.95, totalSpend * 1.05, totalSpend * 0.98, totalSpend * 1.02, totalSpend];
-
-      const summary: SpendSummary = {
-        totalSpend,
-        currency: '$', // Voltando para dólar como padrão
-        previousPeriodChange: changePercentage,
-        sparklineData,
-        providerBreakdown: providerDist.map(p => ({
-          name: p.name,
-          value: totalSpend > 0 ? Math.round((p.value / totalSpend) * 1000) / 10 : 0, // Arredondar para 1 casa decimal
-          color: getProviderColor(p.name)
-        })),
-        // Adicionar dados do provedor com maior gasto para exibir em "Highest Spend"
-        topProvider: {
-          name: highestSpendProvider.name,
-          cost: highestSpendProvider.cost
-        }
-      };
       setSpendSummary(summary);
 
-      console.log('X Cost data loaded successfully');
     } catch (err: any) {
-      console.error('Error loading X Cost data:', err);
       setError(err.message || 'Failed to load data');
     } finally {
-      isLoadingRef.current = false;
+      loadingControl.finishLoading();
       setLoading(false);
     }
   };
 
   // Carregar dados automaticamente se houver credenciais
   useEffect(() => {
-    if (credentials.length > 0 && activeCredential && !isLoadingRef.current) {
-      const currentParams = `${activeCredential.id}-${timeFilter || '30'}`;
-      
-      // Só carregar se os parâmetros mudaram
-      if (currentParams !== lastParamsRef.current) {
-        loadDataForCredential(activeCredential.id, timeFilter);
-      }
+    if (credentials.length > 0 && activeCredential && !loadingControl.isLoading()) {
+      const currentParams = `${activeCredential.id}-${timeFilter || '30'}-${providerName || 'all'}`;
+      loadDataForCredential(activeCredential.id, timeFilter, providerName);
     }
-  }, [credentials.length, activeCredential?.id, timeFilter]);
+  }, [credentials.length, activeCredential?.id, timeFilter, providerName]);
 
   return {
     loading,

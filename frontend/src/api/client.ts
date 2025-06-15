@@ -36,11 +36,33 @@ apiClient.interceptors.response.use(
 
 // Serviços de API
 export const dashboardService = {
-  getSummary: (periodDays?: number, credentialId?: string) => 
+  getSummary: (periodDays?: number, credentialId?: string, providerName?: string) => 
     apiClient.get('/api/v1/dashboard/summary', { 
       params: { 
         period_days: periodDays || 30, 
-        credential_id: credentialId 
+        credential_id: credentialId,
+        provider_name: providerName
       } 
+    })
+};
+
+export const analyticsService = {
+  getCategoryDistribution: (params: {
+    credentialId?: string;
+    days?: number;
+    startDate?: string;
+    endDate?: string;
+    topN?: number;
+    providerName?: string;
+  }) => 
+    apiClient.get('/api/v1/analytics/by-category', { 
+      params: {
+        credential_id: params.credentialId,
+        days: params.days,
+        start_date: params.startDate,
+        end_date: params.endDate,
+        top_n: params.topN,
+        provider_name: params.providerName
+      }
     })
 };

@@ -13,26 +13,14 @@ const Index = () => {
   const { t } = useTranslation();
   const { isAuthenticated, loading } = useAuth();
 
-  // Show loading while checking authentication
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  // Redirect to login if not authenticated
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // Obter os dados do dashboard
+  // Obter os dados do dashboard (hooks devem ser chamados antes de qualquer return condicional)
   const {
     timeFilter,
     setTimeFilter,
     customDateRange,
     handleCustomDateRange,
+    selectedProvider,
+    setSelectedProvider,
     spendSummaryData,
     providerDistributionData,
     categoryDistributionData,
@@ -52,24 +40,42 @@ const Index = () => {
     currency
   } = useDashboardData();
 
+  // Show loading while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
   return (
     <Dashboard>
       <div className="flex-1 w-full">
         <PageHeader 
           icon={Globe} 
           title={t('common.megabill')}
-          description={t('common.cloudCostManagementDashboard')}
           color="text-blue-600"
           showTimeFilter={true}
+          showProviderFilter={true}
           timeFilter={timeFilter}
           onTimeFilterChange={setTimeFilter}
           onCustomDateRange={handleCustomDateRange}
+          customDateRange={customDateRange}
+          selectedProvider={selectedProvider}
+          onProviderChange={setSelectedProvider}
         />
         
         <div className="p-4 space-y-6">
           <DashboardContent
             timeFilter={timeFilter}
             onTimeFilterChange={setTimeFilter}
+            providerFilter={selectedProvider}
             spendSummaryData={spendSummaryData}
             providerDistributionData={providerDistributionData}
             categoryDistributionData={categoryDistributionData}

@@ -7,6 +7,7 @@ import { ChartPie } from 'lucide-react';
 
 interface SummarySectionProps {
   timeFilter?: string; // Adicionar timeFilter como prop
+  providerFilter?: string; // Adicionar providerFilter como prop
   spendSummaryData: {
     totalSpend: number;
     currency: string;
@@ -50,15 +51,18 @@ interface SummarySectionProps {
     totalPotentialSavings: number;
     currency: string;
   };
+  isLoadingRealData?: boolean;
 }
 
 export function SummarySection({ 
   timeFilter, // Adicionar timeFilter aos parâmetros
+  providerFilter, // Adicionar providerFilter aos parâmetros
   spendSummaryData, 
   providerDistributionData,
   categoryDistributionData, 
   anomaliesData, 
-  savingsOpportunitiesData 
+  savingsOpportunitiesData,
+  isLoadingRealData = false
 }: SummarySectionProps) {
   return (
     <div className="space-y-4 mb-6">
@@ -66,6 +70,7 @@ export function SummarySection({
       <div className="w-full">
         <RealTimeSpendSummaryCard
           timeFilter={timeFilter} // Passar o timeFilter
+          providerName={providerFilter} // Passar o providerFilter
           // credentialId pode ser passado como prop se necessário
         />
       </div>
@@ -76,6 +81,7 @@ export function SummarySection({
           <CategoryDistributionCard 
             data={categoryDistributionData}
             currency="$"
+            isLoading={isLoadingRealData}
           />
         </div>
         

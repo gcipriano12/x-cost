@@ -13,6 +13,104 @@ from app.database import cached
 
 logger = logging.getLogger(__name__)
 
+# Mapeamento de serviços para categorias
+SERVICE_CATEGORY_MAPPING = {
+    # Computation
+    "EC2": "Computation",
+    "Virtual Machines": "Computation", 
+    "Compute Engine": "Computation",
+    "Lambda": "Computation",
+    "Functions": "Computation",
+    "Cloud Functions": "Computation",
+    "App Service": "Computation",
+    "Cloud Run": "Computation",
+    "Container Instances": "Computation",
+    
+    # Storage
+    "S3": "Storage",
+    "Storage Account": "Storage",
+    "Cloud Storage": "Storage", 
+    "EBS": "Storage",
+    "Storage": "Storage",
+    "Blob Storage": "Storage",
+    "File Storage": "Storage",
+    
+    # Database
+    "RDS": "Database",
+    "SQL Database": "Database",
+    "Cloud SQL": "Database",
+    "DynamoDB": "Database",
+    "CosmosDB": "Database", 
+    "BigQuery": "Database",
+    "Firestore": "Database",
+    "DocumentDB": "Database",
+    
+    # Network
+    "CloudFront": "Network",
+    "CDN": "Network", 
+    "Cloud CDN": "Network",
+    "VPC": "Network",
+    "Load Balancer": "Network",
+    "ELB": "Network",
+    "Application Gateway": "Network",
+    "ExpressRoute": "Network",
+    "Direct Connect": "Network",
+    "Cloud NAT": "Network",
+    
+    # Monitoring & Management
+    "CloudWatch": "Monitoring",
+    "Monitor": "Monitoring", 
+    "Monitoring": "Monitoring",
+    "Log Analytics": "Monitoring",
+    "Application Insights": "Monitoring",
+    "Cloud Logging": "Monitoring",
+    "Cloud Monitoring": "Monitoring",
+    
+    # Security
+    "IAM": "Security",
+    "Key Vault": "Security",
+    "Security Center": "Security", 
+    "WAF": "Security",
+    "GuardDuty": "Security",
+    "Security Command Center": "Security",
+    
+    # AI/ML
+    "SageMaker": "AI/ML",
+    "Machine Learning": "AI/ML",
+    "Cognitive Services": "AI/ML",
+    "AI Platform": "AI/ML",
+    "AutoML": "AI/ML",
+    
+    # Analytics
+    "Redshift": "Analytics",
+    "BigQuery": "Analytics", 
+    "Synapse Analytics": "Analytics",
+    "Data Factory": "Analytics",
+    "Dataflow": "Analytics",
+    "Kinesis": "Analytics",
+    
+    # Default fallback
+    "_default": "Others"
+}
+
+def get_service_category(service_name: str) -> str:
+    """Mapeia nome do serviço para categoria"""
+    if not service_name:
+        return "Others"
+    
+    # Busca exata primeiro
+    if service_name in SERVICE_CATEGORY_MAPPING:
+        return SERVICE_CATEGORY_MAPPING[service_name]
+    
+    # Busca por substring (case insensitive)
+    service_lower = service_name.lower()
+    for service_key, category in SERVICE_CATEGORY_MAPPING.items():
+        if service_key != "_default" and service_key.lower() in service_lower:
+            return category
+    
+    # Fallback para "Others"
+    return SERVICE_CATEGORY_MAPPING["_default"]
+
 class CostAnalyzer:
     """Classe principal para análises de custo"""
     
@@ -38,19 +136,19 @@ class CostAnalyzer:
             if service_name:
                 query = query.filter(FocusCostData.service_name == service_name)
             if start_date:
-                query = query.filter(FocusCostData.charge_period_start >= start_date)
+                query = query.filter(FocusCostData.billing_period_start >= start_date)
             if end_date:
-                query = query.filter(FocusCostData.charge_period_start <= end_date)
+                query = query.filter(FocusCostData.billing_period_start <= end_date)
             
             # Agrupar por período
             if period == "daily":
-                date_trunc = func.date(FocusCostData.charge_period_start)
+                date_trunc = func.date(FocusCostData.billing_period_start)
             elif period == "weekly":
-                date_trunc = func.date_trunc('week', FocusCostData.charge_period_start)
+                date_trunc = func.date_trunc('week', FocusCostData.billing_period_start)
             elif period == "monthly":
-                date_trunc = func.date_trunc('month', FocusCostData.charge_period_start)
+                date_trunc = func.date_trunc('month', FocusCostData.billing_period_start)
             else:
-                date_trunc = func.date(FocusCostData.charge_period_start)
+                date_trunc = func.date(FocusCostData.billing_period_start)
             
             results = query.with_entities(
                 date_trunc.label('period'),
@@ -234,9 +332,9 @@ class CostAnalyzer:
             if provider_name:
                 query = query.filter(FocusCostData.provider_name == provider_name)
             if start_date:
-                query = query.filter(FocusCostData.charge_period_start >= start_date)
+                query = query.filter(FocusCostData.billing_period_start >= start_date)
             if end_date:
-                query = query.filter(FocusCostData.charge_period_start <= end_date)
+                query = query.filter(FocusCostData.billing_period_start <= end_date)
             
             results = query.group_by(
                 FocusCostData.service_name,
@@ -287,9 +385,9 @@ class CostAnalyzer:
             if provider_name:
                 query = query.filter(FocusCostData.provider_name == provider_name)
             if start_date:
-                query = query.filter(FocusCostData.charge_period_start >= start_date)
+                query = query.filter(FocusCostData.billing_period_start >= start_date)
             if end_date:
-                query = query.filter(FocusCostData.charge_period_start <= end_date)
+                query = query.filter(FocusCostData.billing_period_start <= end_date)
             
             # Filtrar regiões não nulas
             query = query.filter(FocusCostData.region.isnot(None))
@@ -320,6 +418,75 @@ class CostAnalyzer:
             
         except Exception as e:
             logger.error(f"Error analyzing by region: {str(e)}")
+            return []
+
+    @cached(ttl=1800, key_prefix="cost_category")
+    def analyze_by_category(
+        self,
+        provider_name: Optional[str] = None,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+        top_n: int = 10
+    ) -> List[Dict[str, Any]]:
+        """Analisa custos por categoria de serviço"""
+        try:
+            # Buscar todos os serviços e seus custos
+            query = self.db.query(
+                FocusCostData.service_name,
+                func.sum(FocusCostData.effective_cost).label('total_cost'),
+                func.count(FocusCostData.id).label('record_count')
+            )
+            
+            # Aplicar filtros
+            if provider_name:
+                query = query.filter(FocusCostData.provider_name == provider_name)
+            if start_date:
+                query = query.filter(FocusCostData.billing_period_start >= start_date)
+            if end_date:
+                query = query.filter(FocusCostData.billing_period_start <= end_date)
+            
+            # Filtrar serviços não nulos
+            query = query.filter(FocusCostData.service_name.isnot(None))
+            
+            results = query.group_by(FocusCostData.service_name).all()
+            
+            # Agrupar por categoria
+            category_totals = {}
+            category_service_counts = {}
+            
+            for result in results:
+                service_name = result.service_name or ""
+                category = get_service_category(service_name)
+                cost = float(result.total_cost or 0)
+                
+                if category not in category_totals:
+                    category_totals[category] = 0
+                    category_service_counts[category] = 0
+                
+                category_totals[category] += cost
+                category_service_counts[category] += 1
+            
+            # Calcular total geral
+            total_cost = sum(category_totals.values())
+            
+            # Criar lista de categorias ordenada por custo
+            category_analysis = []
+            for category, cost in sorted(category_totals.items(), key=lambda x: x[1], reverse=True):
+                category_analysis.append({
+                    'name': category,
+                    'total_cost': cost,
+                    'service_count': category_service_counts[category],
+                    'percentage': (cost / total_cost * 100) if total_cost > 0 else 0
+                })
+            
+            # Retornar apenas top_n categorias
+            result_categories = category_analysis[:top_n]
+            
+            logger.info(f"Analyzed {len(result_categories)} categories from {len(results)} services")
+            return result_categories
+            
+        except Exception as e:
+            logger.error(f"Error analyzing by category: {str(e)}")
             return []
 
     def forecast_costs(
@@ -819,7 +986,7 @@ class DashboardAnalyzer:
         self.budget_analyzer = BudgetAnalyzer(db)
     
     @cached(ttl=900, key_prefix="dashboard_summary")  # Cache por 15 minutos
-    def get_dashboard_summary(self, period_days: int = 30) -> Dict[str, Any]:
+    def get_dashboard_summary(self, period_days: int = 30, provider_name: Optional[str] = None) -> Dict[str, Any]:
         """Gera resumo completo para o dashboard"""
         try:
             end_date = date.today()
@@ -830,13 +997,13 @@ class DashboardAnalyzer:
             previous_end = start_date
             
             # 1. Métricas principais
-            metrics = self._calculate_main_metrics(start_date, end_date, previous_start, previous_end, period_days)
+            metrics = self._calculate_main_metrics(start_date, end_date, previous_start, previous_end, period_days, provider_name)
             
             # 2. Distribuição por provedor
-            provider_distribution = self._calculate_provider_distribution(start_date, end_date)
+            provider_distribution = self._calculate_provider_distribution(start_date, end_date, provider_name)
             
             # 3. Highlights especiais
-            highlights = self._calculate_highlights(start_date, end_date)
+            highlights = self._calculate_highlights(start_date, end_date, provider_name)
             
             return {
                 'metrics': metrics,
@@ -855,25 +1022,36 @@ class DashboardAnalyzer:
             return {'error': str(e)}
     
     def _calculate_main_metrics(self, start_date: date, end_date: date, 
-                               previous_start: date, previous_end: date, period_days: int) -> Dict[str, Any]:
+                               previous_start: date, previous_end: date, period_days: int, 
+                               provider_name: Optional[str] = None) -> Dict[str, Any]:
         """Calcula métricas principais do dashboard"""
         
         # Custo total do período atual
         current_cost_query = self.db.query(func.sum(FocusCostData.effective_cost)).filter(
             and_(
-                FocusCostData.charge_period_start >= start_date,
-                FocusCostData.charge_period_start <= end_date
+                FocusCostData.billing_period_start >= start_date,
+                FocusCostData.billing_period_start <= end_date
             )
         )
+        
+        # Aplicar filtro de provedor se especificado
+        if provider_name:
+            current_cost_query = current_cost_query.filter(FocusCostData.provider_name == provider_name)
+            
         total_cost = float(current_cost_query.scalar() or 0)
         
         # Custo do período anterior
         previous_cost_query = self.db.query(func.sum(FocusCostData.effective_cost)).filter(
             and_(
-                FocusCostData.charge_period_start >= previous_start,
-                FocusCostData.charge_period_start <= previous_end
+                FocusCostData.billing_period_start >= previous_start,
+                FocusCostData.billing_period_start <= previous_end
             )
         )
+        
+        # Aplicar filtro de provedor se especificado
+        if provider_name:
+            previous_cost_query = previous_cost_query.filter(FocusCostData.provider_name == provider_name)
+            
         previous_cost = float(previous_cost_query.scalar() or 0)
         
         # Variação percentual
@@ -886,7 +1064,7 @@ class DashboardAnalyzer:
         monthly_average = (total_cost / days_in_period) * 30 if days_in_period > 0 else 0
         
         # Maior gasto por serviço
-        top_service = self._get_top_service(start_date, end_date)
+        top_service = self._get_top_service(start_date, end_date, provider_name)
         
         # Projeção anual
         annual_projection = monthly_average * 12
@@ -903,7 +1081,7 @@ class DashboardAnalyzer:
             'budget_consumption': budget_consumption
         }
     
-    def _get_top_service(self, start_date: date, end_date: date) -> Dict[str, Any]:
+    def _get_top_service(self, start_date: date, end_date: date, provider_name: Optional[str] = None) -> Dict[str, Any]:
         """Encontra o serviço com maior gasto"""
         query = self.db.query(
             FocusCostData.service_name,
@@ -911,10 +1089,16 @@ class DashboardAnalyzer:
             func.sum(FocusCostData.effective_cost).label('total_cost')
         ).filter(
             and_(
-                FocusCostData.charge_period_start >= start_date,
-                FocusCostData.charge_period_start <= end_date
+                FocusCostData.billing_period_start >= start_date,
+                FocusCostData.billing_period_start <= end_date
             )
-        ).group_by(
+        )
+        
+        # Aplicar filtro de provedor se especificado
+        if provider_name:
+            query = query.filter(FocusCostData.provider_name == provider_name)
+        
+        query = query.group_by(
             FocusCostData.service_name,
             FocusCostData.provider_name
         ).order_by(
@@ -992,17 +1176,23 @@ class DashboardAnalyzer:
             logger.error(f"Error calculating budget consumption: {str(e)}")
             return None
     
-    def _calculate_provider_distribution(self, start_date: date, end_date: date) -> List[Dict[str, Any]]:
+    def _calculate_provider_distribution(self, start_date: date, end_date: date, provider_name: Optional[str] = None) -> List[Dict[str, Any]]:
         """Calcula distribuição de custos por provedor"""
         query = self.db.query(
             FocusCostData.provider_name,
             func.sum(FocusCostData.effective_cost).label('total_cost')
         ).filter(
             and_(
-                FocusCostData.charge_period_start >= start_date,
-                FocusCostData.charge_period_start <= end_date
+                FocusCostData.billing_period_start >= start_date,
+                FocusCostData.billing_period_start <= end_date
             )
-        ).group_by(
+        )
+        
+        # Aplicar filtro de provedor se especificado
+        if provider_name:
+            query = query.filter(FocusCostData.provider_name == provider_name)
+        
+        query = query.group_by(
             FocusCostData.provider_name
         ).order_by(
             func.sum(FocusCostData.effective_cost).desc()
@@ -1023,7 +1213,7 @@ class DashboardAnalyzer:
         
         return distribution
     
-    def _calculate_highlights(self, start_date: date, end_date: date) -> Dict[str, Any]:
+    def _calculate_highlights(self, start_date: date, end_date: date, provider_name: Optional[str] = None) -> Dict[str, Any]:
         """Calcula highlights especiais do dashboard"""
         
         # 1. Previsão próximo mês
@@ -1034,10 +1224,10 @@ class DashboardAnalyzer:
         }
         
         # 2. Desperdício estimado (recursos com baixa utilização)
-        estimated_waste = self._calculate_estimated_waste(start_date, end_date)
+        estimated_waste = self._calculate_estimated_waste(start_date, end_date, provider_name)
         
         # 3. Economias realizadas (comparação com período anterior)
-        savings_achieved = self._calculate_savings_achieved(start_date, end_date)
+        savings_achieved = self._calculate_savings_achieved(start_date, end_date, provider_name)
         
         return {
             'next_month_forecast': next_month_forecast,
@@ -1045,7 +1235,7 @@ class DashboardAnalyzer:
             'savings_achieved': savings_achieved
         }
     
-    def _calculate_estimated_waste(self, start_date: date, end_date: date) -> Dict[str, Any]:
+    def _calculate_estimated_waste(self, start_date: date, end_date: date, provider_name: Optional[str] = None) -> Dict[str, Any]:
         """Calcula desperdício estimado baseado em anomalias e padrões"""
         
         # Detectar anomalias como indicador de desperdício
@@ -1077,7 +1267,7 @@ class DashboardAnalyzer:
             'total_cost': total_cost
         }
     
-    def _calculate_savings_achieved(self, start_date: date, end_date: date) -> Dict[str, Any]:
+    def _calculate_savings_achieved(self, start_date: date, end_date: date, provider_name: Optional[str] = None) -> Dict[str, Any]:
         """Calcula economias realizadas comparando com período anterior"""
         
         # Período anterior

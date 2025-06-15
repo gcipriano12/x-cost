@@ -666,6 +666,7 @@ async def get_cost_by_service(
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     top_n: Optional[int] = 10,
+    provider_name: Optional[str] = None,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_database)
 ):
@@ -688,16 +689,15 @@ async def get_cost_by_service(
         
         analyzer = CostAnalyzer(db)
         
-        # Por enquanto, vamos usar provider_name como None se credential_id for fornecido
-        # Em uma implementação completa, você mapearia credential_id para provider_name
-        provider_name = None
-        if credential_id:
+        # Usar provider_name passado como parâmetro, se fornecido
+        effective_provider_name = provider_name
+        if credential_id and not provider_name:
             # Aqui você poderia buscar o provider_name baseado no credential_id
-            # Por enquanto, vamos simular com dados existentes
-            pass
+            # Por enquanto, vamos manter como None para buscar todos os providers
+            effective_provider_name = None
         
         service_data = analyzer.analyze_by_service(
-            provider_name=provider_name,
+            provider_name=effective_provider_name,
             start_date=period_start,
             end_date=period_end,
             top_n=top_n
@@ -712,6 +712,7 @@ async def get_cost_by_service(
             },
             "filters": {
                 "credential_id": credential_id,
+                "provider_name": effective_provider_name,
                 "top_n": top_n
             },
             "requested_by": current_user.username
@@ -726,6 +727,7 @@ async def get_dashboard_summary(
     period_days: Optional[int] = 30,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
+    provider_name: Optional[str] = None,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_database)
 ):
@@ -745,7 +747,10 @@ async def get_dashboard_summary(
             calculated_days = period_days
         
         dashboard_analyzer = DashboardAnalyzer(db)
-        summary = dashboard_analyzer.get_dashboard_summary(period_days=calculated_days)
+        summary = dashboard_analyzer.get_dashboard_summary(
+            period_days=calculated_days,
+            provider_name=provider_name
+        )
         
         return summary
         
@@ -760,6 +765,7 @@ async def get_cost_by_region(
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     top_n: Optional[int] = 10,
+    provider_name: Optional[str] = None,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_database)
 ):
@@ -782,16 +788,15 @@ async def get_cost_by_region(
         
         analyzer = CostAnalyzer(db)
         
-        # Por enquanto, vamos usar provider_name como None se credential_id for fornecido
-        # Em uma implementação completa, você mapearia credential_id para provider_name
-        provider_name = None
-        if credential_id:
+        # Usar provider_name passado como parâmetro, se fornecido
+        effective_provider_name = provider_name
+        if credential_id and not provider_name:
             # Aqui você poderia buscar o provider_name baseado no credential_id
-            # Por enquanto, vamos simular com dados existentes
-            pass
+            # Por enquanto, vamos manter como None para buscar todos os providers
+            effective_provider_name = None
         
         region_data = analyzer.analyze_by_region(
-            provider_name=provider_name,
+            provider_name=effective_provider_name,
             start_date=period_start,
             end_date=period_end,
             top_n=top_n
@@ -806,6 +811,7 @@ async def get_cost_by_region(
             },
             "filters": {
                 "credential_id": credential_id,
+                "provider_name": effective_provider_name,
                 "top_n": top_n
             },
             "requested_by": current_user.username
@@ -813,6 +819,66 @@ async def get_cost_by_region(
         
     except Exception as e:
         logger.error(f"Error calculating region breakdown: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/analytics/by-category")
+async def get_cost_by_category(
+    credential_id: Optional[str] = None,
+    days: Optional[int] = 30,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    top_n: Optional[int] = 10,
+    provider_name: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_database)
+):
+    """Obtém breakdown de custos por categoria de serviço"""
+    try:
+        # Determinar período: usar start_date/end_date se fornecidos, senão usar 'days'
+        if start_date and end_date:
+            # Validar que end_date > start_date
+            if end_date <= start_date:
+                raise HTTPException(status_code=400, detail="end_date must be greater than start_date")
+            
+            period_start = start_date
+            period_end = end_date
+            period_days = (end_date - start_date).days + 1
+        else:
+            # Usar lógica existente baseada em 'days'
+            period_end = date.today()
+            period_start = period_end - timedelta(days=days-1)  # -1 para incluir o dia atual
+            period_days = days
+        
+        analyzer = CostAnalyzer(db)
+        
+        # Usar provider_name diretamente se fornecido
+        category_data = analyzer.analyze_by_category(
+            provider_name=provider_name,
+            start_date=period_start,
+            end_date=period_end,
+            top_n=top_n
+        )
+        
+        # Calcular total de custos para o período
+        total_cost = sum(item['total_cost'] for item in category_data)
+        
+        return {
+            "category_breakdown": category_data,
+            "period": {
+                "start_date": period_start,
+                "end_date": period_end,
+                "days": period_days
+            },
+            "total_cost": total_cost,
+            "filters": {
+                "credential_id": credential_id,
+                "top_n": top_n
+            },
+            "requested_by": current_user.username
+        }
+        
+    except Exception as e:
+        logger.error(f"Error calculating category breakdown: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # === MIDDLEWARE DE TRATAMENTO DE ERROS ATUALIZADO ===

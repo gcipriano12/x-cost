@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480">
+  <defs>
+    <style>
+      .gcp-blue { fill: #4285f4; }
+      .gcp-green { fill: #34a853; }
+      .gcp-yellow { fill: #fbbc04; }
+      .gcp-red { fill: #ea4335; }
+      .gcp-white { fill: white; }
+    </style>
+  </defs>
+  
+  <!-- Google Cloud logo simplified -->
+  <g transform="translate(120, 120)">
+    <!-- Cloud shape -->
+    <path d="M150 100 C120 100, 100 120, 100 150 C100 180, 120 200, 150 200 L350 200 C380 200, 400 180, 400 150 C400 120, 380 100, 350 100 C340 80, 320 60, 290 60 C260 60, 240 80, 230 100 Z" class="gcp-white" stroke="#4285f4" stroke-width="8"/>
+    
+    <!-- G symbol -->
+    <circle cx="250" cy="150" r="40" class="gcp-blue"/>
+    <rect x="250" y="110" width="40" height="40" class="gcp-white"/>
+    <rect x="250" y="150" width="20" height="20" class="gcp-blue"/>
+    <rect x="270" y="150" width="20" height="20" class="gcp-white"/>
+  </g>
+</svg>

@@ -1,4 +1,3 @@
-
 {
   "common": {
     "megabill": "MegaBill",
@@ -108,7 +107,8 @@
   
   "categoryDistribution": {
     "title": "Category Distribution",
-    "percentOfTotal": "% of total"
+    "percentOfTotal": "% of total",
+    "noData": "No category data available"
   },
   "categories": {
     "inform": "Inform",
@@ -211,6 +211,11 @@
     "selectDateRange": "Select date range",
     "selectCustomPeriod": "Select custom period",
     "selectStartAndEndDate": "Select start and end dates"
+  },
+  "filters": {
+    "cloudProvider": "Cloud Provider",
+    "all": "All",
+    "showingDataFor": "Showing data for"
   },
   "mockData": {
     "categories": {

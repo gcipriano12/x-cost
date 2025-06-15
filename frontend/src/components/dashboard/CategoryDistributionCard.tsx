@@ -15,9 +15,10 @@ interface CategoryData {
 interface CategoryDistributionProps {
   data: CategoryData[];
   currency: string;
+  isLoading?: boolean;
 }
 
-export function CategoryDistributionCard({ data, currency }: CategoryDistributionProps) {
+export function CategoryDistributionCard({ data, currency, isLoading = false }: CategoryDistributionProps) {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const total = data.reduce((sum, category) => sum + category.value, 0);
@@ -158,17 +159,32 @@ export function CategoryDistributionCard({ data, currency }: CategoryDistributio
           "h-[360px] rounded border",
           isDark ? "border-slate-700" : "border-gray-100"
         )}>
-          <ResponsiveContainer width="100%" height="100%">
-            <Treemap
-              data={treeMapData.children}
-              dataKey="value"
-              stroke={isDark ? "#333" : "#fff"}
-              animationDuration={500}
-              content={<CustomizedContent />}
-            >
-              <Tooltip content={<CustomTooltip />} />
-            </Treemap>
-          </ResponsiveContainer>
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-XCost-blue"></div>
+            </div>
+          ) : data.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <p className={cn(
+                "text-sm",
+                isDark ? "text-slate-400" : "text-muted-foreground"
+              )}>
+                {t('categoryDistribution.noData')}
+              </p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <Treemap
+                data={treeMapData.children}
+                dataKey="value"
+                stroke={isDark ? "#333" : "#fff"}
+                animationDuration={500}
+                content={<CustomizedContent />}
+              >
+                <Tooltip content={<CustomTooltip />} />
+              </Treemap>
+            </ResponsiveContainer>
+          )}
         </div>
       </CardContent>
     </Card>

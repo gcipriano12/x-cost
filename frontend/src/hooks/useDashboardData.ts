@@ -180,7 +180,7 @@ export type DashboardData = {
 export const useDashboardData = () => {
   const [timeFilter, setTimeFilter] = useState('7d');
   const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
-  const [selectedProvider, setSelectedProvider] = useState<string>('all');
+  const [selectedProvider, setSelectedProvider] = useState<string | undefined>(undefined);
   const { t } = useTranslation();
   
   // Function to handle custom date range
@@ -208,7 +208,7 @@ export const useDashboardData = () => {
     timeFilter,
     customStartDate: customDateRange?.from,
     customEndDate: customDateRange?.to,
-    providerName: selectedProvider === 'all' ? undefined : selectedProvider
+    providerName: selectedProvider
   });
 
   // Hook para category distribution
@@ -222,7 +222,7 @@ export const useDashboardData = () => {
     customStartDate: customDateRange?.from,
     customEndDate: customDateRange?.to,
     credentialId: activeCredential?.id?.toString(),
-    providerName: selectedProvider === 'all' ? undefined : selectedProvider
+    providerName: selectedProvider
   });
   
   // Mock data for the dashboard
@@ -724,7 +724,7 @@ export const useDashboardData = () => {
 
   // Filtrar dados mockados por provider se necessário
   const getFilteredMockData = () => {
-    if (selectedProvider === 'all') return mockDashboardData;
+    if (!selectedProvider) return mockDashboardData;
 
     // Filtrar providerDistribution
     const filteredProviderDistribution = mockDashboardData.providerDistributionData.filter(

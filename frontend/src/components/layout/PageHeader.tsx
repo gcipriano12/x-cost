@@ -51,28 +51,28 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
       isDark ? "border-b border-slate-800" : "border-b border-slate-200",
     )}>
       <div className="flex flex-col gap-4 px-4">
-        {/* Linha única: Título, Filtro de Provedor e Filtros */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center gap-6">
-            {/* Logo e Título */}
-            <div className="flex items-center">
-              <div className={cn("flex items-center mr-2", color)}>
-                <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
-              </div>
-              <h1 className="text-xl sm:text-2xl font-semibold">{title}</h1>
+        {/* Layout de três colunas com espaçamento proporcional */}
+        <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 w-full">
+          {/* Coluna 1: Logo e Título (25% da largura) */}
+          <div className="flex items-center flex-shrink-0 lg:w-1/4">
+            <div className={cn("flex items-center mr-2", color)}>
+              <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
+            <h1 className="text-xl sm:text-2xl font-semibold">{title}</h1>
+          </div>
 
-            {/* Filtro de Provedor */}
-            {showProviderFilter && (
+          {/* Coluna 2: Filtro de Provedor (50% da largura - verdadeiramente centralizado) */}
+          {showProviderFilter && (
+            <div className="lg:w-1/2 flex justify-center">
               <CloudProviderFilter
                 selectedProvider={selectedProvider}
                 onProviderChange={onProviderChange}
               />
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Filtros de Tempo */}
-          <div className="flex items-center gap-2">
+          {/* Coluna 3: Filtros de Tempo (25% da largura) */}
+          <div className="flex items-center gap-2 flex-shrink-0 lg:w-1/4 lg:justify-end">
             {showTimeFilter && (
               <TimeFilter
                 value={timeFilter}

@@ -21,7 +21,7 @@ from sqlalchemy import func
 logger = logging.getLogger(__name__)
 
 # Router para budgets
-budget_router = APIRouter(prefix="/api/v1/budgets", tags=["budgets"])
+budget_router = APIRouter(prefix="/api/v1/budgets", tags=["Budget Management"])
 
 # Modelo de resposta para lista de budgets com resumo
 class BudgetListResponse(BaseModel):

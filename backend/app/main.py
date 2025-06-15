@@ -85,6 +85,58 @@ async def lifespan(app: FastAPI):
     # Shutdown
     logger.info("Shutting down X Cost API...")
 
+# Metadados das tags para organização no Swagger
+tags_metadata = [
+    {
+        "name": "Authentication",
+        "description": "Endpoints para autenticação e autorização"
+    },
+    {
+        "name": "Credentials Management", 
+        "description": "Gerenciamento de credenciais cloud"
+    },
+    {
+        "name": "Budget Management",
+        "description": "Gerenciamento de orçamentos e controle de gastos"
+    },
+    {
+        "name": "Cost Analytics",
+        "description": "Análises e relatórios de custos"
+    },
+    {
+        "name": "Dashboard", 
+        "description": "Resumo executivo e métricas principais"
+    },
+    {
+        "name": "Data Ingestion",
+        "description": "Ingestão e sincronização de dados"
+    },
+    {
+        "name": "Cost Data",
+        "description": "Dados brutos de custos e consumo"
+    },
+    {
+        "name": "Cloud Providers",
+        "description": "Status e configuração de provedores cloud"
+    },
+    {
+        "name": "Security",
+        "description": "Informações e configurações de segurança"
+    },
+    {
+        "name": "System Health",
+        "description": "Monitoramento da saúde do sistema"
+    },
+    {
+        "name": "System Management",
+        "description": "Operações administrativas do sistema"
+    },
+    {
+        "name": "Audit",
+        "description": "Logs de auditoria e rastreamento"
+    }
+]
+
 # Criar aplicação FastAPI
 app = FastAPI(
     title="X Cost API",
@@ -92,7 +144,8 @@ app = FastAPI(
     version="2.0.0",
     lifespan=lifespan,
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    openapi_tags=tags_metadata
 )
 
 # Configurar CORS
@@ -140,7 +193,7 @@ async def log_requests(request, call_next):
 
 # === ENDPOINTS EXISTENTES DE DADOS DE CUSTO (mantidos) ===
 
-@app.get("/api/v1/costs", response_model=List[FocusCostDataResponse])
+@app.get("/api/v1/costs", response_model=List[FocusCostDataResponse], tags=["Cost Data"])
 async def get_costs(
     params: CostQueryParams = Depends(),
     cache = Depends(get_cache),
@@ -204,7 +257,7 @@ async def get_costs(
 
 # === NOVOS ENDPOINTS PARA INGESTÃO SEGURA ===
 
-@app.post("/api/v1/data/secure-ingest")
+@app.post("/api/v1/data/secure-ingest", tags=["Data Ingestion"])
 async def trigger_secure_data_ingestion(
     background_tasks: BackgroundTasks,
     providers: Optional[List[str]] = None,
@@ -372,7 +425,7 @@ async def run_secure_data_ingestion(
 
 # === ENDPOINTS DE MONITORAMENTO ATUALIZADOS ===
 
-@app.get("/api/v1/health")
+@app.get("/api/v1/health", tags=["System Health"])
 async def health_check_endpoint():
     """Endpoint para verificação de saúde do sistema"""
     try:
@@ -456,7 +509,7 @@ async def health_check_endpoint():
         )
 
 
-@app.get("/api/v1/system/status")
+@app.get("/api/v1/system/status", tags=["System Health"])
 async def get_system_status(
     current_user: User = Depends(get_current_active_user)
 ):
@@ -532,7 +585,7 @@ async def get_system_status(
 
 # === ENDPOINTS PARA CONFIGURAÇÃO DE PROVEDORES ===
 
-@app.get("/api/v1/providers/status")
+@app.get("/api/v1/providers/status", tags=["Cloud Providers"])
 async def get_providers_status(
     current_user: User = Depends(get_current_active_user)
 ):
@@ -586,7 +639,7 @@ async def get_providers_status(
 
 # === ENDPOINTS DE UTILITÁRIOS ATUALIZADOS ===
 
-@app.delete("/api/v1/cache/clear")
+@app.delete("/api/v1/cache/clear", tags=["System Management"])
 async def clear_cache(
     pattern: Optional[str] = "*",
     current_user: User = Depends(get_current_active_user),
@@ -622,7 +675,7 @@ async def clear_cache(
 # Todos os endpoints existentes de analytics, budgets, etc. são mantidos
 # mas agora requerem autenticação via get_current_active_user
 
-@app.get("/api/v1/analytics/trend")
+@app.get("/api/v1/analytics/trend", tags=["Cost Analytics"])
 async def get_cost_trend(
     provider_name: Optional[str] = None,
     service_name: Optional[str] = None,
@@ -659,7 +712,7 @@ async def get_cost_trend(
         logger.error(f"Error calculating trend: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/v1/analytics/by-service")
+@app.get("/api/v1/analytics/by-service", tags=["Cost Analytics"])
 async def get_cost_by_service(
     credential_id: Optional[str] = None,
     days: Optional[int] = 30,
@@ -722,7 +775,7 @@ async def get_cost_by_service(
         logger.error(f"Error calculating service breakdown: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/v1/dashboard/summary", response_model=DashboardSummary)
+@app.get("/api/v1/dashboard/summary", response_model=DashboardSummary, tags=["Dashboard"])
 async def get_dashboard_summary(
     period_days: Optional[int] = 30,
     start_date: Optional[date] = None,
@@ -758,7 +811,7 @@ async def get_dashboard_summary(
         logger.error(f"Error generating dashboard summary: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/v1/analytics/by-region")
+@app.get("/api/v1/analytics/by-region", tags=["Cost Analytics"])
 async def get_cost_by_region(
     credential_id: Optional[str] = None,
     days: Optional[int] = 30,
@@ -821,7 +874,7 @@ async def get_cost_by_region(
         logger.error(f"Error calculating region breakdown: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/v1/analytics/by-category")
+@app.get("/api/v1/analytics/by-category", tags=["Cost Analytics"])
 async def get_cost_by_category(
     credential_id: Optional[str] = None,
     days: Optional[int] = 30,
@@ -904,7 +957,7 @@ async def global_exception_handler(request, exc):
 
 # === ENDPOINT DE DOCUMENTAÇÃO DE SEGURANÇA ===
 
-@app.get("/api/v1/security/info")
+@app.get("/api/v1/security/info", tags=["Security"])
 async def get_security_info():
     """Retorna informações públicas sobre segurança da API"""
     return {

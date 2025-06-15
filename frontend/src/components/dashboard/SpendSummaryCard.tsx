@@ -185,7 +185,30 @@ export function SpendSummaryCard({
   
   const RADIAN = Math.PI / 180;
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }: any) => {
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.6;
+    const value = pieData[index].value;
+    
+    // Só exibir texto se a fatia for grande o suficiente (maior que 8%)
+    if (value < 8) {
+      return null;
+    }
+    
+    // Calcular posição do texto - fatias menores mais externas, fatias grandes mais centralizadas
+    let radiusMultiplier = 0.8; // Posição padrão
+    
+    // Para fatias menores (8-15%), posicionar próximo da borda externa
+    if (value < 15) {
+      radiusMultiplier = 0.75;
+    }
+    // Para fatias médias (15-40%), posição externa
+    else if (value < 40) {
+      radiusMultiplier = 0.8;
+    }
+    // Para fatias grandes (40%+), posição mais centralizada
+    else {
+      radiusMultiplier = 0.55;
+    }
+    
+    const radius = innerRadius + (outerRadius - innerRadius) * radiusMultiplier;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
     
@@ -197,16 +220,16 @@ export function SpendSummaryCard({
         x={x} 
         y={y} 
         fill={providerColor} 
-        textAnchor={x > cx ? 'start' : 'end'} 
+        textAnchor="middle" // Centralizar o texto para evitar sobreposição
         dominantBaseline="central"
-        fontSize={12}
+        fontSize={value < 15 ? 13 : 14} // Fonte maior: 13px para fatias menores, 14px para maiores
         fontWeight="bold"
         className="drop-shadow-sm"
         stroke={isDark ? "#333" : "#fff"}
         strokeWidth={0.5}
         paintOrder="stroke"
       >
-        {`${pieData[index].value.toFixed(1)}%`}
+        {`${value.toFixed(1)}%`}
       </text>
     );
   };

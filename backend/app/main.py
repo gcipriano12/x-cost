@@ -1,5 +1,5 @@
 from app.secrets_manager import get_secrets_manager_hybrid
-from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
+from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
@@ -8,6 +8,9 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta, date
 import logging
 import os
+import time
+import functools
+from collections import defaultdict
 from contextlib import asynccontextmanager
 
 # Imports existentes
@@ -17,6 +20,17 @@ from app.models import (
     CostQueryParams, AnalysisQueryParams, FocusCostDataCreate,
     BudgetCreate, CostSummary, MonthlyCostResponse, CostForecast,
     DashboardSummary
+)
+# Cloud Native Optimization imports
+from app.cloud_native_optimization import (
+    CloudNativeOptimizationService,
+    AnomalyType,
+    SeverityLevel,
+    RecommendationType,
+    CloudAnomaly,
+    SavingsOpportunity,
+    OptimizationRecommendation,
+    create_optimization_service
 )
 from app.cost_analytics import CostAnalyzer, BudgetAnalyzer
 from app.cloud_connectors import CloudConnectorFactory, extract_all_providers_data
@@ -134,6 +148,10 @@ tags_metadata = [
     {
         "name": "Audit",
         "description": "Logs de auditoria e rastreamento"
+    },
+    {
+        "name": "Cloud Native Optimization",
+        "description": "Otimização de custos cloud native, anomalias e recomendações"
     }
 ]
 
@@ -190,6 +208,62 @@ async def log_requests(request, call_next):
         f"Time: {process_time:.3f}s"
     )
     return response
+
+# Rate limiting storage (em produção, usar Redis)
+_rate_limit_storage = defaultdict(lambda: defaultdict(list))
+
+def rate_limit(max_requests: int, window_minutes: int = 1):
+    """
+    Rate limiting decorator
+    
+    Args:
+        max_requests: Maximum number of requests allowed
+        window_minutes: Time window in minutes
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        async def wrapper(*args, **kwargs):
+            # Encontrar o request e current_user nos argumentos
+            request = None
+            current_user = None
+            
+            for arg in args:
+                if hasattr(arg, 'method') and hasattr(arg, 'url'):  # Request object
+                    request = arg
+                elif hasattr(arg, 'username'):  # User object
+                    current_user = arg
+                    
+            for value in kwargs.values():
+                if hasattr(value, 'method') and hasattr(value, 'url'):  # Request object
+                    request = value
+                elif hasattr(value, 'username'):  # User object
+                    current_user = value
+            
+            if current_user:
+                user_id = current_user.username
+                endpoint = func.__name__
+                now = time.time()
+                window_start = now - (window_minutes * 60)
+                
+                # Limpar requests antigos
+                _rate_limit_storage[user_id][endpoint] = [
+                    req_time for req_time in _rate_limit_storage[user_id][endpoint]
+                    if req_time > window_start
+                ]
+                
+                # Verificar limite
+                if len(_rate_limit_storage[user_id][endpoint]) >= max_requests:
+                    raise HTTPException(
+                        status_code=429,
+                        detail=f"Rate limit exceeded. Maximum {max_requests} requests per {window_minutes} minute(s)"
+                    )
+                
+                # Registrar request atual
+                _rate_limit_storage[user_id][endpoint].append(now)
+            
+            return await func(*args, **kwargs)
+        return wrapper
+    return decorator
 
 # === ENDPOINTS EXISTENTES DE DADOS DE CUSTO (mantidos) ===
 
@@ -987,12 +1061,399 @@ async def get_security_info():
         ]
     }
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
-    )
+
+# === CLOUD NATIVE OPTIMIZATION ENDPOINTS ===
+
+# Global optimization service instance
+optimization_service: Optional[CloudNativeOptimizationService] = None
+
+@app.on_event("startup")
+async def init_optimization_service():
+    """Initialize optimization service on startup"""
+    global optimization_service
+    try:
+        from app.cloud_native_optimization import load_config_from_env
+        import redis
+        
+        # Criar cliente Redis
+        redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+        
+        # Carregar configuração
+        config = load_config_from_env()
+        
+        # Criar serviço
+        optimization_service = create_optimization_service(redis_client, config)
+        logger.info("Cloud Native Optimization Service initialized successfully")
+    except Exception as e:
+        logger.warning(f"Cloud Native Optimization Service initialization failed: {e}")
+        # Don't fail startup if optimization service fails
+
+
+def get_optimization_service() -> CloudNativeOptimizationService:
+    """Dependency to get optimization service instance"""
+    if optimization_service is None:
+        raise HTTPException(status_code=503, detail="Optimization service not available")
+    return optimization_service
+
+
+@app.get("/api/v1/anomalies", tags=["Cloud Native Optimization"])
+@rate_limit(max_requests=100, window_minutes=1)
+async def get_anomalies(
+    provider: Optional[str] = Query(None, description="Cloud provider (AWS, Azure, GCP, Oracle) or None for all"),
+    days: int = Query(30, description="Number of days to analyze", ge=1, le=365),
+    severity: Optional[str] = Query(None, description="Filter by severity: high, medium, low"),
+    force_refresh: bool = Query(False, description="Force refresh from cache"),
+    current_user: User = Depends(get_current_active_user),
+    service: CloudNativeOptimizationService = Depends(get_optimization_service)
+):
+    """
+    Get cost anomalies from specified cloud providers
+    
+    **Query Parameters:**
+    - `provider`: Cloud provider to analyze (AWS, Azure, GCP, Oracle) or None for all providers
+    - `days`: Number of days to analyze (1-365, default: 30)
+    - `severity`: Filter by severity level (high, medium, low)
+    - `force_refresh`: Skip cache and get fresh data
+    
+    **Returns:**
+    List of detected cost anomalies with severity levels, cost impact, and metadata.
+    
+    **Rate Limiting:** 100 requests per minute per user
+    """
+    try:
+        start_time = datetime.utcnow()
+        
+        # Validar severity se fornecido
+        if severity and severity.lower() not in ['high', 'medium', 'low']:
+            raise HTTPException(
+                status_code=400, 
+                detail="Invalid severity. Must be 'high', 'medium', or 'low'"
+            )
+        
+        # Mapear provider para formato interno
+        provider_name = provider.lower() if provider else None
+        
+        # Buscar anomalias
+        anomalies = await service.get_anomalies_by_provider(provider_name=provider_name)
+        
+        # Filtrar por severidade se especificado
+        if severity:
+            anomalies = [a for a in anomalies if hasattr(a, 'severity') and a.severity.lower() == severity.lower()]
+        
+        # Calcular métricas
+        total_cost_impact = sum(a.cost_impact for a in anomalies if hasattr(a, 'cost_impact'))
+        severity_count = {}
+        for anomaly in anomalies:
+            if hasattr(anomaly, 'severity'):
+                severity_level = anomaly.severity
+                severity_count[severity_level] = severity_count.get(severity_level, 0) + 1
+        
+        end_time = datetime.utcnow()
+        processing_time = (end_time - start_time).total_seconds()
+        
+        logger.info(f"Retrieved {len(anomalies)} anomalies for user {current_user.username}")
+        
+        return {
+            "data": anomalies,
+            "metadata": {
+                "total_count": len(anomalies),
+                "total_cost_impact": round(total_cost_impact, 2),
+                "severity_breakdown": severity_count,
+                "filters": {
+                    "provider": provider,
+                    "days": days,
+                    "severity": severity
+                },
+                "last_updated": end_time.isoformat(),
+                "processing_time_seconds": round(processing_time, 3),
+                "requested_by": current_user.username
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get anomalies: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve anomalies")
+
+@app.get("/api/v1/savings-opportunities", tags=["Cloud Native Optimization"])
+@rate_limit(max_requests=100, window_minutes=1)
+async def get_savings_opportunities(
+    provider: Optional[str] = Query(None, description="Cloud provider (AWS, Azure, GCP, Oracle) or None for all"),
+    min_savings: Optional[float] = Query(None, description="Minimum monthly savings threshold in USD"),
+    category: Optional[str] = Query(None, description="Filter by category: rightsizing, unused_resources, reserved_instances, etc."),
+    force_refresh: bool = Query(False, description="Force refresh from cache"),
+    current_user: User = Depends(get_current_active_user),
+    service: CloudNativeOptimizationService = Depends(get_optimization_service)
+):
+    """
+    Get cost savings opportunities from specified cloud providers
+    
+    **Query Parameters:**
+    - `provider`: Cloud provider to analyze (AWS, Azure, GCP, Oracle) or None for all providers
+    - `min_savings`: Minimum monthly savings threshold in USD
+    - `category`: Filter by opportunity category (rightsizing, unused_resources, reserved_instances, etc.)
+    - `force_refresh`: Skip cache and get fresh data
+    
+    **Returns:**
+    List of identified savings opportunities with potential impact, confidence levels, and implementation guidance.
+    
+    **Rate Limiting:** 100 requests per minute per user
+    """
+    try:
+        start_time = datetime.utcnow()
+        
+        # Mapear provider para formato interno
+        provider_name = provider.lower() if provider else None
+        
+        # Buscar oportunidades
+        opportunities = await service.get_savings_opportunities_by_provider(provider_name=provider_name)
+        
+        # Filtrar por valor mínimo se especificado
+        if min_savings is not None:
+            opportunities = [o for o in opportunities if hasattr(o, 'potential_savings') and o.potential_savings >= min_savings]
+        
+        # Filtrar por categoria se especificado
+        if category:
+            opportunities = [o for o in opportunities if hasattr(o, 'category') and category.lower() in o.category.lower()]
+        
+        # Calcular métricas
+        total_potential_savings = sum(o.potential_savings for o in opportunities if hasattr(o, 'potential_savings'))
+        category_breakdown = {}
+        effort_breakdown = {}
+        
+        for opportunity in opportunities:
+            if hasattr(opportunity, 'category'):
+                cat = opportunity.category
+                category_breakdown[cat] = category_breakdown.get(cat, 0) + 1
+            
+            if hasattr(opportunity, 'effort_level'):
+                effort = opportunity.effort_level
+                effort_breakdown[effort] = effort_breakdown.get(effort, 0) + 1
+        
+        end_time = datetime.utcnow()
+        processing_time = (end_time - start_time).total_seconds()
+        
+        logger.info(f"Retrieved {len(opportunities)} savings opportunities for user {current_user.username}")
+        
+        return {
+            "data": opportunities,
+            "metadata": {
+                "total_count": len(opportunities),
+                "total_potential_savings": round(total_potential_savings, 2),
+                "category_breakdown": category_breakdown,
+                "effort_breakdown": effort_breakdown,
+                "filters": {
+                    "provider": provider,
+                    "min_savings": min_savings,
+                    "category": category
+                },
+                "last_updated": end_time.isoformat(),
+                "processing_time_seconds": round(processing_time, 3),
+                "requested_by": current_user.username
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get savings opportunities: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve savings opportunities")
+
+
+@app.get("/api/v1/optimization/recommendations", response_model=List[OptimizationRecommendation], tags=["Cloud Native Optimization"])
+async def get_optimization_recommendations(
+    provider_name: Optional[str] = Query(None, description="Cloud provider to check"),
+    recommendation_type: Optional[RecommendationType] = Query(None, description="Type of recommendations to include"),
+    force_refresh: bool = Query(False, description="Force refresh from cache"),
+    current_user: User = Depends(get_current_active_user),
+    service: CloudNativeOptimizationService = Depends(get_optimization_service)
+):
+    """
+    Get comprehensive optimization recommendations
+    
+    Returns prioritized list of optimization recommendations based on anomalies and savings opportunities.
+    """
+    try:
+        recommendations = await service.get_unified_recommendations(provider_name=provider_name)
+        logger.info(f"Retrieved {len(recommendations)} recommendations for user {current_user.username}")
+        return recommendations
+    except Exception as e:
+        logger.error(f"Failed to get recommendations: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve recommendations")
+
+
+@app.get("/api/v1/optimization/summary", tags=["Cloud Native Optimization"])
+@rate_limit(max_requests=50, window_minutes=1)
+async def get_optimization_summary(
+    provider: Optional[str] = Query(None, description="Cloud provider (AWS, Azure, GCP, Oracle) or None for all"),
+    current_user: User = Depends(get_current_active_user),
+    service: CloudNativeOptimizationService = Depends(get_optimization_service)
+) -> Dict[str, Any]:
+    """
+    Get comprehensive optimization summary
+    
+    **Query Parameters:**
+    - `provider`: Cloud provider to analyze (AWS, Azure, GCP, Oracle) or None for all providers
+    
+    **Returns:**
+    Aggregated statistics and metrics for anomalies, savings opportunities, and recommendations.
+    Includes optimization score, total potential impact, and prioritized insights.
+    
+    **Rate Limiting:** 50 requests per minute per user
+    """
+    try:
+        start_time = datetime.utcnow()
+        
+        # Mapear provider para formato interno
+        provider_name = provider.lower() if provider else None
+        
+        # Chamar métodos individuais e consolidar
+        anomalies = await service.get_anomalies_by_provider(provider_name)
+        opportunities = await service.get_savings_opportunities_by_provider(provider_name)
+        recommendations = await service.get_unified_recommendations(provider_name)
+        
+        # Calcular métricas agregadas
+        total_cost_impact = sum(a.cost_impact for a in anomalies if hasattr(a, 'cost_impact'))
+        total_potential_savings = sum(o.potential_savings for o in opportunities if hasattr(o, 'potential_savings'))
+        
+        # Breakdown por severidade de anomalias
+        anomaly_severity_breakdown = {}
+        for anomaly in anomalies:
+            if hasattr(anomaly, 'severity'):
+                severity = anomaly.severity
+                anomaly_severity_breakdown[severity] = anomaly_severity_breakdown.get(severity, 0) + 1
+        
+        # Breakdown por tipo de recomendação
+        recommendation_type_breakdown = {}
+        for rec in recommendations:
+            if hasattr(rec, 'type'):
+                rec_type = rec.type
+                recommendation_type_breakdown[rec_type] = recommendation_type_breakdown.get(rec_type, 0) + 1
+        
+        # Calcular optimization score (0-100)
+        optimization_score = 100
+        if anomalies:
+            optimization_score -= min(50, len(anomalies) * 5)  # Penalizar anomalias
+        if opportunities:
+            optimization_score += min(20, len(opportunities) * 2)  # Bonificar oportunidades identificadas
+        optimization_score = max(0, min(100, optimization_score))
+        
+        # Top insights
+        top_anomaly = max(anomalies, key=lambda x: getattr(x, 'cost_impact', 0)) if anomalies else None
+        top_opportunity = max(opportunities, key=lambda x: getattr(x, 'potential_savings', 0)) if opportunities else None
+        
+        end_time = datetime.utcnow()
+        processing_time = (end_time - start_time).total_seconds()
+        
+        summary = {
+            "anomalies": {
+                "total_count": len(anomalies),
+                "total_cost_impact": round(total_cost_impact, 2),
+                "severity_breakdown": anomaly_severity_breakdown,
+                "top_anomaly": {
+                    "description": getattr(top_anomaly, 'description', None),
+                    "cost_impact": getattr(top_anomaly, 'cost_impact', 0),
+                    "severity": getattr(top_anomaly, 'severity', None)
+                } if top_anomaly else None
+            },
+            "savings_opportunities": {
+                "total_count": len(opportunities),
+                "total_potential_savings": round(total_potential_savings, 2),
+                "top_opportunity": {
+                    "description": getattr(top_opportunity, 'description', None),
+                    "potential_savings": getattr(top_opportunity, 'potential_savings', 0),
+                    "category": getattr(top_opportunity, 'category', None)
+                } if top_opportunity else None
+            },
+            "recommendations": {
+                "total_count": len(recommendations),
+                "type_breakdown": recommendation_type_breakdown,
+                "high_priority_count": len([r for r in recommendations if hasattr(r, 'priority') and r.priority in ['high', 'critical']])
+            },
+            "optimization_metrics": {
+                "optimization_score": round(optimization_score, 1),
+                "total_potential_impact": round(total_cost_impact + total_potential_savings, 2),
+                "health_status": "excellent" if optimization_score >= 90 else 
+                               "good" if optimization_score >= 70 else 
+                               "needs_attention" if optimization_score >= 50 else "critical"
+            },
+            "metadata": {
+                "provider": provider,
+                "analysis_scope": "all_providers" if not provider else f"{provider}_only",
+                "last_updated": end_time.isoformat(),
+                "processing_time_seconds": round(processing_time, 3),
+                "requested_by": current_user.username
+            }
+        }
+        
+        logger.info(f"Generated optimization summary for user {current_user.username}")
+        return summary
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get optimization summary: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve optimization summary")
+
+
+@app.post("/api/v1/optimization/cache/invalidate", tags=["Cloud Native Optimization"])
+async def invalidate_optimization_cache(
+    pattern: str = Query("*", description="Cache pattern to invalidate"),
+    current_user: User = Depends(get_current_active_user),
+    service: CloudNativeOptimizationService = Depends(get_optimization_service)
+):
+    """
+    Invalidate cache entries matching the specified pattern
+    
+    Useful for forcing refresh of optimization data when cloud configurations change.
+    """
+    try:
+        # Verificar permissões de admin
+        from app.auth_security import security_manager
+        if not security_manager.check_permission(current_user.role, "system:admin"):
+            raise HTTPException(
+                status_code=403,
+                detail="Admin privileges required to invalidate cache"
+            )
+        
+        await service.invalidate_cache(pattern)
+        logger.info(f"Cache invalidated for pattern: {pattern} by user {current_user.username}")
+        return {"message": f"Cache invalidated for pattern: {pattern}"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to invalidate cache: {e}")
+        raise HTTPException(status_code=500, detail="Failed to invalidate cache")
+
+
+@app.get("/api/v1/optimization/providers", tags=["Cloud Native Optimization"])
+async def get_supported_providers():
+    """Get list of supported cloud providers for optimization"""
+    return {
+        "providers": ["aws", "azure", "gcp", "oracle"],
+        "descriptions": {
+            "aws": "Amazon Web Services",
+            "azure": "Microsoft Azure", 
+            "gcp": "Google Cloud Platform",
+            "oracle": "Oracle Cloud Infrastructure"
+        }
+    }
+
+
+@app.get("/api/v1/optimization/types", tags=["Cloud Native Optimization"])
+async def get_optimization_types():
+    """Get list of supported optimization types"""
+    return {
+        "types": list(RecommendationType),
+        "descriptions": {
+            RecommendationType.RIGHTSIZING: "Rightsizing recommendations for compute resources",
+            RecommendationType.RESERVED_INSTANCES: "Reserved instance recommendations",
+            RecommendationType.SPOT_INSTANCES: "Spot instance recommendations",
+            RecommendationType.STORAGE_OPTIMIZATION: "Storage optimization recommendations",
+            RecommendationType.NETWORK_OPTIMIZATION: "Network optimization recommendations",
+            RecommendationType.IDLE_RESOURCES: "Idle resource identification",
+            RecommendationType.SCHEDULING: "Resource scheduling optimizations"
+        }
+    }
+
+
+# === END CLOUD NATIVE OPTIMIZATION ENDPOINTS ===

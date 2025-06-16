@@ -1,0 +1,26 @@
+# Dependências adicionais para Cloud Native Optimization Service
+
+# Redis para cache
+redis>=4.5.0
+
+# AWS SDK
+boto3>=1.28.0
+botocore>=1.31.0
+
+# Azure SDK
+azure-mgmt-advisor>=9.0.0
+azure-mgmt-resource>=22.0.0
+azure-identity>=1.13.0
+
+# Google Cloud SDK
+google-cloud-recommender>=2.14.0
+google-auth>=2.20.0
+
+# Oracle Cloud SDK (quando disponível)
+# oci>=2.100.0
+
+# Validação e serialização
+pydantic>=1.10.0
+
+# Utilitários
+python-dateutil>=2.8.0

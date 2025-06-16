@@ -10,7 +10,7 @@ export const PROVIDER_COLORS = {
   AWS: '#FBB040',              // Laranja suave e elegante
   Azure: '#4A9EF1',           // Azul suave similar ao card de forecast
   GCP: '#7BA7F7',             // Azul claro suave diferenciado
-  'Oracle Cloud': '#F87171',  // Vermelho suave similar ao card de waste
+  'Oracle Cloud': '#EF4444',  // Vermelho igual ao High Effort (bg-red-500)
   'Google Cloud': '#7BA7F7',  // Alias para GCP
   'Microsoft Azure': '#4A9EF1', // Nome completo do Azure
   'Amazon Web Services': '#FBB040', // Nome completo da AWS

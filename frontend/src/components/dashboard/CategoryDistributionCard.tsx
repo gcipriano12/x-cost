@@ -276,9 +276,9 @@ export function CategoryDistributionCard({ data, currency, isLoading = false }: 
           </CardTitle>
         </div>
       </CardHeader>
-      <CardContent className="flex-grow p-3">
+      <CardContent className="flex-grow p-3 overflow-hidden">
         <div className={cn(
-          "h-[360px] rounded-lg border backdrop-blur-sm relative overflow-hidden",
+          "h-full rounded-lg border backdrop-blur-sm relative overflow-hidden",
           // Aplicar glassmorphism exatamente como no gráfico de pizza (container transparente)
           isDark 
             ? "bg-slate-900/10 border-slate-800 shadow-lg" // Muito mais transparente para o efeito glassmorphism

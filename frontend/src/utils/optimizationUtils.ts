@@ -77,30 +77,30 @@ export const formatSeverity = (severity: SeverityLevel) => {
   return severityConfig[severity] || severityConfig.low;
 };
 
-// Effort level badge styling
+// Effort level badge styling - usando as mesmas cores dos highlight cards
 export const formatEffortLevel = (effort: EffortLevel) => {
   const effortConfig = {
     'Baixo': {
       color: 'bg-green-500 text-white',
-      textColor: 'text-green-700',
-      bgColor: 'bg-green-50',
-      borderColor: 'border-green-200',
+      textColor: 'text-XCost-green dark:text-green-400',
+      bgColor: 'bg-green-50 dark:bg-green-900/50 border border-green-100 dark:border-green-800',
+      borderColor: 'border-green-200/20',
       dots: '●○○',
       label: 'Low Effort'
     },
     'Médio': {
       color: 'bg-yellow-500 text-white',
-      textColor: 'text-yellow-700',
-      bgColor: 'bg-yellow-50',
-      borderColor: 'border-yellow-200',
+      textColor: 'text-yellow-700 dark:text-yellow-400',
+      bgColor: 'bg-yellow-50 dark:bg-yellow-900/50 border border-yellow-100 dark:border-yellow-800',
+      borderColor: 'border-yellow-200/20',
       dots: '●●○',
       label: 'Medium Effort'
     },
     'Alto': {
       color: 'bg-red-500 text-white',
-      textColor: 'text-red-700',
-      bgColor: 'bg-red-50',
-      borderColor: 'border-red-200',
+      textColor: 'text-XCost-red dark:text-red-400',
+      bgColor: 'bg-red-50 dark:bg-red-900/50 border border-red-100 dark:border-red-800',
+      borderColor: 'border-red-200/20',
       dots: '●●●',
       label: 'High Effort'
     }

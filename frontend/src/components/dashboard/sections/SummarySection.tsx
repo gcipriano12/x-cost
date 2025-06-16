@@ -83,7 +83,7 @@ export function SummarySection({
       
       {/* Grid with 4 optimization cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="col-span-1 min-h-[320px]">
+        <div className="col-span-1 h-[415px]">
           <CategoryDistributionCard 
             data={categoryDistributionData}
             currency="$"
@@ -91,7 +91,7 @@ export function SummarySection({
           />
         </div>
         
-        <div className="col-span-1 min-h-[320px]">
+        <div className="col-span-1 h-[415px]">
           <AnomaliesCard 
             provider={providerFilter}
             days={timeFilter ? timeFilterToDays(timeFilter) : 30}
@@ -99,7 +99,7 @@ export function SummarySection({
           />
         </div>
 
-        <div className="col-span-1 min-h-[320px]">
+        <div className="col-span-1 h-[415px]">
           <SavingsOpportunitiesCard 
             provider={providerFilter}
             days={timeFilter ? timeFilterToDays(timeFilter) : 30}
@@ -107,7 +107,7 @@ export function SummarySection({
           />
         </div>
         
-        <div className="col-span-1 min-h-[320px]">
+        <div className="col-span-1 h-[415px]">
           <OptimizationScoreCard 
             provider={providerFilter}
             autoRefresh={false}

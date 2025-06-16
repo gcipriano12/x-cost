@@ -1,0 +1,139 @@
+{
+  "anomalies": [
+    {
+      "id": "aws_anomaly_001",
+      "provider": "AWS",
+      "service": "EC2",
+      "region": "us-east-1",
+      "anomaly_type": "cost_increase",
+      "severity": "high",
+      "detected_at": "2025-06-16T12:00:00Z",
+      "cost_impact": 2340.5,
+      "currency": "USD",
+      "description": "Unusual EC2 cost spike detected in us-east-1",
+      "root_cause": "New instance types launched",
+      "affected_resources": [
+        "i-1234567890abcdef0",
+        "i-0987654321fedcba0"
+      ]
+    },
+    {
+      "id": "aws_anomaly_002",
+      "provider": "Azure",
+      "service": "Storage",
+      "region": "eastus",
+      "anomaly_type": "unusual_pattern",
+      "severity": "medium",
+      "detected_at": "2025-06-16T10:30:00Z",
+      "cost_impact": 890.25,
+      "currency": "USD",
+      "description": "Unexpected storage cost pattern in Azure",
+      "root_cause": "Increased data transfer",
+      "affected_resources": [
+        "storage-account-001"
+      ]
+    },
+    {
+      "id": "gcp_anomaly_001",
+      "provider": "GCP",
+      "service": "Compute Engine",
+      "region": "us-central1",
+      "anomaly_type": "spike",
+      "severity": "medium",
+      "detected_at": "2025-06-16T09:15:00Z",
+      "cost_impact": 567.8,
+      "currency": "USD",
+      "description": "Compute Engine cost spike in us-central1",
+      "root_cause": "Auto-scaling triggered",
+      "affected_resources": [
+        "instance-group-001"
+      ]
+    }
+  ],
+  "savings_opportunities": [
+    {
+      "id": "aws_ri_001",
+      "provider": "AWS",
+      "service": "EC2",
+      "region": "us-east-1",
+      "opportunity_type": "reserved_instances",
+      "estimated_savings": 6780.0,
+      "currency": "USD",
+      "confidence_level": 95.0,
+      "implementation_effort": "Alto",
+      "description": "Reserved Instance opportunity for m5.large instances",
+      "resources_affected": [
+        "m5.large instances"
+      ],
+      "action_required": "Purchase 1-year RI commitment",
+      "risk_level": "medium",
+      "created_at": "2025-06-16T08:00:00Z"
+    },
+    {
+      "id": "aws_rightsizing_001",
+      "provider": "AWS",
+      "service": "EC2",
+      "region": "us-west-2",
+      "opportunity_type": "rightsizing",
+      "estimated_savings": 4520.0,
+      "currency": "USD",
+      "confidence_level": 88.0,
+      "implementation_effort": "Baixo",
+      "description": "Right-size over-provisioned instances",
+      "resources_affected": [
+        "i-abcdef1234567890"
+      ],
+      "action_required": "Downsize from m5.xlarge to m5.large",
+      "risk_level": "low",
+      "created_at": "2025-06-16T07:30:00Z"
+    },
+    {
+      "id": "aws_unused_001",
+      "provider": "AWS",
+      "service": "EBS",
+      "region": "us-east-1",
+      "opportunity_type": "idle_resources",
+      "estimated_savings": 3950.0,
+      "currency": "USD",
+      "confidence_level": 92.0,
+      "implementation_effort": "Baixo",
+      "description": "Remove unused EBS volumes",
+      "resources_affected": [
+        "vol-1234567890abcdef0"
+      ],
+      "action_required": "Delete unattached volumes",
+      "risk_level": "low",
+      "created_at": "2025-06-16T07:00:00Z"
+    }
+  ],
+  "optimization_summary": {
+    "total_anomalies": 7,
+    "total_opportunities": 15,
+    "total_recommendations": 23,
+    "total_estimated_savings": 152570.0,
+    "optimization_score": 67,
+    "health_status": "needs_attention",
+    "currency": "USD",
+    "last_updated": "2025-06-16T15:00:00Z",
+    "providers_summary": {
+      "AWS": {
+        "anomalies_count": 4,
+        "opportunities_count": 12,
+        "estimated_savings": 89340.0,
+        "optimization_score": 71
+      },
+      "Azure": {
+        "anomalies_count": 2,
+        "opportunities_count": 2,
+        "estimated_savings": 34520.0,
+        "optimization_score": 65
+      },
+      "GCP": {
+        "anomalies_count": 1,
+        "opportunities_count": 1,
+        "estimated_savings": 28710.0,
+        "optimization_score": 58
+      }
+    }
+  }
+}

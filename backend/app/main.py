@@ -88,10 +88,10 @@ async def lifespan(app: FastAPI):
     health = health_check()
     if not health["overall"]:
         logger.error(f"Health check failed: {health}")
-
-
-
         raise RuntimeError("System health check failed")
+    
+    # Inicializar serviço de otimização
+    await init_optimization_service()
     
     logger.info("X Cost API started successfully")
     yield
@@ -1067,7 +1067,6 @@ async def get_security_info():
 # Global optimization service instance
 optimization_service: Optional[CloudNativeOptimizationService] = None
 
-@app.on_event("startup")
 async def init_optimization_service():
     """Initialize optimization service on startup"""
     global optimization_service
@@ -1099,24 +1098,55 @@ def get_optimization_service() -> CloudNativeOptimizationService:
 @app.get("/api/v1/anomalies", tags=["Cloud Native Optimization"])
 @rate_limit(max_requests=100, window_minutes=1)
 async def get_anomalies(
+    # Filtros
     provider: Optional[str] = Query(None, description="Cloud provider (AWS, Azure, GCP, Oracle) or None for all"),
     days: int = Query(30, description="Number of days to analyze", ge=1, le=365),
     severity: Optional[str] = Query(None, description="Filter by severity: high, medium, low"),
+    anomaly_type: Optional[str] = Query(None, description="Filter by anomaly type"),
+    service_name: Optional[str] = Query(None, description="Filter by service name"),
+    min_cost_impact: Optional[float] = Query(None, description="Minimum cost impact filter"),
+    max_cost_impact: Optional[float] = Query(None, description="Maximum cost impact filter"),
+    date_from: Optional[str] = Query(None, description="Start date filter (YYYY-MM-DD)"),
+    date_to: Optional[str] = Query(None, description="End date filter (YYYY-MM-DD)"),
+    
+    # Busca
+    search: Optional[str] = Query(None, description="Search term for resource names, descriptions, etc."),
+    
+    # Paginação
+    page: int = Query(1, description="Page number", ge=1),
+    per_page: int = Query(20, description="Items per page", ge=1, le=100),
+    
+    # Ordenação
+    sort_by: Optional[str] = Query("detected_at", description="Sort field: detected_at, cost_impact, severity, service"),
+    sort_order: Optional[str] = Query("desc", description="Sort order: asc, desc"),
+    
+    # Outros
     force_refresh: bool = Query(False, description="Force refresh from cache"),
     current_user: User = Depends(get_current_active_user),
     service: CloudNativeOptimizationService = Depends(get_optimization_service)
 ):
     """
-    Get cost anomalies from specified cloud providers
+    Get cost anomalies from specified cloud providers with advanced filtering, pagination, and search
     
     **Query Parameters:**
     - `provider`: Cloud provider to analyze (AWS, Azure, GCP, Oracle) or None for all providers
     - `days`: Number of days to analyze (1-365, default: 30)
     - `severity`: Filter by severity level (high, medium, low)
+    - `anomaly_type`: Filter by anomaly type
+    - `service_name`: Filter by service name
+    - `min_cost_impact`: Minimum cost impact filter
+    - `max_cost_impact`: Maximum cost impact filter
+    - `date_from`: Start date filter (YYYY-MM-DD)
+    - `date_to`: End date filter (YYYY-MM-DD)
+    - `search`: Search term for resource names, descriptions, etc.
+    - `page`: Page number (default: 1)
+    - `per_page`: Items per page (default: 20, max: 100)
+    - `sort_by`: Sort field (detected_at, cost_impact, severity, service)
+    - `sort_order`: Sort order (asc, desc)
     - `force_refresh`: Skip cache and get fresh data
     
     **Returns:**
-    List of detected cost anomalies with severity levels, cost impact, and metadata.
+    Paginated list of detected cost anomalies with severity levels, cost impact, and metadata.
     
     **Rate Limiting:** 100 requests per minute per user
     """
@@ -1130,40 +1160,163 @@ async def get_anomalies(
                 detail="Invalid severity. Must be 'high', 'medium', or 'low'"
             )
         
+        # Validar sort_by
+        valid_sort_fields = ['detected_at', 'cost_impact', 'severity', 'service', 'resource_name', 'anomaly_type']
+        if sort_by not in valid_sort_fields:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Invalid sort_by field. Must be one of: {', '.join(valid_sort_fields)}"
+            )
+        
+        # Validar sort_order
+        if sort_order not in ['asc', 'desc']:
+            raise HTTPException(
+                status_code=400, 
+                detail="Invalid sort_order. Must be 'asc' or 'desc'"
+            )
+        
+        # Validar datas se fornecidas
+        start_date = None
+        end_date = None
+        if date_from:
+            try:
+                start_date = datetime.strptime(date_from, '%Y-%m-%d').date()
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid date_from format. Use YYYY-MM-DD")
+        
+        if date_to:
+            try:
+                end_date = datetime.strptime(date_to, '%Y-%m-%d').date()
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid date_to format. Use YYYY-MM-DD")
+        
         # Mapear provider para formato interno
         provider_name = provider.lower() if provider else None
         
         # Buscar anomalias
         anomalies = await service.get_anomalies_by_provider(provider_name=provider_name)
         
-        # Filtrar por severidade se especificado
-        if severity:
-            anomalies = [a for a in anomalies if hasattr(a, 'severity') and a.severity.lower() == severity.lower()]
-        
-        # Calcular métricas
-        total_cost_impact = sum(a.cost_impact for a in anomalies if hasattr(a, 'cost_impact'))
-        severity_count = {}
+        # Aplicar filtros
+        filtered_anomalies = []
         for anomaly in anomalies:
+            # Filtro por severidade
+            if severity and hasattr(anomaly, 'severity') and anomaly.severity.lower() != severity.lower():
+                continue
+            
+            # Filtro por tipo de anomalia
+            if anomaly_type and hasattr(anomaly, 'anomaly_type') and anomaly_type.lower() not in anomaly.anomaly_type.lower():
+                continue
+            
+            # Filtro por nome do serviço
+            if service_name and hasattr(anomaly, 'service') and service_name.lower() not in anomaly.service.lower():
+                continue
+            
+            # Filtro por impacto de custo mínimo
+            if min_cost_impact is not None and hasattr(anomaly, 'cost_impact') and anomaly.cost_impact < min_cost_impact:
+                continue
+            
+            # Filtro por impacto de custo máximo
+            if max_cost_impact is not None and hasattr(anomaly, 'cost_impact') and anomaly.cost_impact > max_cost_impact:
+                continue
+            
+            # Filtro por data
+            if start_date and hasattr(anomaly, 'detected_at'):
+                anomaly_date = anomaly.detected_at.date() if hasattr(anomaly.detected_at, 'date') else anomaly.detected_at
+                if anomaly_date < start_date:
+                    continue
+            
+            if end_date and hasattr(anomaly, 'detected_at'):
+                anomaly_date = anomaly.detected_at.date() if hasattr(anomaly.detected_at, 'date') else anomaly.detected_at
+                if anomaly_date > end_date:
+                    continue
+            
+            # Filtro de busca
+            if search:
+                search_term = search.lower()
+                searchable_fields = []
+                
+                if hasattr(anomaly, 'resource_name'):
+                    searchable_fields.append(str(anomaly.resource_name).lower())
+                if hasattr(anomaly, 'description'):
+                    searchable_fields.append(str(anomaly.description).lower())
+                if hasattr(anomaly, 'service'):
+                    searchable_fields.append(str(anomaly.service).lower())
+                if hasattr(anomaly, 'anomaly_type'):
+                    searchable_fields.append(str(anomaly.anomaly_type).lower())
+                
+                if not any(search_term in field for field in searchable_fields):
+                    continue
+            
+            filtered_anomalies.append(anomaly)
+        
+        # Ordenação
+        def get_sort_key(anomaly):
+            if sort_by == 'detected_at':
+                return getattr(anomaly, 'detected_at', datetime.min) or datetime.min
+            elif sort_by == 'cost_impact':
+                return getattr(anomaly, 'cost_impact', 0) or 0
+            elif sort_by == 'severity':
+                severity_order = {'high': 3, 'medium': 2, 'low': 1}
+                return severity_order.get(getattr(anomaly, 'severity', '').lower(), 0)
+            elif sort_by == 'service':
+                return getattr(anomaly, 'service', '') or ''
+            elif sort_by == 'resource_name':
+                return getattr(anomaly, 'resource_name', '') or ''
+            elif sort_by == 'anomaly_type':
+                return getattr(anomaly, 'anomaly_type', '') or ''
+            else:
+                return getattr(anomaly, sort_by, '') or ''
+        
+        filtered_anomalies.sort(key=get_sort_key, reverse=(sort_order == 'desc'))
+        
+        # Calcular métricas totais (antes da paginação)
+        total_count = len(filtered_anomalies)
+        total_cost_impact = sum(getattr(a, 'cost_impact', 0) or 0 for a in filtered_anomalies)
+        
+        severity_count = {}
+        for anomaly in filtered_anomalies:
             if hasattr(anomaly, 'severity'):
                 severity_level = anomaly.severity
                 severity_count[severity_level] = severity_count.get(severity_level, 0) + 1
         
+        # Paginação
+        start_index = (page - 1) * per_page
+        end_index = start_index + per_page
+        paginated_anomalies = filtered_anomalies[start_index:end_index]
+        
+        # Calcular total de páginas
+        total_pages = (total_count + per_page - 1) // per_page
+        
         end_time = datetime.utcnow()
         processing_time = (end_time - start_time).total_seconds()
         
-        logger.info(f"Retrieved {len(anomalies)} anomalies for user {current_user.username}")
+        logger.info(f"Retrieved {len(paginated_anomalies)} anomalies (page {page}/{total_pages}, total: {total_count}) for user {current_user.username}")
         
         return {
-            "data": anomalies,
+            "anomalies": paginated_anomalies,
+            "total_count": total_count,
+            "page": page,
+            "per_page": per_page,
+            "total_pages": total_pages,
+            "total_cost_impact": round(total_cost_impact, 2),
+            "severity_breakdown": severity_count,
+            "filters": {
+                "provider": provider,
+                "days": days,
+                "severity": severity,
+                "anomaly_type": anomaly_type,
+                "service_name": service_name,
+                "min_cost_impact": min_cost_impact,
+                "max_cost_impact": max_cost_impact,
+                "date_from": date_from,
+                "date_to": date_to,
+                "search": search
+            },
+            "sort": {
+                "sort_by": sort_by,
+                "sort_order": sort_order
+            },
             "metadata": {
-                "total_count": len(anomalies),
-                "total_cost_impact": round(total_cost_impact, 2),
-                "severity_breakdown": severity_count,
-                "filters": {
-                    "provider": provider,
-                    "days": days,
-                    "severity": severity
-                },
                 "last_updated": end_time.isoformat(),
                 "processing_time_seconds": round(processing_time, 3),
                 "requested_by": current_user.username
@@ -1178,29 +1331,69 @@ async def get_anomalies(
 @app.get("/api/v1/savings-opportunities", tags=["Cloud Native Optimization"])
 @rate_limit(max_requests=100, window_minutes=1)
 async def get_savings_opportunities(
+    # Filtros
     provider: Optional[str] = Query(None, description="Cloud provider (AWS, Azure, GCP, Oracle) or None for all"),
     min_savings: Optional[float] = Query(None, description="Minimum monthly savings threshold in USD"),
+    max_savings: Optional[float] = Query(None, description="Maximum monthly savings threshold in USD"),
     category: Optional[str] = Query(None, description="Filter by category: rightsizing, unused_resources, reserved_instances, etc."),
+    confidence_level: Optional[str] = Query(None, description="Filter by confidence level: high, medium, low"),
+    service_name: Optional[str] = Query(None, description="Filter by service name"),
+    
+    # Busca
+    search: Optional[str] = Query(None, description="Search term for resource names, descriptions, etc."),
+    
+    # Paginação
+    page: int = Query(1, description="Page number", ge=1),
+    per_page: int = Query(20, description="Items per page", ge=1, le=100),
+    
+    # Ordenação
+    sort_by: Optional[str] = Query("monthly_savings", description="Sort field: monthly_savings, confidence, category, service"),
+    sort_order: Optional[str] = Query("desc", description="Sort order: asc, desc"),
+    
+    # Outros
     force_refresh: bool = Query(False, description="Force refresh from cache"),
     current_user: User = Depends(get_current_active_user),
     service: CloudNativeOptimizationService = Depends(get_optimization_service)
 ):
     """
-    Get cost savings opportunities from specified cloud providers
+    Get cost savings opportunities from specified cloud providers with advanced filtering, pagination, and search
     
     **Query Parameters:**
     - `provider`: Cloud provider to analyze (AWS, Azure, GCP, Oracle) or None for all providers
     - `min_savings`: Minimum monthly savings threshold in USD
+    - `max_savings`: Maximum monthly savings threshold in USD
     - `category`: Filter by opportunity category (rightsizing, unused_resources, reserved_instances, etc.)
+    - `confidence_level`: Filter by confidence level (high, medium, low)
+    - `service_name`: Filter by service name
+    - `search`: Search term for resource names, descriptions, etc.
+    - `page`: Page number (default: 1)
+    - `per_page`: Items per page (default: 20, max: 100)
+    - `sort_by`: Sort field (monthly_savings, confidence, category, service)
+    - `sort_order`: Sort order (asc, desc)
     - `force_refresh`: Skip cache and get fresh data
     
     **Returns:**
-    List of identified savings opportunities with potential impact, confidence levels, and implementation guidance.
+    Paginated list of identified savings opportunities with potential impact, confidence levels, and implementation guidance.
     
     **Rate Limiting:** 100 requests per minute per user
     """
     try:
         start_time = datetime.utcnow()
+        
+        # Validar sort_by
+        valid_sort_fields = ['monthly_savings', 'confidence', 'category', 'service', 'resource_name', 'effort_level']
+        if sort_by not in valid_sort_fields:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Invalid sort_by field. Must be one of: {', '.join(valid_sort_fields)}"
+            )
+        
+        # Validar sort_order
+        if sort_order not in ['asc', 'desc']:
+            raise HTTPException(
+                status_code=400, 
+                detail="Invalid sort_order. Must be 'asc' or 'desc'"
+            )
         
         # Mapear provider para formato interno
         provider_name = provider.lower() if provider else None
@@ -1208,20 +1401,78 @@ async def get_savings_opportunities(
         # Buscar oportunidades
         opportunities = await service.get_savings_opportunities_by_provider(provider_name=provider_name)
         
-        # Filtrar por valor mínimo se especificado
-        if min_savings is not None:
-            opportunities = [o for o in opportunities if hasattr(o, 'potential_savings') and o.potential_savings >= min_savings]
+        # Aplicar filtros
+        filtered_opportunities = []
+        for opportunity in opportunities:
+            # Filtro por valor mínimo
+            if min_savings is not None and hasattr(opportunity, 'potential_savings') and opportunity.potential_savings < min_savings:
+                continue
+            
+            # Filtro por valor máximo
+            if max_savings is not None and hasattr(opportunity, 'potential_savings') and opportunity.potential_savings > max_savings:
+                continue
+            
+            # Filtro por categoria
+            if category and hasattr(opportunity, 'category') and category.lower() not in opportunity.category.lower():
+                continue
+            
+            # Filtro por nível de confiança
+            if confidence_level and hasattr(opportunity, 'confidence') and confidence_level.lower() != opportunity.confidence.lower():
+                continue
+            
+            # Filtro por nome do serviço
+            if service_name and hasattr(opportunity, 'service') and service_name.lower() not in opportunity.service.lower():
+                continue
+            
+            # Filtro de busca
+            if search:
+                search_term = search.lower()
+                searchable_fields = []
+                
+                if hasattr(opportunity, 'resource_name'):
+                    searchable_fields.append(str(opportunity.resource_name).lower())
+                if hasattr(opportunity, 'description'):
+                    searchable_fields.append(str(opportunity.description).lower())
+                if hasattr(opportunity, 'service'):
+                    searchable_fields.append(str(opportunity.service).lower())
+                if hasattr(opportunity, 'category'):
+                    searchable_fields.append(str(opportunity.category).lower())
+                
+                if not any(search_term in field for field in searchable_fields):
+                    continue
+            
+            filtered_opportunities.append(opportunity)
         
-        # Filtrar por categoria se especificado
-        if category:
-            opportunities = [o for o in opportunities if hasattr(o, 'category') and category.lower() in o.category.lower()]
+        # Ordenação
+        def get_sort_key(opportunity):
+            if sort_by == 'monthly_savings':
+                return getattr(opportunity, 'potential_savings', 0) or 0
+            elif sort_by == 'confidence':
+                confidence_order = {'high': 3, 'medium': 2, 'low': 1}
+                return confidence_order.get(getattr(opportunity, 'confidence', '').lower(), 0)
+            elif sort_by == 'category':
+                return getattr(opportunity, 'category', '') or ''
+            elif sort_by == 'service':
+                return getattr(opportunity, 'service', '') or ''
+            elif sort_by == 'resource_name':
+                return getattr(opportunity, 'resource_name', '') or ''
+            elif sort_by == 'effort_level':
+                effort_order = {'low': 1, 'medium': 2, 'high': 3}
+                return effort_order.get(getattr(opportunity, 'effort_level', '').lower(), 0)
+            else:
+                return getattr(opportunity, sort_by, '') or ''
         
-        # Calcular métricas
-        total_potential_savings = sum(o.potential_savings for o in opportunities if hasattr(o, 'potential_savings'))
+        filtered_opportunities.sort(key=get_sort_key, reverse=(sort_order == 'desc'))
+        
+        # Calcular métricas totais (antes da paginação)
+        total_count = len(filtered_opportunities)
+        total_potential_savings = sum(getattr(o, 'potential_savings', 0) or 0 for o in filtered_opportunities)
+        
         category_breakdown = {}
         effort_breakdown = {}
+        confidence_breakdown = {}
         
-        for opportunity in opportunities:
+        for opportunity in filtered_opportunities:
             if hasattr(opportunity, 'category'):
                 cat = opportunity.category
                 category_breakdown[cat] = category_breakdown.get(cat, 0) + 1
@@ -1229,24 +1480,48 @@ async def get_savings_opportunities(
             if hasattr(opportunity, 'effort_level'):
                 effort = opportunity.effort_level
                 effort_breakdown[effort] = effort_breakdown.get(effort, 0) + 1
+                
+            if hasattr(opportunity, 'confidence'):
+                confidence = opportunity.confidence
+                confidence_breakdown[confidence] = confidence_breakdown.get(confidence, 0) + 1
+        
+        # Paginação
+        start_index = (page - 1) * per_page
+        end_index = start_index + per_page
+        paginated_opportunities = filtered_opportunities[start_index:end_index]
+        
+        # Calcular total de páginas
+        total_pages = (total_count + per_page - 1) // per_page
         
         end_time = datetime.utcnow()
         processing_time = (end_time - start_time).total_seconds()
         
-        logger.info(f"Retrieved {len(opportunities)} savings opportunities for user {current_user.username}")
+        logger.info(f"Retrieved {len(paginated_opportunities)} savings opportunities (page {page}/{total_pages}, total: {total_count}) for user {current_user.username}")
         
         return {
-            "data": opportunities,
+            "opportunities": paginated_opportunities,
+            "total_count": total_count,
+            "page": page,
+            "per_page": per_page,
+            "total_pages": total_pages,
+            "total_potential_savings": round(total_potential_savings, 2),
+            "category_breakdown": category_breakdown,
+            "effort_breakdown": effort_breakdown,
+            "confidence_breakdown": confidence_breakdown,
+            "filters": {
+                "provider": provider,
+                "min_savings": min_savings,
+                "max_savings": max_savings,
+                "category": category,
+                "confidence_level": confidence_level,
+                "service_name": service_name,
+                "search": search
+            },
+            "sort": {
+                "sort_by": sort_by,
+                "sort_order": sort_order
+            },
             "metadata": {
-                "total_count": len(opportunities),
-                "total_potential_savings": round(total_potential_savings, 2),
-                "category_breakdown": category_breakdown,
-                "effort_breakdown": effort_breakdown,
-                "filters": {
-                    "provider": provider,
-                    "min_savings": min_savings,
-                    "category": category
-                },
                 "last_updated": end_time.isoformat(),
                 "processing_time_seconds": round(processing_time, 3),
                 "requested_by": current_user.username

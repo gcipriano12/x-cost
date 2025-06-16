@@ -3,7 +3,8 @@ import { RealTimeSpendSummaryCard } from '../RealTimeSpendSummaryCard';
 import { CategoryDistributionCard } from '../CategoryDistributionCard';
 import { AnomaliesCard } from '../AnomaliesCard';
 import { SavingsOpportunitiesCard } from '../SavingsOpportunitiesCard';
-import { ChartPie } from 'lucide-react';
+import { OptimizationScoreCard } from '../OptimizationScoreCard';
+import { timeFilterToDays } from '@/utils/timeFrame';
 
 interface SummarySectionProps {
   timeFilter?: string; // Adicionar timeFilter como prop
@@ -55,8 +56,8 @@ interface SummarySectionProps {
 }
 
 export function SummarySection({ 
-  timeFilter, // Adicionar timeFilter aos parâmetros
-  providerFilter, // Adicionar providerFilter aos parâmetros
+  timeFilter,
+  providerFilter,
   spendSummaryData, 
   providerDistributionData,
   categoryDistributionData, 
@@ -64,6 +65,11 @@ export function SummarySection({
   savingsOpportunitiesData,
   isLoadingRealData = false
 }: SummarySectionProps) {
+  // Suppress unused variable warnings for mock data that will be removed later
+  void spendSummaryData;
+  void providerDistributionData;
+  void anomaliesData;
+  void savingsOpportunitiesData;
   return (
     <div className="space-y-4 mb-6">
       {/* Resumo de Gastos com dados reais da API */}
@@ -75,9 +81,9 @@ export function SummarySection({
         />
       </div>
       
-      {/* Os outros três cards ficam lado a lado abaixo */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="col-span-1">
+      {/* Grid with 4 optimization cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="col-span-1 min-h-[320px]">
           <CategoryDistributionCard 
             data={categoryDistributionData}
             currency="$"
@@ -85,18 +91,26 @@ export function SummarySection({
           />
         </div>
         
-        <div className="col-span-1">
+        <div className="col-span-1 min-h-[320px]">
           <AnomaliesCard 
-            anomalies={anomaliesData}
-            currency="$"
+            provider={providerFilter}
+            days={timeFilter ? timeFilterToDays(timeFilter) : 30}
+            autoRefresh={false}
           />
         </div>
 
-        <div className="col-span-1">
+        <div className="col-span-1 min-h-[320px]">
           <SavingsOpportunitiesCard 
-            opportunities={savingsOpportunitiesData.opportunities}
-            totalPotentialSavings={savingsOpportunitiesData.totalPotentialSavings}
-            currency={savingsOpportunitiesData.currency}
+            provider={providerFilter}
+            days={timeFilter ? timeFilterToDays(timeFilter) : 30}
+            autoRefresh={false}
+          />
+        </div>
+        
+        <div className="col-span-1 min-h-[320px]">
+          <OptimizationScoreCard 
+            provider={providerFilter}
+            autoRefresh={false}
           />
         </div>
       </div>

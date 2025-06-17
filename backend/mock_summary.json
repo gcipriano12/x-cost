@@ -1,0 +1,32 @@
+{
+  "total_opportunities": 50,
+  "total_anomalies": 30,
+  "total_monthly_savings": 265357.5,
+  "total_annual_savings": 3184290.0,
+  "confidence_breakdown": {
+    "low": 16,
+    "medium": 17,
+    "high": 17
+  },
+  "effort_breakdown": {
+    "high": 19,
+    "medium": 13,
+    "low": 18
+  },
+  "risk_breakdown": {
+    "medium": 11,
+    "high": 27,
+    "low": 12
+  },
+  "category_breakdown": {
+    "idle_resources": 8,
+    "scheduling": 10,
+    "reserved_instances": 4,
+    "unused_resources": 6,
+    "network_optimization": 6,
+    "rightsizing": 5,
+    "storage_optimization": 7,
+    "spot_instances": 4
+  },
+  "generated_at": "2025-06-16T23:59:12.516028"
+}

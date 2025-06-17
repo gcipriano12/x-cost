@@ -1337,6 +1337,8 @@ async def get_savings_opportunities(
     max_savings: Optional[float] = Query(None, description="Maximum monthly savings threshold in USD"),
     category: Optional[str] = Query(None, description="Filter by category: rightsizing, unused_resources, reserved_instances, etc."),
     confidence_level: Optional[str] = Query(None, description="Filter by confidence level: high, medium, low"),
+    implementation_effort: Optional[str] = Query(None, description="Filter by implementation effort: low, medium, high"),
+    risk_level: Optional[str] = Query(None, description="Filter by risk level: low, medium, high"),
     service_name: Optional[str] = Query(None, description="Filter by service name"),
     
     # Busca
@@ -1364,6 +1366,8 @@ async def get_savings_opportunities(
     - `max_savings`: Maximum monthly savings threshold in USD
     - `category`: Filter by opportunity category (rightsizing, unused_resources, reserved_instances, etc.)
     - `confidence_level`: Filter by confidence level (high, medium, low)
+    - `implementation_effort`: Filter by implementation effort (low, medium, high)
+    - `risk_level`: Filter by risk level (low, medium, high)
     - `service_name`: Filter by service name
     - `search`: Search term for resource names, descriptions, etc.
     - `page`: Page number (default: 1)
@@ -1381,7 +1385,7 @@ async def get_savings_opportunities(
         start_time = datetime.utcnow()
         
         # Validar sort_by
-        valid_sort_fields = ['monthly_savings', 'confidence', 'category', 'service', 'resource_name', 'effort_level']
+        valid_sort_fields = ['monthly_savings', 'confidence', 'category', 'service', 'resource_name', 'effort_level', 'risk_level']
         if sort_by not in valid_sort_fields:
             raise HTTPException(
                 status_code=400, 
@@ -1393,6 +1397,46 @@ async def get_savings_opportunities(
             raise HTTPException(
                 status_code=400, 
                 detail="Invalid sort_order. Must be 'asc' or 'desc'"
+            )
+        
+        # Validar confidence_level
+        if confidence_level and confidence_level not in ['high', 'medium', 'low']:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid confidence_level. Must be one of: high, medium, low"
+            )
+        
+        # Validar implementation_effort
+        if implementation_effort and implementation_effort not in ['low', 'medium', 'high']:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid implementation_effort. Must be one of: low, medium, high"
+            )
+        
+        # Validar risk_level
+        if risk_level and risk_level not in ['low', 'medium', 'high']:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid risk_level. Must be one of: low, medium, high"
+            )
+        
+        # Validar min/max savings
+        if min_savings is not None and min_savings < 0:
+            raise HTTPException(
+                status_code=400,
+                detail="min_savings must be >= 0"
+            )
+        
+        if max_savings is not None and max_savings < 0:
+            raise HTTPException(
+                status_code=400,
+                detail="max_savings must be >= 0"
+            )
+        
+        if min_savings is not None and max_savings is not None and min_savings > max_savings:
+            raise HTTPException(
+                status_code=400,
+                detail="min_savings cannot be greater than max_savings"
             )
         
         # Mapear provider para formato interno
@@ -1420,6 +1464,14 @@ async def get_savings_opportunities(
             if confidence_level and hasattr(opportunity, 'confidence') and confidence_level.lower() != opportunity.confidence.lower():
                 continue
             
+            # Filtro por esforço de implementação
+            if implementation_effort and hasattr(opportunity, 'effort_level') and implementation_effort.lower() != opportunity.effort_level.lower():
+                continue
+            
+            # Filtro por nível de risco
+            if risk_level and hasattr(opportunity, 'risk_level') and risk_level.lower() != opportunity.risk_level.lower():
+                continue
+            
             # Filtro por nome do serviço
             if service_name and hasattr(opportunity, 'service') and service_name.lower() not in opportunity.service.lower():
                 continue
@@ -1437,6 +1489,8 @@ async def get_savings_opportunities(
                     searchable_fields.append(str(opportunity.service).lower())
                 if hasattr(opportunity, 'category'):
                     searchable_fields.append(str(opportunity.category).lower())
+                if hasattr(opportunity, 'action_required'):
+                    searchable_fields.append(str(opportunity.action_required).lower())
                 
                 if not any(search_term in field for field in searchable_fields):
                     continue
@@ -1459,6 +1513,9 @@ async def get_savings_opportunities(
             elif sort_by == 'effort_level':
                 effort_order = {'low': 1, 'medium': 2, 'high': 3}
                 return effort_order.get(getattr(opportunity, 'effort_level', '').lower(), 0)
+            elif sort_by == 'risk_level':
+                risk_order = {'low': 1, 'medium': 2, 'high': 3}
+                return risk_order.get(getattr(opportunity, 'risk_level', '').lower(), 0)
             else:
                 return getattr(opportunity, sort_by, '') or ''
         
@@ -1471,6 +1528,7 @@ async def get_savings_opportunities(
         category_breakdown = {}
         effort_breakdown = {}
         confidence_breakdown = {}
+        risk_breakdown = {}
         
         for opportunity in filtered_opportunities:
             if hasattr(opportunity, 'category'):
@@ -1484,6 +1542,10 @@ async def get_savings_opportunities(
             if hasattr(opportunity, 'confidence'):
                 confidence = opportunity.confidence
                 confidence_breakdown[confidence] = confidence_breakdown.get(confidence, 0) + 1
+            
+            if hasattr(opportunity, 'risk_level'):
+                risk = opportunity.risk_level
+                risk_breakdown[risk] = risk_breakdown.get(risk, 0) + 1
         
         # Paginação
         start_index = (page - 1) * per_page
@@ -1508,12 +1570,15 @@ async def get_savings_opportunities(
             "category_breakdown": category_breakdown,
             "effort_breakdown": effort_breakdown,
             "confidence_breakdown": confidence_breakdown,
+            "risk_breakdown": risk_breakdown,
             "filters": {
                 "provider": provider,
                 "min_savings": min_savings,
                 "max_savings": max_savings,
                 "category": category,
                 "confidence_level": confidence_level,
+                "implementation_effort": implementation_effort,
+                "risk_level": risk_level,
                 "service_name": service_name,
                 "search": search
             },
@@ -1729,6 +1794,236 @@ async def get_optimization_types():
             RecommendationType.SCHEDULING: "Resource scheduling optimizations"
         }
     }
+
+
+# Implementation Plans and Bulk Actions
+from pydantic import BaseModel as PydanticBaseModel
+from typing import List as TypingList
+
+class BulkActionRequest(PydanticBaseModel):
+    """Request model for bulk actions on savings opportunities"""
+    action: str  # 'add_to_plan', 'implement', 'dismiss'
+    opportunity_ids: TypingList[str]
+    plan_id: Optional[str] = None  # Required for 'add_to_plan' action
+    notes: Optional[str] = None
+
+class ImplementationPlan(PydanticBaseModel):
+    """Implementation plan model"""
+    id: str
+    name: str
+    description: str
+    opportunity_ids: TypingList[str]
+    estimated_total_savings: float
+    timeline_months: int
+    risk_assessment: str
+    status: str  # 'draft', 'active', 'completed', 'paused'
+    created_at: datetime
+    updated_at: datetime
+
+class ImplementationPlanCreate(PydanticBaseModel):
+    """Request model for creating implementation plans"""
+    name: str
+    description: str
+    opportunity_ids: TypingList[str] = []
+    timeline_months: int = 3
+    risk_assessment: str = "medium"
+
+
+@app.post("/api/v1/savings-opportunities/bulk-action", tags=["Cloud Native Optimization"])
+@rate_limit(max_requests=50, window_minutes=1)
+async def bulk_action_savings_opportunities(
+    request: BulkActionRequest,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Perform bulk actions on savings opportunities
+    
+    **Actions:**
+    - `add_to_plan`: Add opportunities to an implementation plan
+    - `implement`: Mark opportunities as being implemented
+    - `dismiss`: Dismiss opportunities
+    
+    **Request Body:**
+    - `action`: Action to perform
+    - `opportunity_ids`: List of opportunity IDs
+    - `plan_id`: Plan ID (required for add_to_plan action)
+    - `notes`: Optional notes
+    
+    **Returns:**
+    Success/failure status for each opportunity
+    """
+    try:
+        if not request.opportunity_ids:
+            raise HTTPException(status_code=400, detail="No opportunity IDs provided")
+        
+        if request.action not in ['add_to_plan', 'implement', 'dismiss']:
+            raise HTTPException(status_code=400, detail="Invalid action. Must be one of: add_to_plan, implement, dismiss")
+        
+        if request.action == 'add_to_plan' and not request.plan_id:
+            raise HTTPException(status_code=400, detail="plan_id is required for add_to_plan action")
+        
+        # Simulate processing bulk action
+        results = []
+        for opportunity_id in request.opportunity_ids:
+            # In a real implementation, you would update the database here
+            result = {
+                "opportunity_id": opportunity_id,
+                "status": "success",
+                "message": f"Successfully {request.action.replace('_', ' ')} opportunity {opportunity_id}"
+            }
+            results.append(result)
+        
+        logger.info(f"Bulk action '{request.action}' performed on {len(request.opportunity_ids)} opportunities by user {current_user.username}")
+        
+        return {
+            "action": request.action,
+            "total_opportunities": len(request.opportunity_ids),
+            "successful": len(results),
+            "failed": 0,
+            "results": results,
+            "processed_at": datetime.utcnow().isoformat(),
+            "processed_by": current_user.username
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to perform bulk action: {e}")
+        raise HTTPException(status_code=500, detail="Failed to perform bulk action")
+
+
+@app.get("/api/v1/implementation-plans", tags=["Cloud Native Optimization"])
+@rate_limit(max_requests=100, window_minutes=1)
+async def get_implementation_plans(
+    status: Optional[str] = Query(None, description="Filter by status: draft, active, completed, paused"),
+    page: int = Query(1, description="Page number", ge=1),
+    per_page: int = Query(20, description="Items per page", ge=1, le=100),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get implementation plans for savings opportunities
+    
+    **Query Parameters:**
+    - `status`: Filter by plan status
+    - `page`: Page number
+    - `per_page`: Items per page
+    
+    **Returns:**
+    Paginated list of implementation plans
+    """
+    try:
+        # Mock implementation plans data
+        mock_plans = [
+            {
+                "id": "plan_001",
+                "name": "Q1 2024 Cost Optimization",
+                "description": "High-impact cost optimization initiatives for Q1",
+                "opportunity_ids": ["opp_001", "opp_002", "opp_003"],
+                "estimated_total_savings": 15000.0,
+                "timeline_months": 3,
+                "risk_assessment": "medium",
+                "status": "active",
+                "created_at": datetime.utcnow() - timedelta(days=10),
+                "updated_at": datetime.utcnow() - timedelta(days=2)
+            },
+            {
+                "id": "plan_002", 
+                "name": "Storage Optimization Plan",
+                "description": "Focus on storage cost reduction across all environments",
+                "opportunity_ids": ["opp_004", "opp_005"],
+                "estimated_total_savings": 8500.0,
+                "timeline_months": 2,
+                "risk_assessment": "low",
+                "status": "draft",
+                "created_at": datetime.utcnow() - timedelta(days=5),
+                "updated_at": datetime.utcnow() - timedelta(days=1)
+            }
+        ]
+        
+        # Filter by status if provided
+        if status:
+            mock_plans = [plan for plan in mock_plans if plan["status"] == status]
+        
+        # Pagination
+        total_count = len(mock_plans)
+        start_index = (page - 1) * per_page
+        end_index = start_index + per_page
+        paginated_plans = mock_plans[start_index:end_index]
+        
+        total_pages = (total_count + per_page - 1) // per_page
+        
+        logger.info(f"Retrieved {len(paginated_plans)} implementation plans for user {current_user.username}")
+        
+        return {
+            "plans": paginated_plans,
+            "total_count": total_count,
+            "page": page,
+            "per_page": per_page,
+            "total_pages": total_pages,
+            "has_next": page < total_pages,
+            "has_prev": page > 1
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get implementation plans: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve implementation plans")
+
+
+@app.post("/api/v1/implementation-plans", tags=["Cloud Native Optimization"])
+@rate_limit(max_requests=20, window_minutes=1)
+async def create_implementation_plan(
+    plan_data: ImplementationPlanCreate,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Create a new implementation plan for savings opportunities
+    
+    **Request Body:**
+    - `name`: Plan name
+    - `description`: Plan description
+    - `opportunity_ids`: List of opportunity IDs to include
+    - `timeline_months`: Implementation timeline in months
+    - `risk_assessment`: Risk assessment level
+    
+    **Returns:**
+    Created implementation plan
+    """
+    try:
+        if not plan_data.name.strip():
+            raise HTTPException(status_code=400, detail="Plan name is required")
+        
+        if plan_data.timeline_months < 1 or plan_data.timeline_months > 24:
+            raise HTTPException(status_code=400, detail="Timeline must be between 1 and 24 months")
+        
+        if plan_data.risk_assessment not in ['low', 'medium', 'high']:
+            raise HTTPException(status_code=400, detail="Risk assessment must be one of: low, medium, high")
+        
+        # Create new plan
+        new_plan = {
+            "id": f"plan_{int(time.time())}",
+            "name": plan_data.name,
+            "description": plan_data.description,
+            "opportunity_ids": plan_data.opportunity_ids,
+            "estimated_total_savings": 0.0,  # Would be calculated from opportunities
+            "timeline_months": plan_data.timeline_months,
+            "risk_assessment": plan_data.risk_assessment,
+            "status": "draft",
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        
+        logger.info(f"Created implementation plan '{plan_data.name}' for user {current_user.username}")
+        
+        return {
+            "plan": new_plan,
+            "message": "Implementation plan created successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to create implementation plan: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create implementation plan")
 
 
 # === END CLOUD NATIVE OPTIMIZATION ENDPOINTS ===

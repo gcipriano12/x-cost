@@ -1,0 +1,508 @@
+[
+  {
+    "id": "anom_001",
+    "provider": "Oracle",
+    "service": "App Service",
+    "region": "us-east-1",
+    "anomaly_type": "unusual_pattern",
+    "severity": "critical",
+    "detected_at": "2025-06-15T23:59:12.514909",
+    "cost_impact": 2386.42,
+    "currency": "USD",
+    "description": "Unusual usage pattern detected in App Service during off-hours",
+    "root_cause": "After-hours activity or batch processing changes",
+    "affected_resources": [
+      "app service-000"
+    ]
+  },
+  {
+    "id": "anom_002",
+    "provider": "Azure",
+    "service": "Cloud Storage",
+    "region": "eu-west-1",
+    "anomaly_type": "cost_increase",
+    "severity": "medium",
+    "detected_at": "2025-06-09T23:59:12.514926",
+    "cost_impact": 2201.59,
+    "currency": "USD",
+    "description": "Significant cost increase in Cloud Storage - 96% higher than last month",
+    "root_cause": "Resource configuration changes or pricing updates",
+    "affected_resources": [
+      "cloud storage-000",
+      "cloud storage-001",
+      "cloud storage-002"
+    ]
+  },
+  {
+    "id": "anom_003",
+    "provider": "GCP",
+    "service": "S3",
+    "region": "us-west-2",
+    "anomaly_type": "drift",
+    "severity": "high",
+    "detected_at": "2025-06-15T23:59:12.514937",
+    "cost_impact": 1335.85,
+    "currency": "USD",
+    "description": "Gradual cost increase in S3 - 23% above normal trend",
+    "root_cause": "Gradual increase in usage or inefficient resource allocation",
+    "affected_resources": [
+      "s3-000"
+    ]
+  },
+  {
+    "id": "anom_004",
+    "provider": "AWS",
+    "service": "Cloud Storage",
+    "region": "us-west-2",
+    "anomaly_type": "cost_increase",
+    "severity": "medium",
+    "detected_at": "2025-06-05T23:59:12.514946",
+    "cost_impact": 2363.08,
+    "currency": "USD",
+    "description": "Significant cost increase in Cloud Storage - 71% higher than last month",
+    "root_cause": "Resource configuration changes or pricing updates",
+    "affected_resources": [
+      "cloud storage-000",
+      "cloud storage-001",
+      "cloud storage-002"
+    ]
+  },
+  {
+    "id": "anom_005",
+    "provider": "Oracle",
+    "service": "EC2",
+    "region": "eu-west-1",
+    "anomaly_type": "unusual_pattern",
+    "severity": "high",
+    "detected_at": "2025-06-10T23:59:12.514969",
+    "cost_impact": 4518.41,
+    "currency": "USD",
+    "description": "Unusual usage pattern detected in EC2 during off-hours",
+    "root_cause": "After-hours activity or batch processing changes",
+    "affected_resources": [
+      "ec2-000"
+    ]
+  },
+  {
+    "id": "anom_006",
+    "provider": "Oracle",
+    "service": "SQL Database",
+    "region": "eu-west-1",
+    "anomaly_type": "drift",
+    "severity": "medium",
+    "detected_at": "2025-06-14T23:59:12.514980",
+    "cost_impact": 2542.48,
+    "currency": "USD",
+    "description": "Gradual cost increase in SQL Database - 36% above normal trend",
+    "root_cause": "Gradual increase in usage or inefficient resource allocation",
+    "affected_resources": [
+      "sql database-000"
+    ]
+  },
+  {
+    "id": "anom_007",
+    "provider": "GCP",
+    "service": "EC2",
+    "region": "us-west-2",
+    "anomaly_type": "drift",
+    "severity": "high",
+    "detected_at": "2025-06-15T23:59:12.514988",
+    "cost_impact": 2162.3,
+    "currency": "USD",
+    "description": "Gradual cost increase in EC2 - 39% above normal trend",
+    "root_cause": "Gradual increase in usage or inefficient resource allocation",
+    "affected_resources": [
+      "ec2-000"
+    ]
+  },
+  {
+    "id": "anom_008",
+    "provider": "GCP",
+    "service": "EC2",
+    "region": "us-west-2",
+    "anomaly_type": "drift",
+    "severity": "low",
+    "detected_at": "2025-06-08T23:59:12.514996",
+    "cost_impact": 1113.56,
+    "currency": "USD",
+    "description": "Gradual cost increase in EC2 - 36% above normal trend",
+    "root_cause": "Gradual increase in usage or inefficient resource allocation",
+    "affected_resources": [
+      "ec2-000"
+    ]
+  },
+  {
+    "id": "anom_009",
+    "provider": "Oracle",
+    "service": "ELB",
+    "region": "eu-west-1",
+    "anomaly_type": "drift",
+    "severity": "low",
+    "detected_at": "2025-06-06T23:59:12.515003",
+    "cost_impact": 1594.99,
+    "currency": "USD",
+    "description": "Gradual cost increase in ELB - 34% above normal trend",
+    "root_cause": "Gradual increase in usage or inefficient resource allocation",
+    "affected_resources": [
+      "elb-000",
+      "elb-001"
+    ]
+  },
+  {
+    "id": "anom_010",
+    "provider": "Oracle",
+    "service": "RDS",
+    "region": "us-east-1",
+    "anomaly_type": "drift",
+    "severity": "medium",
+    "detected_at": "2025-06-09T23:59:12.515011",
+    "cost_impact": 1990.82,
+    "currency": "USD",
+    "description": "Gradual cost increase in RDS - 18% above normal trend",
+    "root_cause": "Gradual increase in usage or inefficient resource allocation",
+    "affected_resources": [
+      "rds-000",
+      "rds-001"
+    ]
+  },
+  {
+    "id": "anom_011",
+    "provider": "Azure",
+    "service": "RDS",
+    "region": "eu-west-1",
+    "anomaly_type": "cost_increase",
+    "severity": "critical",
+    "detected_at": "2025-06-02T23:59:12.515018",
+    "cost_impact": 4682.14,
+    "currency": "USD",
+    "description": "Significant cost increase in RDS - 119% higher than last month",
+    "root_cause": "Resource configuration changes or pricing updates",
+    "affected_resources": [
+      "rds-000"
+    ]
+  },
+  {
+    "id": "anom_012",
+    "provider": "Azure",
+    "service": "Cloud Functions",
+    "region": "us-west-2",
+    "anomaly_type": "spike",
+    "severity": "high",
+    "detected_at": "2025-06-11T23:59:12.515026",
+    "cost_impact": 4601.73,
+    "currency": "USD",
+    "description": "Sudden cost spike detected in Cloud Functions - 488% increase over baseline",
+    "root_cause": "Possible auto-scaling event or new workload deployment",
+    "affected_resources": [
+      "cloud functions-000",
+      "cloud functions-001",
+      "cloud functions-002"
+    ]
+  },
+  {
+    "id": "anom_013",
+    "provider": "Oracle",
+    "service": "EC2",
+    "region": "eu-west-1",
+    "anomaly_type": "unusual_pattern",
+    "severity": "medium",
+    "detected_at": "2025-06-07T23:59:12.515033",
+    "cost_impact": 1256.07,
+    "currency": "USD",
+    "description": "Unusual usage pattern detected in EC2 during off-hours",
+    "root_cause": "After-hours activity or batch processing changes",
+    "affected_resources": [
+      "ec2-000",
+      "ec2-001"
+    ]
+  },
+  {
+    "id": "anom_014",
+    "provider": "AWS",
+    "service": "Compute Engine",
+    "region": "us-east-1",
+    "anomaly_type": "cost_increase",
+    "severity": "medium",
+    "detected_at": "2025-06-03T23:59:12.515041",
+    "cost_impact": 2292.93,
+    "currency": "USD",
+    "description": "Significant cost increase in Compute Engine - 46% higher than last month",
+    "root_cause": "Resource configuration changes or pricing updates",
+    "affected_resources": [
+      "compute engine-000",
+      "compute engine-001"
+    ]
+  },
+  {
+    "id": "anom_015",
+    "provider": "Azure",
+    "service": "SQL Database",
+    "region": "eu-west-1",
+    "anomaly_type": "unusual_pattern",
+    "severity": "medium",
+    "detected_at": "2025-06-04T23:59:12.515049",
+    "cost_impact": 4065.55,
+    "currency": "USD",
+    "description": "Unusual usage pattern detected in SQL Database during off-hours",
+    "root_cause": "After-hours activity or batch processing changes",
+    "affected_resources": [
+      "sql database-000",
+      "sql database-001"
+    ]
+  },
+  {
+    "id": "anom_016",
+    "provider": "AWS",
+    "service": "EC2",
+    "region": "us-east-1",
+    "anomaly_type": "spike",
+    "severity": "high",
+    "detected_at": "2025-06-15T23:59:12.515056",
+    "cost_impact": 968.89,
+    "currency": "USD",
+    "description": "Sudden cost spike detected in EC2 - 780% increase over baseline",
+    "root_cause": "Possible auto-scaling event or new workload deployment",
+    "affected_resources": [
+      "ec2-000",
+      "ec2-001"
+    ]
+  },
+  {
+    "id": "anom_017",
+    "provider": "GCP",
+    "service": "EC2",
+    "region": "us-east-1",
+    "anomaly_type": "cost_increase",
+    "severity": "medium",
+    "detected_at": "2025-06-04T23:59:12.515064",
+    "cost_impact": 3782.92,
+    "currency": "USD",
+    "description": "Significant cost increase in EC2 - 58% higher than last month",
+    "root_cause": "Resource configuration changes or pricing updates",
+    "affected_resources": [
+      "ec2-000",
+      "ec2-001",
+      "ec2-002"
+    ]
+  },
+  {
+    "id": "anom_018",
+    "provider": "AWS",
+    "service": "RDS",
+    "region": "us-west-2",
+    "anomaly_type": "drift",
+    "severity": "high",
+    "detected_at": "2025-06-08T23:59:12.515072",
+    "cost_impact": 875.03,
+    "currency": "USD",
+    "description": "Gradual cost increase in RDS - 24% above normal trend",
+    "root_cause": "Gradual increase in usage or inefficient resource allocation",
+    "affected_resources": [
+      "rds-000",
+      "rds-001",
+      "rds-002"
+    ]
+  },
+  {
+    "id": "anom_019",
+    "provider": "Oracle",
+    "service": "ELB",
+    "region": "eu-west-1",
+    "anomaly_type": "unusual_pattern",
+    "severity": "low",
+    "detected_at": "2025-06-09T23:59:12.515079",
+    "cost_impact": 1110.12,
+    "currency": "USD",
+    "description": "Unusual usage pattern detected in ELB during off-hours",
+    "root_cause": "After-hours activity or batch processing changes",
+    "affected_resources": [
+      "elb-000"
+    ]
+  },
+  {
+    "id": "anom_020",
+    "provider": "Azure",
+    "service": "BigQuery",
+    "region": "us-west-2",
+    "anomaly_type": "cost_increase",
+    "severity": "critical",
+    "detected_at": "2025-06-05T23:59:12.515094",
+    "cost_impact": 2343.16,
+    "currency": "USD",
+    "description": "Significant cost increase in BigQuery - 74% higher than last month",
+    "root_cause": "Resource configuration changes or pricing updates",
+    "affected_resources": [
+      "bigquery-000",
+      "bigquery-001"
+    ]
+  },
+  {
+    "id": "anom_021",
+    "provider": "Azure",
+    "service": "Compute Engine",
+    "region": "us-west-2",
+    "anomaly_type": "cost_increase",
+    "severity": "medium",
+    "detected_at": "2025-06-09T23:59:12.515107",
+    "cost_impact": 4816.24,
+    "currency": "USD",
+    "description": "Significant cost increase in Compute Engine - 36% higher than last month",
+    "root_cause": "Resource configuration changes or pricing updates",
+    "affected_resources": [
+      "compute engine-000",
+      "compute engine-001",
+      "compute engine-002"
+    ]
+  },
+  {
+    "id": "anom_022",
+    "provider": "AWS",
+    "service": "Compute Engine",
+    "region": "us-east-1",
+    "anomaly_type": "drift",
+    "severity": "medium",
+    "detected_at": "2025-06-12T23:59:12.515115",
+    "cost_impact": 4951.92,
+    "currency": "USD",
+    "description": "Gradual cost increase in Compute Engine - 46% above normal trend",
+    "root_cause": "Gradual increase in usage or inefficient resource allocation",
+    "affected_resources": [
+      "compute engine-000",
+      "compute engine-001"
+    ]
+  },
+  {
+    "id": "anom_023",
+    "provider": "AWS",
+    "service": "BigQuery",
+    "region": "us-east-1",
+    "anomaly_type": "spike",
+    "severity": "medium",
+    "detected_at": "2025-06-02T23:59:12.515122",
+    "cost_impact": 161.53,
+    "currency": "USD",
+    "description": "Sudden cost spike detected in BigQuery - 267% increase over baseline",
+    "root_cause": "Possible auto-scaling event or new workload deployment",
+    "affected_resources": [
+      "bigquery-000"
+    ]
+  },
+  {
+    "id": "anom_024",
+    "provider": "Oracle",
+    "service": "App Service",
+    "region": "us-east-1",
+    "anomaly_type": "spike",
+    "severity": "high",
+    "detected_at": "2025-06-11T23:59:12.515164",
+    "cost_impact": 2922.15,
+    "currency": "USD",
+    "description": "Sudden cost spike detected in App Service - 628% increase over baseline",
+    "root_cause": "Possible auto-scaling event or new workload deployment",
+    "affected_resources": [
+      "app service-000",
+      "app service-001"
+    ]
+  },
+  {
+    "id": "anom_025",
+    "provider": "Oracle",
+    "service": "Cloud Functions",
+    "region": "us-west-2",
+    "anomaly_type": "spike",
+    "severity": "low",
+    "detected_at": "2025-06-14T23:59:12.515174",
+    "cost_impact": 736.92,
+    "currency": "USD",
+    "description": "Sudden cost spike detected in Cloud Functions - 397% increase over baseline",
+    "root_cause": "Possible auto-scaling event or new workload deployment",
+    "affected_resources": [
+      "cloud functions-000",
+      "cloud functions-001",
+      "cloud functions-002"
+    ]
+  },
+  {
+    "id": "anom_026",
+    "provider": "Oracle",
+    "service": "Cloud Functions",
+    "region": "us-east-1",
+    "anomaly_type": "drift",
+    "severity": "low",
+    "detected_at": "2025-06-03T23:59:12.515182",
+    "cost_impact": 1718.46,
+    "currency": "USD",
+    "description": "Gradual cost increase in Cloud Functions - 37% above normal trend",
+    "root_cause": "Gradual increase in usage or inefficient resource allocation",
+    "affected_resources": [
+      "cloud functions-000"
+    ]
+  },
+  {
+    "id": "anom_027",
+    "provider": "GCP",
+    "service": "Lambda",
+    "region": "us-east-1",
+    "anomaly_type": "cost_increase",
+    "severity": "low",
+    "detected_at": "2025-06-06T23:59:12.515189",
+    "cost_impact": 3512.98,
+    "currency": "USD",
+    "description": "Significant cost increase in Lambda - 94% higher than last month",
+    "root_cause": "Resource configuration changes or pricing updates",
+    "affected_resources": [
+      "lambda-000",
+      "lambda-001"
+    ]
+  },
+  {
+    "id": "anom_028",
+    "provider": "Oracle",
+    "service": "Virtual Machines",
+    "region": "us-west-2",
+    "anomaly_type": "cost_increase",
+    "severity": "critical",
+    "detected_at": "2025-06-14T23:59:12.515197",
+    "cost_impact": 3160.46,
+    "currency": "USD",
+    "description": "Significant cost increase in Virtual Machines - 44% higher than last month",
+    "root_cause": "Resource configuration changes or pricing updates",
+    "affected_resources": [
+      "virtual machines-000",
+      "virtual machines-001"
+    ]
+  },
+  {
+    "id": "anom_029",
+    "provider": "Azure",
+    "service": "Storage",
+    "region": "eu-west-1",
+    "anomaly_type": "drift",
+    "severity": "high",
+    "detected_at": "2025-06-04T23:59:12.515205",
+    "cost_impact": 2899.27,
+    "currency": "USD",
+    "description": "Gradual cost increase in Storage - 45% above normal trend",
+    "root_cause": "Gradual increase in usage or inefficient resource allocation",
+    "affected_resources": [
+      "storage-000",
+      "storage-001"
+    ]
+  },
+  {
+    "id": "anom_030",
+    "provider": "Oracle",
+    "service": "Cloud Functions",
+    "region": "us-east-1",
+    "anomaly_type": "unusual_pattern",
+    "severity": "high",
+    "detected_at": "2025-06-06T23:59:12.515212",
+    "cost_impact": 335.69,
+    "currency": "USD",
+    "description": "Unusual usage pattern detected in Cloud Functions during off-hours",
+    "root_cause": "After-hours activity or batch processing changes",
+    "affected_resources": [
+      "cloud functions-000"
+    ]
+  }
+]

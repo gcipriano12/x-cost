@@ -57,7 +57,7 @@ export const formatSeverity = (severity: SeverityLevel) => {
       label: 'High'
     },
     medium: {
-      color: 'bg-yellow-500 text-white',
+      color: 'bg-yellow-500 text-black',
       textColor: 'text-yellow-700 dark:text-yellow-400',
       bgColor: 'bg-yellow-50 dark:bg-yellow-900/50 border border-yellow-100 dark:border-yellow-800',
       borderColor: 'border-yellow-200/20',
@@ -97,7 +97,7 @@ export const formatEffortLevel = (effort: EffortLevel) => {
       label: 'Low Effort'
     },
     'Médio': {
-      color: 'bg-yellow-500 text-white',
+      color: 'bg-yellow-500 text-black',
       textColor: 'text-yellow-700 dark:text-yellow-400',
       bgColor: 'bg-yellow-50 dark:bg-yellow-900/50 border border-yellow-100 dark:border-yellow-800',
       borderColor: 'border-yellow-200/20',
@@ -105,7 +105,7 @@ export const formatEffortLevel = (effort: EffortLevel) => {
       label: 'Medium Effort'
     },
     'medium': {
-      color: 'bg-yellow-500 text-white',
+      color: 'bg-yellow-500 text-black',
       textColor: 'text-yellow-700 dark:text-yellow-400',
       bgColor: 'bg-yellow-50 dark:bg-yellow-900/50 border border-yellow-100 dark:border-yellow-800',
       borderColor: 'border-yellow-200/20',
@@ -145,7 +145,7 @@ export const formatRiskLevel = (risk: RiskLevel) => {
       label: 'Low Risk'
     },
     medium: {
-      color: 'bg-yellow-500 text-white',
+      color: 'bg-yellow-500 text-black',
       textColor: 'text-yellow-700',
       bgColor: 'bg-yellow-50',
       borderColor: 'border-yellow-200',

@@ -64,7 +64,14 @@ export function AnomaliesCard({ provider, days = 30, autoRefresh = true }: Anoma
   
   // Sort anomalies by priority and get top ones
   const sortedAnomalies = sortByPriority.anomalies(anomalies || []);
-  const itemsPerPage = 5; // 1 principal + 4 na lista
+  // Calculate items per page based on screen size and available height
+  const getItemsPerPage = () => {
+    // Only use reduced items for very small screens (phones)
+    if (typeof window !== 'undefined' && window.innerWidth < 640) return 3; // 1 principal + 2 na lista (small mobile)
+    return 5; // 1 principal + 4 na lista (tablet, laptop, desktop)
+  };
+  
+  const itemsPerPage = getItemsPerPage();
   const startIndex = currentIndex * itemsPerPage;
   const displayAnomalies = sortedAnomalies.slice(startIndex, startIndex + itemsPerPage);
   
@@ -91,22 +98,25 @@ export function AnomaliesCard({ provider, days = 30, autoRefresh = true }: Anoma
       // mas mantemos a lista original sem reordenar
       mainAnomaly = selected;
       // A lista mantém os outros itens na ordem original, excluindo apenas o selecionado
-      listAnomalies = displayAnomalies.filter(anomaly => anomaly.id !== selected.id).slice(0, 4);
+      const maxListItems = itemsPerPage - 1; // Subtract 1 for main anomaly
+      listAnomalies = displayAnomalies.filter(anomaly => anomaly.id !== selected.id).slice(0, maxListItems);
     }
   } else {
     // Quando não há seleção, usar a lógica normal
-    listAnomalies = displayAnomalies.slice(1, 5);
+    const maxListItems = itemsPerPage - 1; // Subtract 1 for main anomaly
+    listAnomalies = displayAnomalies.slice(1, maxListItems + 1);
   }
   
-  // Garantir que sempre tenhamos 4 itens na lista, buscando de outras páginas se necessário
-  if (listAnomalies.length < 4) {
+  // Garantir que sempre tenhamos o número correto de itens na lista, buscando de outras páginas se necessário
+  const maxListItems = itemsPerPage - 1; // Subtract 1 for main anomaly
+  if (listAnomalies.length < maxListItems) {
     let nextPageIndex = currentIndex + 1;
-    while (listAnomalies.length < 4 && nextPageIndex * itemsPerPage < sortedAnomalies.length) {
+    while (listAnomalies.length < maxListItems && nextPageIndex * itemsPerPage < sortedAnomalies.length) {
       const nextPageStart = nextPageIndex * itemsPerPage;
       const nextPageAnomalies = sortedAnomalies.slice(nextPageStart, nextPageStart + itemsPerPage);
       
       for (const anomaly of nextPageAnomalies) {
-        if (anomaly.id !== mainAnomaly.id && listAnomalies.length < 4) {
+        if (anomaly.id !== mainAnomaly.id && listAnomalies.length < maxListItems) {
           listAnomalies.push(anomaly);
         }
       }
@@ -118,13 +128,13 @@ export function AnomaliesCard({ provider, days = 30, autoRefresh = true }: Anoma
   const totalPages = Math.ceil(sortedAnomalies.length / itemsPerPage);
   
   const handlePrevious = () => {
-    setCurrentIndex(prev => (prev > 0 ? prev - 1 : totalPages - 1));
+    setCurrentIndex(prev => Math.max(0, prev - 1));
     // Resetar a seleção ao mudar de página
     setSelectedAnomaly(null);
   };
 
   const handleNext = () => {
-    setCurrentIndex(prev => (prev < totalPages - 1 ? prev + 1 : 0));
+    setCurrentIndex(prev => Math.min(totalPages - 1, prev + 1));
     // Resetar a seleção ao mudar de página
     setSelectedAnomaly(null);
   };
@@ -218,11 +228,11 @@ export function AnomaliesCard({ provider, days = 30, autoRefresh = true }: Anoma
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center text-lg font-medium whitespace-nowrap">
             <AlertTriangle className="mr-2 h-5 w-5 text-amber-500" />
-            {isMobile ? 'Anomalies' : 'Anomalies Detected'}
+{isMobile ? t('common.anomalies') : t('anomalies.detected')}
           </CardTitle>
           <div className="flex items-center space-x-2">
             <div className={`whitespace-nowrap ${isMobile ? 'text-lg' : 'text-xl'} font-bold ${headerTextColorClass}`}>
-              {formatSmartCurrency(totalImpact)}
+              {totalImpact >= 1000 ? `$${(totalImpact / 1000).toFixed(1)}K` : `$${Math.round(totalImpact).toLocaleString()}`}
             </div>
           </div>
         </div>
@@ -237,31 +247,31 @@ export function AnomaliesCard({ provider, days = 30, autoRefresh = true }: Anoma
                   <AlertTriangle className={`h-5 w-5 mr-2 ${formatSeverity(mainAnomaly.severity).textColor}`} />
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <h4 className={`font-medium text-sm ${formatSeverity(mainAnomaly.severity).textColor}`}>
+                      <h4 className={`font-medium text-sm ${formatSeverity(mainAnomaly.severity).textColor} truncate whitespace-nowrap overflow-hidden max-w-[120px]`}>
                         {mainAnomaly.provider} {mainAnomaly.service}
                       </h4>
                       {shouldShowProviderTags && (
                         <ProviderBadge 
                           provider={mainAnomaly.provider}
-                          size="sm"
+                          size="xs"
                         />
                       )}
                     </div>
                   </div>
                 </div>
                 <Badge 
-                  className={`ml-2 text-xs ${formatSeverity(mainAnomaly.severity).color}`}
+                  className={`ml-2 text-xs whitespace-nowrap ${formatSeverity(mainAnomaly.severity).color}`}
                 >
                   {formatSeverity(mainAnomaly.severity).label}
                 </Badge>
               </div>
-              <p className="text-xs text-muted-foreground my-1 ml-7 line-clamp-2">
+              <p className="text-xs text-muted-foreground my-1 ml-7 truncate whitespace-nowrap overflow-hidden">
                 {mainAnomaly.description}
               </p>
               
               <div className="flex justify-between items-center mt-2 ml-7">
                 <div className="flex items-center text-xs">
-                  <span className="text-muted-foreground mr-1">Impact:</span>
+                  <span className="text-muted-foreground mr-1">{t('anomalies.impact')}:</span>
                   <span className={`font-medium ${formatSeverity(mainAnomaly.severity).textColor}`}>
                     {formatSmartCurrency(mainAnomaly.cost_impact, mainAnomaly.currency)}
                   </span>
@@ -273,7 +283,7 @@ export function AnomaliesCard({ provider, days = 30, autoRefresh = true }: Anoma
                   className={`h-6 text-xs ${formatSeverity(mainAnomaly.severity).textColor}`}
                   onClick={() => navigate('/anomalies')}
                 >
-                  <span className="mr-1">View Details</span>
+                  <span className="mr-1">{t('anomalies.investigate')}</span>
                   <ArrowUpRight className="h-3 w-3" />
                 </Button>
               </div>
@@ -281,9 +291,9 @@ export function AnomaliesCard({ provider, days = 30, autoRefresh = true }: Anoma
 
             {/* Lista de outras anomalias - altura fixa para garantir posicionamento estático da paginação */}
             <div className="flex-1 flex flex-col">
-              <div className="space-y-1.5 h-[196px] overflow-hidden">
-                {/* Sempre renderiza exatamente 4 itens na lista (slots) */}
-                {Array.from({ length: 4 }).map((_, slotIdx) => {
+              <div className={`space-y-1.5 overflow-hidden ${typeof window !== 'undefined' && window.innerWidth < 640 ? 'h-[84px]' : 'h-[196px]'}`}>
+                {/* Sempre renderiza exatamente o número correto de itens na lista (slots) */}
+                {Array.from({ length: maxListItems }).map((_, slotIdx) => {
                   const anomaly = slotIdx < listAnomalies.length ? listAnomalies[slotIdx] : null;
                   
                   // Se não houver anomalia para este slot, renderiza um item vazio
@@ -313,7 +323,7 @@ export function AnomaliesCard({ provider, days = 30, autoRefresh = true }: Anoma
                     <div 
                       key={`${anomaly.id}-${slotIdx}`} 
                       className={cn(
-                        "flex items-center justify-between p-2 border rounded-lg text-sm cursor-pointer hover:bg-accent/50 transition-colors h-[40px]",
+                        "flex items-center justify-between p-2 border rounded-lg text-sm cursor-pointer hover:bg-accent/50 transition-colors h-[40px] min-h-[40px] max-h-[40px]",
                         isDark 
                           ? "border-slate-700" 
                           : "border-gray-100",
@@ -339,13 +349,13 @@ export function AnomaliesCard({ provider, days = 30, autoRefresh = true }: Anoma
                         />
                         <div className="flex-1">
                           <div className="flex items-center gap-1.5">
-                            <span className="font-medium truncate">
+                            <span className="font-medium truncate text-xs whitespace-nowrap overflow-hidden">
                               {anomaly.provider} {anomaly.service}
                             </span>
                             {shouldShowProviderTags && (
                               <ProviderBadge 
                                 provider={anomaly.provider}
-                                size="sm"
+                                size="xs"
                               />
                             )}
                           </div>
@@ -364,12 +374,13 @@ export function AnomaliesCard({ provider, days = 30, autoRefresh = true }: Anoma
               </div>
             </div>
             
-            {/* Paginação - posição fixa na parte inferior */}
-            {shouldShowPagination && (
-              <div className={cn(
-                "flex justify-center items-center border-t pt-2 h-8 mt-auto",
-                isDark ? "border-slate-700" : "border-gray-100"
-              )}>
+            {/* Paginação - área fixa na parte inferior */}
+            <div className={cn(
+              "flex justify-center items-center pt-2 h-8 mt-auto",
+              shouldShowPagination && "border-t",
+              isDark ? "border-slate-700" : "border-gray-100"
+            )}>
+              {shouldShowPagination && (
                 <div className="text-xs flex items-center justify-center">
                   <Button 
                     variant="ghost" 
@@ -391,8 +402,8 @@ export function AnomaliesCard({ provider, days = 30, autoRefresh = true }: Anoma
                     <ChevronRight className="h-3 w-3" />
                   </Button>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
         </div>
         ) : (
           <div className={cn(

@@ -5,7 +5,7 @@ import {
   useSidebar
 } from '@/components/ui/sidebar';
 import { useTranslation } from 'react-i18next';
-import { Globe } from 'lucide-react';
+import { Languages } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
 
@@ -42,7 +42,7 @@ export const LanguageSwitcher = () => {
           "flex items-center justify-center",
           isMobile && openMobile ? "h-6 w-6" : "h-5 w-5"
         )}>
-          <Globe className="h-5 w-5" />
+          <Languages className="h-5 w-5" />
         </div>
         <span className={showText ? "" : "hidden"}>
           {i18n.language === 'en' ? 'Portuguese' : 'Inglês'}

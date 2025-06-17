@@ -46,7 +46,11 @@
     },
     "all": "Todos",
     "apply": "Aplicar",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "dataRefreshed": "Dados atualizados",
+    "allDataUpdated": "Todos os dados do dashboard foram atualizados com sucesso",
+    "refreshFailed": "Falha na atualização",
+    "refreshFailedDescription": "Falha ao atualizar alguns dados. Tente novamente."
   },
   "spendSummary": {
     "title": "Resumo de Gastos",
@@ -97,23 +101,47 @@
     "title": "Conformidade FinOps",
     "practicesInCompliance": "práticas em conformidade"
   },
+  "optimizationScore": {
+    "title": "Score de Otimização",
+    "criticalIssues": "Problemas Críticos",
+    "savingsPotential": "Potencial de Economia",
+    "compliance": "Conformidade",
+    "anomalies": "anomalias",
+    "opportunities": "oportunidades",
+    "compliant": "em conformidade",
+    "impact": "impacto",
+    "potential": "potencial",
+    "bestPractices": "melhores práticas",
+    "issues": "Problemas",
+    "savings": "Economia",
+    "score": "score",
+    "healthLabels": {
+      "excellent": "Excelente",
+      "good": "Bom",
+      "fair": "Razoável",
+      "poor": "Ruim",
+      "critical": "Crítico"
+    }
+  },
   "resourceUtilization": {
     "title": "Utilização de Recursos",
-    "averageUtilization": "Utilização média dos recursos"
+    "averageUtilization": "Utilização média de recursos"
   },
   "savingsOpportunities": {
     "title": "Oportunidades de Economia",
     "opportunities": "Oportunidades",
+    "opportunitiesShort": "Oportunidades",
     "noOpportunitiesFound": "Nenhuma oportunidade de economia encontrada.",
     "effortLow": "Baixo",
-    "effortMedium": "Médio", 
+    "effortMedium": "Médio",
     "effortHigh": "Alto",
     "contribution": "Contribuição",
     "implement": "Implementar",
+    "annual": "anual",
     "perMonth": "/mês"
   },
   "topServices": {
-    "title": "Top Serviços",
+    "title": "Principais Serviços",
     "service": "Serviço",
     "provider": "Provedor",
     "currentSpend": "Gasto Atual",

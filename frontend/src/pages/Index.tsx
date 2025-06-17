@@ -8,7 +8,8 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Globe } from 'lucide-react';
 import { DashboardContent } from '@/components/dashboard/DashboardContent';
 import { useDashboardData } from '@/hooks/useDashboardData';
-import { useAnomalies, useSavingsOpportunities } from '@/hooks/useOptimization';
+import { useAnomalies, useSavingsOpportunities, useOptimizationSummary } from '@/hooks/useOptimization';
+import { useDashboard } from '@/hooks/useDashboard';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
@@ -47,25 +48,34 @@ const Index = () => {
   // Hooks de otimização para refetch
   const { refetch: refetchAnomalies } = useAnomalies({});
   const { refetch: refetchSavings } = useSavingsOpportunities({});
+  const { refetch: refetchOptimizationSummary } = useOptimizationSummary({});
+  
+  // Hook do dashboard principal para refetch
+  const { refetch: refetchDashboard } = useDashboard({
+    timeFilter,
+    providerName: selectedProvider
+  });
 
   // Função de refresh global
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      // Refresh optimization data
+      // Refresh all dashboard data
       await Promise.all([
         refetchAnomalies(),
-        refetchSavings()
+        refetchSavings(),
+        refetchOptimizationSummary(),
+        refetchDashboard()
       ]);
       
       toast({
-        title: "Data refreshed",
-        description: "All dashboard data has been updated successfully",
+        title: t('common.dataRefreshed'),
+        description: t('common.allDataUpdated'),
       });
     } catch (error) {
       toast({
-        title: "Refresh failed",
-        description: "Failed to refresh some data. Please try again.",
+        title: t('common.refreshFailed'),
+        description: t('common.refreshFailedDescription'),
         variant: "destructive",
       });
     } finally {

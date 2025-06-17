@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { ProviderBadge } from '@/components/ui/provider-badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Progress } from '@/components/ui/progress';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -72,7 +71,14 @@ export function SavingsOpportunitiesCard({
   
   // Sort and process opportunities
   const sortedOpportunities = sortByPriority.opportunities(opportunities || []);
-  const itemsPerPage = 5; // 1 principal + 4 na lista
+  // Calculate items per page based on screen size and available height
+  const getItemsPerPage = () => {
+    // Only use reduced items for very small screens (phones)
+    if (typeof window !== 'undefined' && window.innerWidth < 640) return 3; // 1 principal + 2 na lista (small mobile)
+    return 5; // 1 principal + 4 na lista (tablet, laptop, desktop)
+  };
+  
+  const itemsPerPage = getItemsPerPage();
   const startIndex = currentIndex * itemsPerPage;
   const displayOpportunities = sortedOpportunities.slice(startIndex, startIndex + itemsPerPage);
   
@@ -84,13 +90,13 @@ export function SavingsOpportunitiesCard({
   const totalPages = Math.ceil(sortedOpportunities.length / itemsPerPage);
   
   const handlePrevious = () => {
-    setCurrentIndex(prev => (prev > 0 ? prev - 1 : totalPages - 1));
+    setCurrentIndex(prev => Math.max(0, prev - 1));
     // Resetar a seleção ao mudar de página
     setSelectedOpportunity(null);
   };
 
   const handleNext = () => {
-    setCurrentIndex(prev => (prev < totalPages - 1 ? prev + 1 : 0));
+    setCurrentIndex(prev => Math.min(totalPages - 1, prev + 1));
     // Resetar a seleção ao mudar de página
     setSelectedOpportunity(null);
   };
@@ -113,10 +119,6 @@ export function SavingsOpportunitiesCard({
     }
   }, [selectedOpportunity, sortedOpportunities, itemsPerPage]);
 
-  // Para o cálculo da porcentagem, usamos o total geral de todas as oportunidades
-  const calculatePercentage = (savings: number) => {
-    return totalPotentialSavings > 0 ? (savings / totalPotentialSavings) * 100 : 0;
-  };
 
   const shouldShowPagination = totalPages > 1;
   // Determinar qual oportunidade deve ser mostrada como principal
@@ -130,22 +132,25 @@ export function SavingsOpportunitiesCard({
       // mas mantemos a lista original sem reordenar
       mainOpportunity = selected;
       // A lista mantém os outros itens na ordem original, excluindo apenas o selecionado
-      listOpportunities = displayOpportunities.filter(opp => opp.id !== selected.id).slice(0, 4);
+      const maxListItems = itemsPerPage - 1; // Subtract 1 for main opportunity
+      listOpportunities = displayOpportunities.filter(opp => opp.id !== selected.id).slice(0, maxListItems);
     }
   } else {
     // Quando não há seleção, usar a lógica normal
-    listOpportunities = displayOpportunities.slice(1, 5);
+    const maxListItems = itemsPerPage - 1; // Subtract 1 for main opportunity
+    listOpportunities = displayOpportunities.slice(1, maxListItems + 1);
   }
   
-  // Garantir que sempre tenhamos 4 itens na lista, buscando de outras páginas se necessário
-  if (listOpportunities.length < 4) {
+  // Garantir que sempre tenhamos o número correto de itens na lista, buscando de outras páginas se necessário
+  const maxListItems = itemsPerPage - 1; // Subtract 1 for main opportunity
+  if (listOpportunities.length < maxListItems) {
     let nextPageIndex = currentIndex + 1;
-    while (listOpportunities.length < 4 && nextPageIndex * itemsPerPage < sortedOpportunities.length) {
+    while (listOpportunities.length < maxListItems && nextPageIndex * itemsPerPage < sortedOpportunities.length) {
       const nextPageStart = nextPageIndex * itemsPerPage;
       const nextPageOpportunities = sortedOpportunities.slice(nextPageStart, nextPageStart + itemsPerPage);
       
       for (const opp of nextPageOpportunities) {
-        if (opp.id !== mainOpportunity.id && listOpportunities.length < 4) {
+        if (opp.id !== mainOpportunity.id && listOpportunities.length < maxListItems) {
           listOpportunities.push(opp);
         }
       }
@@ -210,11 +215,11 @@ export function SavingsOpportunitiesCard({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center text-lg font-medium">
             <Lightbulb className={cn("mr-2 h-5 w-5", isDark ? "text-green-400" : "text-XCost-green")} />
-            {isMobile ? 'Opportunities' : 'Savings Opportunities'}
+            {isMobile ? t('savingsOpportunities.opportunitiesShort') : t('common.savingsOpportunities')}
           </CardTitle>
           <div className="flex items-center space-x-2">
             <div className={`whitespace-nowrap ${isMobile ? 'text-lg' : 'text-xl'} font-bold ${headerTextColorClass}`}>
-              {formatSmartCurrency(totalPotentialSavings)}
+              {totalPotentialSavings >= 1000 ? `$${(totalPotentialSavings / 1000).toFixed(1)}K` : `$${Math.round(totalPotentialSavings).toLocaleString()}`}
             </div>
           </div>
         </div>
@@ -229,43 +234,32 @@ export function SavingsOpportunitiesCard({
                   <CheckCircle className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} ${formatEffortLevel(mainOpportunity.implementation_effort).textColor} mr-2`} />
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <h4 className={`font-medium ${isMobile ? 'text-xs' : 'text-sm'} truncate`}>
+                      <h4 className={`font-medium ${isMobile ? 'text-xs' : 'text-sm'} truncate whitespace-nowrap overflow-hidden max-w-[120px]`}>
                         {mainOpportunity.opportunity_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                       </h4>
                       {shouldShowProviderTags && mainOpportunity.provider && (
                         <ProviderBadge 
                           provider={mainOpportunity.provider}
-                          size="sm"
+                          size="xs"
                         />
                       )}
                     </div>
                   </div>
                 </div>
-                <Badge className={`${isMobile ? 'text-[8px] px-1.5 py-0' : 'text-[10px] px-2 py-0.5'} whitespace-nowrap ${formatEffortLevel(mainOpportunity.implementation_effort).color}`}>
+                <Badge className={`${isMobile ? 'text-[8px] px-1.5 py-0 max-w-[70px]' : 'text-[10px] px-2 py-0.5 max-w-[100px]'} whitespace-nowrap truncate ${formatEffortLevel(mainOpportunity.implementation_effort).color}`}>
                   {formatEffortLevel(mainOpportunity.implementation_effort).label}
                 </Badge>
               </div>
-              <p className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-muted-foreground my-1 line-clamp-1 ml-${isMobile ? '5' : '6'}`}>
+              <p className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-muted-foreground my-1 truncate whitespace-nowrap overflow-hidden ml-${isMobile ? '5' : '6'}`}>
                 {mainOpportunity.description}
               </p>
-              
-              <div className={`mt-1 mb-1 ml-${isMobile ? '5' : '6'}`}>
-                <div className="flex justify-between items-center text-xs mb-0.5">
-                  <span className={isMobile ? 'text-[10px]' : ''}>Contribution</span>
-                  <span className={`font-medium ${isMobile ? 'text-[10px]' : ''}`}>{calculatePercentage(mainOpportunity.estimated_savings).toFixed(1)}%</span>
-                </div>
-                <Progress 
-                  value={calculatePercentage(mainOpportunity.estimated_savings)}
-                  className={cn("h-1", isDark ? "bg-slate-700" : "bg-gray-100")}
-                />
-              </div>
               
               <div className={`flex justify-between items-center mt-1 ml-${isMobile ? '5' : '6'}`}>
                 <div className="flex items-center">
                   <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium ${formatEffortLevel(mainOpportunity.implementation_effort).textColor}`}>
                     {formatSmartCurrency(mainOpportunity.estimated_savings, mainOpportunity.currency)}
                   </span>
-                  <span className={`text-muted-foreground ml-1 ${isMobile ? 'text-[10px]' : 'text-xs'}`}>annual</span>
+                  <span className={`text-muted-foreground ml-1 ${isMobile ? 'text-[10px]' : 'text-xs'}`}>{t('savingsOpportunities.annual')}</span>
                 </div>
                 
                 <Button 
@@ -274,7 +268,7 @@ export function SavingsOpportunitiesCard({
                   className={`h-6 ${isMobile ? 'text-[10px] px-2' : 'text-xs'} ${formatEffortLevel(mainOpportunity.implementation_effort).textColor}`}
                   onClick={() => navigate('/savings-opportunities')}
                 >
-                  <span className="mr-1">Implement</span>
+                  <span className="mr-1">{t('savingsOpportunities.implement')}</span>
                   <ArrowUpRight className="h-3 w-3" />
                 </Button>
               </div>
@@ -282,9 +276,9 @@ export function SavingsOpportunitiesCard({
 
             {/* Lista de outras oportunidades - altura fixa para garantir posicionamento estático da paginação */}
             <div className="flex-1 flex flex-col">
-              <div className="space-y-1.5 h-[190px] overflow-hidden">
-                {/* Sempre renderiza exatamente 4 itens na lista (slots) */}
-                {Array.from({ length: 4 }).map((_, slotIdx) => {
+              <div className={`space-y-1.5 overflow-hidden ${isMobile ? 'h-[84px]' : 'h-[190px]'}`}>
+                {/* Sempre renderiza exatamente o número correto de itens na lista (slots) */}
+                {Array.from({ length: maxListItems }).map((_, slotIdx) => {
                   const opportunity = slotIdx < listOpportunities.length ? listOpportunities[slotIdx] : null;
                   
                   // Se não houver oportunidade para este slot, renderiza um item vazio
@@ -314,7 +308,7 @@ export function SavingsOpportunitiesCard({
                     <div 
                       key={`${opportunity.id}-${slotIdx}`} 
                       className={cn(
-                        "flex items-center justify-between p-2 border rounded-lg text-sm cursor-pointer hover:bg-accent/50 transition-colors h-[40px]",
+                        "flex items-center justify-between p-2 border rounded-lg text-sm cursor-pointer hover:bg-accent/50 transition-colors h-[40px] min-h-[40px] max-h-[40px]",
                         isDark 
                           ? "border-slate-700" 
                           : "border-gray-100",
@@ -340,13 +334,13 @@ export function SavingsOpportunitiesCard({
                         />
                         <div className="flex-1">
                           <div className="flex items-center gap-1.5">
-                            <span className="font-medium truncate">
+                            <span className="font-medium truncate text-xs whitespace-nowrap overflow-hidden">
                               {opportunity.opportunity_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </span>
                             {shouldShowProviderTags && opportunity.provider && (
                               <ProviderBadge 
                                 provider={opportunity.provider}
-                                size="sm"
+                                size="xs"
                               />
                             )}
                           </div>
@@ -361,12 +355,13 @@ export function SavingsOpportunitiesCard({
               </div>
             </div>
             
-            {/* Paginação - posição fixa na parte inferior */}
-            {shouldShowPagination && (
-              <div className={cn(
-                "flex justify-center items-center border-t pt-2 h-8 mt-auto",
-                isDark ? "border-slate-700" : "border-gray-100"
-              )}>
+            {/* Paginação - área fixa na parte inferior */}
+            <div className={cn(
+              "flex justify-center items-center pt-2 h-8 mt-auto",
+              shouldShowPagination && "border-t",
+              isDark ? "border-slate-700" : "border-gray-100"
+            )}>
+              {shouldShowPagination && (
                 <div className="text-xs flex items-center justify-center">
                   <Button 
                     variant="ghost" 
@@ -388,8 +383,8 @@ export function SavingsOpportunitiesCard({
                     <ChevronRight className="h-3 w-3" />
                   </Button>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
             </div>
         ) : (
           <div className={cn(

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 interface RoundedGaugeProps {
@@ -143,6 +144,8 @@ export function HealthRoundedGauge({
   strokeWidth?: number;
   showTitle?: boolean;
 }) {
+  const { t } = useTranslation();
+  
   const getHealthColor = (val: number) => {
     if (val >= 85) return '#10b981'; // emerald-600
     if (val >= 70) return '#3b82f6'; // blue-500
@@ -152,11 +155,11 @@ export function HealthRoundedGauge({
   };
   
   const getHealthLabel = (val: number) => {
-    if (val >= 85) return 'Excellent';
-    if (val >= 70) return 'Good';
-    if (val >= 50) return 'Fair';
-    if (val >= 30) return 'Poor';
-    return 'Critical';
+    if (val >= 85) return t('optimizationScore.healthLabels.excellent');
+    if (val >= 70) return t('optimizationScore.healthLabels.good');
+    if (val >= 50) return t('optimizationScore.healthLabels.fair');
+    if (val >= 30) return t('optimizationScore.healthLabels.poor');
+    return t('optimizationScore.healthLabels.critical');
   };
   
   const healthColor = getHealthColor(value);
@@ -206,9 +209,6 @@ export function HealthRoundedGauge({
             style={{ color: healthColor }}
           >
             {healthLabel}
-          </div>
-          <div className="text-xs text-muted-foreground">
-            Health Score
           </div>
         </div>
       )}

@@ -46,7 +46,11 @@
     },
     "all": "All",
     "apply": "Apply",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "dataRefreshed": "Data refreshed",
+    "allDataUpdated": "All dashboard data has been updated successfully",
+    "refreshFailed": "Refresh failed",
+    "refreshFailedDescription": "Failed to refresh some data. Please try again."
   },
   "spendSummary": {
     "title": "Spend Summary",
@@ -97,6 +101,28 @@
     "title": "FinOps Compliance",
     "practicesInCompliance": "practices in compliance"
   },
+  "optimizationScore": {
+    "title": "Optimization Score",
+    "criticalIssues": "Critical Issues",
+    "savingsPotential": "Savings Potential",
+    "compliance": "Compliance",
+    "anomalies": "anomalies",
+    "opportunities": "opportunities",
+    "compliant": "compliant",
+    "impact": "impact",
+    "potential": "potential",
+    "bestPractices": "best practices",
+    "issues": "Issues",
+    "savings": "Savings",
+    "score": "score",
+    "healthLabels": {
+      "excellent": "Excellent",
+      "good": "Good",
+      "fair": "Fair",
+      "poor": "Poor",
+      "critical": "Critical"
+    }
+  },
   "resourceUtilization": {
     "title": "Resource Utilization",
     "averageUtilization": "Average resource utilization"
@@ -104,12 +130,14 @@
   "savingsOpportunities": {
     "title": "Savings Opportunities",
     "opportunities": "Opportunities",
+    "opportunitiesShort": "Opportunities",
     "noOpportunitiesFound": "No savings opportunities found.",
     "effortLow": "Low",
     "effortMedium": "Medium", 
     "effortHigh": "High",
     "contribution": "Contribution",
     "implement": "Implement",
+    "annual": "annual",
     "perMonth": "/month"
   },
   "topServices": {

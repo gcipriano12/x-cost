@@ -73,6 +73,16 @@ export interface APIError {
   status_code: number;
 }
 
+// Tipos para Account Distribution
+export interface AccountDistribution {
+  account_id: string;
+  billing_account_name: string;
+  provider_name: string;
+  total_cost: string; // API retorna como string
+  percentage: string; // API retorna como string
+  cost_change?: number | null;
+}
+
 // Tipos para Dashboard Summary - Atualizado para corresponder à API real
 export interface DashboardSummary {
   metrics: {
@@ -98,6 +108,7 @@ export interface DashboardSummary {
     percentage: string; // API retorna como string
     cost_change: number | null;
   }[];
+  account_distribution?: AccountDistribution[]; // Optional - only when provider filter is applied
   highlights: {
     next_month_forecast: {
       amount: number;

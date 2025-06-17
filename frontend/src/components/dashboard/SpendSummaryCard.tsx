@@ -18,12 +18,22 @@ interface ProviderBreakdown {
   color: string;
 }
 
+interface AccountBreakdown {
+  accountId: string;
+  accountName?: string; // For backwards compatibility
+  billing_account_name?: string; // Primary field from backend
+  value: number;
+  color: string;
+}
+
 interface SpendSummaryProps {
   totalSpend: number;
   currency: string;
   previousPeriodChange: number;
   sparklineData: number[];
   providerBreakdown?: ProviderBreakdown[];
+  accountBreakdown?: AccountBreakdown[];
+  selectedProvider?: string; // Add selected provider to determine which distribution to show
   wastedSpend?: number;
   budgetLimit?: number;
   budgetConsumed?: number;
@@ -57,6 +67,8 @@ export function SpendSummaryCard({
     { name: 'GCP', value: 12, color: getProviderColor('GCP') },
     { name: 'Oracle Cloud', value: 8, color: getProviderColor('Oracle Cloud') }
   ],
+  accountBreakdown,
+  selectedProvider,
   wastedSpend = totalSpend * 0.15,
   budgetLimit = totalSpend * 1.2,
   budgetConsumed = 75,
@@ -115,10 +127,43 @@ export function SpendSummaryCard({
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   };
 
-  // Calcular valores absolutos para cada provedor
-  const providerValues = providerBreakdown.map(provider => ({
-    ...provider,
-    absoluteValue: (provider.value / 100) * totalSpend
+  // Determine which distribution to show based on selected provider
+  const showAccountDistribution = selectedProvider && accountBreakdown && accountBreakdown.length > 0;
+  const distributionTitle = showAccountDistribution 
+    ? t('spendSummary.accountDistribution') 
+    : t('spendSummary.providerDistribution');
+
+  // Function to generate account colors based on account index
+  const generateAccountColor = (index: number): string => {
+    const accountColors = [
+      '#FBB040', // Orange
+      '#4A9EF1', // Blue
+      '#7BA7F7', // Light blue
+      '#F87171', // Red
+      '#34D399', // Green
+      '#A78BFA', // Purple
+      '#67E8F9', // Cyan
+      '#F472B6', // Pink
+      '#9CA3AF', // Gray
+      '#FDE047', // Yellow
+    ];
+    return accountColors[index % accountColors.length];
+  };
+
+  // Prepare account breakdown with colors if not already set
+  const processedAccountBreakdown = accountBreakdown?.map((account, index) => ({
+    ...account,
+    color: account.color || generateAccountColor(index)
+  })) || [];
+
+  // Calcular valores absolutos para cada item (provider ou account)
+  const currentBreakdown = showAccountDistribution ? processedAccountBreakdown : providerBreakdown;
+  const distributionValues = currentBreakdown.map(item => ({
+    ...item,
+    absoluteValue: (item.value / 100) * totalSpend,
+    displayName: showAccountDistribution 
+      ? (item as AccountBreakdown).billing_account_name || (item as AccountBreakdown).accountName || (item as AccountBreakdown).accountId
+      : item.name
   }));
 
   // Função para intensificar cores mantendo a identidade de cada provedor
@@ -174,13 +219,13 @@ export function SpendSummaryCard({
     return borderColors[originalColor] || originalColor;
   };
 
-  // Dados para o gráfico de pizza com cores originais dos provedores e glassmorphism
-  const pieData = providerValues.map(provider => ({
-    name: provider.name,
-    value: provider.value,
-    absoluteValue: provider.absoluteValue,
-    color: hexToRgba(intensifyColor(provider.color), 0.4), // Usar cor intensificada do provedor com transparência
-    originalColor: provider.color // Manter cor original para borders
+  // Dados para o gráfico de pizza com cores originais e glassmorphism
+  const pieData = distributionValues.map(item => ({
+    name: item.displayName,
+    value: item.value,
+    absoluteValue: item.absoluteValue,
+    color: hexToRgba(intensifyColor(item.color), 0.4), // Usar cor intensificada com transparência
+    originalColor: item.color // Manter cor original para borders
   }));
   
   const RADIAN = Math.PI / 180;
@@ -479,7 +524,7 @@ export function SpendSummaryCard({
           
           <div className="col-span-12 md:col-span-4">
             <div className="flex items-center mb-2">
-              <p className="text-sm text-muted-foreground">{t('spendSummary.providerDistribution')}</p>
+              <p className="text-sm text-muted-foreground">{distributionTitle}</p>
             </div>
 
             <div className="h-64 w-full relative">

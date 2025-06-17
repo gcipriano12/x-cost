@@ -985,6 +985,66 @@ class DashboardAnalyzer:
         self.cost_analyzer = CostAnalyzer(db)
         self.budget_analyzer = BudgetAnalyzer(db)
     
+    def _calculate_account_distribution(self, start_date: date, end_date: date, provider_name: str) -> List[Dict[str, Any]]:
+        """Calcula distribuição de custos por billing account para um provider específico"""
+        try:
+            # Query para obter custos por account dentro do provider
+            account_costs_query = self.db.query(
+                FocusCostData.billing_account_id,
+                FocusCostData.billing_account_name,
+                FocusCostData.provider_name,
+                func.sum(FocusCostData.effective_cost).label('total_cost')
+            ).filter(
+                and_(
+                    FocusCostData.billing_period_start >= start_date,
+                    FocusCostData.billing_period_start <= end_date,
+                    FocusCostData.provider_name == provider_name,
+                    FocusCostData.billing_account_name.isnot(None),
+                    FocusCostData.billing_account_name != '',
+                    FocusCostData.effective_cost > 0
+                )
+            ).group_by(
+                FocusCostData.billing_account_id,
+                FocusCostData.billing_account_name,
+                FocusCostData.provider_name
+            ).order_by(
+                func.sum(FocusCostData.effective_cost).desc()
+            ).all()
+
+            if not account_costs_query:
+                return []
+
+            # Calcular custo total do provider para percentuais
+            total_provider_cost = sum(float(row.total_cost) for row in account_costs_query)
+            
+            if total_provider_cost == 0:
+                return []
+
+            # Construir lista de distribuição
+            distribution = []
+            for row in account_costs_query:
+                account_cost = float(row.total_cost)
+                percentage = (account_cost / total_provider_cost) * 100
+                
+                distribution.append({
+                    'account_id': row.billing_account_id or 'unknown',
+                    'billing_account_name': row.billing_account_name,
+                    'provider_name': row.provider_name,
+                    'total_cost': f"{account_cost:.2f}",
+                    'percentage': f"{percentage:.1f}",
+                    'cost_change': None  # TODO: Implementar comparação com período anterior se necessário
+                })
+
+            # Validação: verificar se percentuais somam próximo de 100%
+            total_percentage = sum(float(item['percentage']) for item in distribution)
+            logger.info(f"Account distribution calculated for {provider_name}: {len(distribution)} accounts, total percentage: {total_percentage:.1f}%")
+            
+            return distribution
+            
+        except Exception as e:
+            logger.error(f"Error calculating account distribution for {provider_name}: {str(e)}")
+            return []
+
     @cached(ttl=900, key_prefix="dashboard_summary")  # Cache por 15 minutos
     def get_dashboard_summary(self, period_days: int = 30, provider_name: Optional[str] = None) -> Dict[str, Any]:
         """Gera resumo completo para o dashboard"""
@@ -1005,10 +1065,16 @@ class DashboardAnalyzer:
             # 3. Highlights especiais
             highlights = self._calculate_highlights(start_date, end_date, provider_name)
             
+            # 4. Distribuição por accounts (apenas quando provider específico é selecionado)
+            account_distribution = None
+            if provider_name:
+                account_distribution = self._calculate_account_distribution(start_date, end_date, provider_name)
+            
             return {
                 'metrics': metrics,
                 'provider_distribution': provider_distribution,
                 'highlights': highlights,
+                'account_distribution': account_distribution,
                 'generated_at': datetime.utcnow(),
                 'period': {
                     'start_date': start_date,

@@ -309,9 +309,19 @@ class DashboardHighlights(BaseModel):
     estimated_waste: Dict[str, Any]
     savings_achieved: Dict[str, Any]
 
+class AccountDistribution(BaseModel):
+    """Distribuição de custos por conta de billing"""
+    account_id: str
+    billing_account_name: str
+    provider_name: str
+    total_cost: str
+    percentage: str
+    cost_change: Optional[float] = None
+
 class DashboardSummary(BaseModel):
     metrics: DashboardMetrics
     provider_distribution: List[ProviderDistribution]
     highlights: DashboardHighlights
+    account_distribution: Optional[List[AccountDistribution]] = None  # Quando provider específico selecionado
     generated_at: datetime
     period: Dict[str, Any]

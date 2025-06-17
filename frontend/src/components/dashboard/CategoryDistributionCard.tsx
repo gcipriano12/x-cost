@@ -270,9 +270,10 @@ export function CategoryDistributionCard({ data, currency, isLoading = false }: 
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-1 flex-shrink-0">
         <div className="flex items-center">
-          <CardTitle className="flex items-center text-lg font-medium whitespace-nowrap">
+          <CardTitle className="flex items-center text-lg font-medium">
             <Disc className="mr-2 h-5 w-5 text-XCost-blue" />
-            {t('categoryDistribution.title')}
+            <span className="hidden lg:inline">{t('categoryDistribution.title')}</span>
+            <span className="lg:hidden">{t('categoryDistribution.titleShort')}</span>
           </CardTitle>
         </div>
       </CardHeader>

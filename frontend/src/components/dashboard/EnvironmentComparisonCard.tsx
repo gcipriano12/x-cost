@@ -79,7 +79,8 @@ export function EnvironmentComparisonCard({ environments, currency }: Environmen
             "h-5 w-5 mr-2", 
             isDark ? "text-blue-400" : "text-blue-500"
           )} />
-          {t('environmentComparison.title')}
+          <span className="hidden lg:inline">{t('environmentComparison.title')}</span>
+          <span className="lg:hidden">{t('environmentComparison.titleShort')}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-grow px-4 pt-2 pb-3 overflow-auto">

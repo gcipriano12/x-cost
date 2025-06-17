@@ -226,9 +226,10 @@ export function AnomaliesCard({ provider, days = 30, autoRefresh = true }: Anoma
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-1 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center text-lg font-medium whitespace-nowrap">
+          <CardTitle className="flex items-center text-lg font-medium">
             <AlertTriangle className="mr-2 h-5 w-5 text-amber-500" />
-{isMobile ? t('common.anomalies') : t('anomalies.detected')}
+            <span className="hidden lg:inline">{t('anomalies.detected')}</span>
+            <span className="lg:hidden">{t('common.anomalies')}</span>
           </CardTitle>
           <div className="flex items-center space-x-2">
             <div className={`whitespace-nowrap ${isMobile ? 'text-lg' : 'text-xl'} font-bold ${headerTextColorClass}`}>

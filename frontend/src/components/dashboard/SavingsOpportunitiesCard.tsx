@@ -215,7 +215,8 @@ export function SavingsOpportunitiesCard({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center text-lg font-medium">
             <Lightbulb className={cn("mr-2 h-5 w-5", isDark ? "text-green-400" : "text-XCost-green")} />
-            {isMobile ? t('savingsOpportunities.opportunitiesShort') : t('common.savingsOpportunities')}
+            <span className="hidden lg:inline">{t('common.savingsOpportunities')}</span>
+            <span className="lg:hidden">{t('savingsOpportunities.opportunitiesShort')}</span>
           </CardTitle>
           <div className="flex items-center space-x-2">
             <div className={`whitespace-nowrap ${isMobile ? 'text-lg' : 'text-xl'} font-bold ${headerTextColorClass}`}>

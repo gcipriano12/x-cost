@@ -155,7 +155,8 @@ export function RegionHeatmapCard({ data, currency }: RegionHeatmapCardProps) {
       <CardHeader className="pb-2 flex-shrink-0">
         <CardTitle className="flex items-center text-base font-semibold">
           <MapPin className="h-5 w-5 mr-2 text-green-500" />
-          {t('regionHeatmap.title')}
+          <span className="hidden lg:inline">{t('regionHeatmap.title')}</span>
+          <span className="lg:hidden">{t('regionHeatmap.titleShort')}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-grow px-4 pt-2 pb-3 overflow-auto">

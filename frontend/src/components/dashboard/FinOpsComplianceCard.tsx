@@ -80,7 +80,8 @@ export function FinOpsComplianceCard({ items }: FinOpsComplianceCardProps) {
             "mr-2 h-5 w-5",
             isDark ? "text-green-400" : "text-XCost-green"
           )} />
-          {t('finOpsCompliance.title')}
+          <span className="hidden lg:inline">{t('finOpsCompliance.title')}</span>
+          <span className="lg:hidden">{t('finOpsCompliance.titleShort')}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-grow pb-3 flex flex-col">

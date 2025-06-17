@@ -78,6 +78,7 @@
   },
   "spendingForecast": {
     "title": "Spending Forecast",
+    "titleShort": "Forecast",
     "forecastExceedsBudget": "Forecast exceeds budget",
     "budget": "Budget",
     "actualSpend": "Actual spend",
@@ -89,17 +90,20 @@
     "title": "Spending by Team"
   },
   "regionHeatmap": {
-    "title": "Cost Heatmap by Region"
+    "title": "Cost Heatmap by Region",
+    "titleShort": "Heatmap"
   },
   "newServices": {
     "title": "New Services"
   },
   "environmentComparison": {
     "title": "Environment Comparison",
+    "titleShort": "Environments",
     "efficiency": "Efficiency:"
   },
   "finOpsCompliance": {
     "title": "FinOps Compliance",
+    "titleShort": "Compliance",
     "practicesInCompliance": "practices in compliance"
   },
   "optimizationScore": {
@@ -126,6 +130,7 @@
   },
   "resourceUtilization": {
     "title": "Resource Utilization",
+    "titleShort": "Utilization",
     "averageUtilization": "Average resource utilization"
   },
   "savingsOpportunities": {
@@ -152,6 +157,7 @@
   
   "categoryDistribution": {
     "title": "Category Distribution",
+    "titleShort": "Categories",
     "percentOfTotal": "% of total",
     "noData": "No category data available",
     "categories": {
@@ -391,6 +397,7 @@
   },
   "calendar": {
     "title": "Cost Events Calendar",
+    "titleShort": "Calendar",
     "months": [
       "January", "February", "March", "April", "May", "June", 
       "July", "August", "September", "October", "November", "December"

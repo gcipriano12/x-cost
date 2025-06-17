@@ -102,7 +102,8 @@ export function ResourceUtilizationCard({ resources }: ResourceUtilizationCardPr
       <CardHeader className="pb-2 flex-shrink-0">
         <CardTitle className="flex items-center text-lg font-medium">
           <Activity className="mr-2 h-5 w-5 text-amber-500" />
-          {t('resourceUtilization.title')}
+          <span className="hidden lg:inline">{t('resourceUtilization.title')}</span>
+          <span className="lg:hidden">{t('resourceUtilization.titleShort')}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-grow pb-3 flex flex-col">

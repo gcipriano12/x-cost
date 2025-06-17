@@ -156,7 +156,8 @@ export function CostEventCalendarCard({ events }: CostEventCalendarCardProps) {
               "h-5 w-5 mr-2",
               isDark ? "text-blue-400" : "text-XCost-blue"
             )} />
-            {t('calendar.title')}
+            <span className="hidden lg:inline">{t('calendar.title')}</span>
+            <span className="lg:hidden">{t('calendar.titleShort')}</span>
           </CardTitle>
           
           {/* Controles de navegação do calendário - reorganizados para mobile */}

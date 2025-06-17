@@ -247,7 +247,7 @@ export function AnomaliesCard({ provider, days = 30, autoRefresh = true }: Anoma
                   <AlertTriangle className={`h-5 w-5 mr-2 ${formatSeverity(mainAnomaly.severity).textColor}`} />
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <h4 className={`font-medium text-sm ${formatSeverity(mainAnomaly.severity).textColor} truncate whitespace-nowrap overflow-hidden max-w-[120px]`}>
+                      <h4 className="font-medium text-sm text-white truncate whitespace-nowrap overflow-hidden max-w-[120px]">
                         {mainAnomaly.provider} {mainAnomaly.service}
                       </h4>
                       {shouldShowProviderTags && (

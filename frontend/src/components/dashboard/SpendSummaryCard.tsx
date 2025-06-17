@@ -150,6 +150,12 @@ export function SpendSummaryCard({
     return accountColors[index % accountColors.length];
   };
 
+  // Função para truncar nomes longos
+  const truncateAccountName = (name: string, maxLength: number = 25): string => {
+    if (name.length <= maxLength) return name;
+    return name.substring(0, maxLength - 3) + '...';
+  };
+
   // Prepare account breakdown with colors if not already set
   const processedAccountBreakdown = accountBreakdown?.map((account, index) => ({
     ...account,
@@ -162,6 +168,9 @@ export function SpendSummaryCard({
     ...item,
     absoluteValue: (item.value / 100) * totalSpend,
     displayName: showAccountDistribution 
+      ? (item as AccountBreakdown).billing_account_name || (item as AccountBreakdown).accountName || (item as AccountBreakdown).accountId
+      : item.name,
+    fullDisplayName: showAccountDistribution 
       ? (item as AccountBreakdown).billing_account_name || (item as AccountBreakdown).accountName || (item as AccountBreakdown).accountId
       : item.name
   }));
@@ -221,7 +230,8 @@ export function SpendSummaryCard({
 
   // Dados para o gráfico de pizza com cores originais e glassmorphism
   const pieData = distributionValues.map(item => ({
-    name: item.displayName,
+    name: truncateAccountName(item.displayName, 25), // Nome truncado para display
+    fullName: item.fullDisplayName, // Nome completo para tooltip
     value: item.value,
     absoluteValue: item.absoluteValue,
     color: hexToRgba(intensifyColor(item.color), 0.4), // Usar cor intensificada com transparência
@@ -305,41 +315,64 @@ export function SpendSummaryCard({
     const { payload } = props;
     
     return (
-      <div className={cn(
-        "flex flex-col space-y-2 text-sm",
-        isMobile ? "flex-row flex-wrap justify-center gap-4 space-y-0" : ""
-      )}>
-        {payload.map((entry: any, index: number) => {
-          // Encontrar os dados correspondentes do pieData
-          const pieEntry = pieData.find(item => item.name === entry.value);
-          const backgroundColor = pieEntry ? pieEntry.color : entry.color; // Cor transparente como na pizza
-          const borderColor = pieEntry ? getBorderColor(pieEntry.originalColor) : entry.color; // Borda vibrante como na pizza
-          
-          return (
-            <div key={`legend-${index}`} className="flex items-center space-x-2">
-              {/* Quadrado com mesmo estilo da pizza: fundo transparente + borda vibrante */}
-              <div
-                className="w-3 h-3 rounded-sm"
-                style={{
-                  backgroundColor: backgroundColor, // Cor transparente igual à pizza
-                  border: `1px solid ${borderColor}`, // Borda vibrante igual à pizza (mesma espessura das fatias)
-                  backdropFilter: 'blur(10px)', // Mesmo efeito glassmorphism da pizza
-                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' // Mesma sombra da pizza
-                }}
-              />
-              <span 
-                className="font-semibold" 
-                style={{ 
-                  color: isDark ? "#F8FAFC" : "#0F172A",
-                  textShadow: isDark ? "0 1px 2px rgba(0,0,0,0.8)" : "0 1px 2px rgba(0,0,0,0.1)"
-                }}
-              >
-                {entry.value}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+      <TooltipProvider>
+        <div className={cn(
+          "flex flex-col space-y-2 text-sm",
+          isMobile ? "flex-row flex-wrap justify-center gap-4 space-y-0" : ""
+        )}>
+          {payload.map((entry: any, index: number) => {
+            // Encontrar os dados correspondentes do pieData
+            const pieEntry = pieData.find(item => item.name === entry.value);
+            const backgroundColor = pieEntry ? pieEntry.color : entry.color; // Cor transparente como na pizza
+            const borderColor = pieEntry ? getBorderColor(pieEntry.originalColor) : entry.color; // Borda vibrante como na pizza
+            const fullName = pieEntry?.fullName || entry.value;
+            const isNameTruncated = fullName.length > 25;
+            
+            const legendItem = (
+              <div key={`legend-${index}`} className="flex items-center space-x-2 cursor-default">
+                {/* Quadrado com mesmo estilo da pizza: fundo transparente + borda vibrante */}
+                <div
+                  className="w-3 h-3 rounded-sm flex-shrink-0"
+                  style={{
+                    backgroundColor: backgroundColor, // Cor transparente igual à pizza
+                    border: `1px solid ${borderColor}`, // Borda vibrante igual à pizza (mesma espessura das fatias)
+                    backdropFilter: 'blur(10px)', // Mesmo efeito glassmorphism da pizza
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' // Mesma sombra da pizza
+                  }}
+                />
+                <span 
+                  className={cn(
+                    "font-semibold text-left leading-tight",
+                    isMobile ? "text-xs" : "text-sm"
+                  )}
+                  style={{ 
+                    color: isDark ? "#F8FAFC" : "#0F172A",
+                    textShadow: isDark ? "0 1px 2px rgba(0,0,0,0.8)" : "0 1px 2px rgba(0,0,0,0.1)"
+                  }}
+                >
+                  {entry.value}
+                </span>
+              </div>
+            );
+
+            // Se o nome foi truncado, envolver em tooltip
+            if (isNameTruncated) {
+              return (
+                <Tooltip key={`legend-${index}`}>
+                  <TooltipTrigger asChild>
+                    {legendItem}
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs break-words">{fullName}</p>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            }
+
+            return legendItem;
+          })}
+        </div>
+      </TooltipProvider>
     );
   };
 
@@ -350,12 +383,12 @@ export function SpendSummaryCard({
       
       return (
         <div className={cn(
-          "p-3 border rounded-md shadow-md",
+          "p-3 border rounded-md shadow-md max-w-xs",
           isDark 
             ? "bg-slate-800 border-slate-700 text-white" 
             : "bg-white border-gray-200 text-slate-900"
         )}>
-          <p className="font-medium text-sm mb-1">{data.name}</p>
+          <p className="font-medium text-sm mb-1 break-words">{data.fullName || data.name}</p>
           <p className="text-sm">
             <span className="font-semibold">{formatCurrency(data.absoluteValue)}</span>
           </p>
@@ -570,7 +603,7 @@ export function SpendSummaryCard({
                     content={<CustomLegend />}
                     wrapperStyle={isMobile ? 
                       { paddingTop: '10px' }
-                      : {}
+                      : { paddingLeft: '15px', marginLeft: '10px' }
                     }
                   />
                   <RechartsTooltip 

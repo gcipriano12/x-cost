@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, ArrowUpRight, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { ProviderBadge } from '@/components/ui/provider-badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
@@ -10,23 +11,27 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAnomalies } from '@/hooks/useOptimization';
-import { formatSeverity, formatCurrency, formatRelativeTime, sortByPriority } from '@/utils/optimizationUtils';
+import { formatSeverity, sortByPriority } from '@/utils/optimizationUtils';
 
-// Função para obter a cor da badge do provider
-const getProviderBadgeColor = (provider: string) => {
-  switch (provider?.toLowerCase()) {
-    case 'aws':
-      return 'bg-orange-100 text-orange-700 border-orange-200';
-    case 'azure':
-      return 'bg-blue-100 text-blue-700 border-blue-200';
-    case 'gcp':
-    case 'google':
-      return 'bg-green-100 text-green-700 border-green-200';
-    case 'oracle':
-      return 'bg-red-500 text-white border-red-600';
-    default:
-      return 'bg-gray-100 text-gray-700 border-gray-200';
+// Função para formatar valores de forma inteligente (igual ao SavingsCard)
+const formatSmartCurrency = (amount: number, currency: string = 'USD'): string => {
+  if (amount >= 10000) {
+    // Para valores >= $10,000, usar formato com K
+    return `${(amount / 1000).toFixed(1)}K ${currency}`;
+  } else {
+    // Para valores menores, usar formato normal sem decimais
+    return `$${Math.round(amount).toLocaleString()}`;
   }
+};
+
+// Helper function to get severity color for dots
+const getSeverityDotColor = (severity: string): string => {
+  const severityStyle = formatSeverity(severity as any);
+  if (severityStyle.textColor.includes('green')) return '#10b981';
+  if (severityStyle.textColor.includes('yellow') || severityStyle.textColor.includes('amber')) return '#f59e0b';
+  if (severityStyle.textColor.includes('orange')) return '#f97316';
+  if (severityStyle.textColor.includes('red')) return '#ef4444';
+  return '#ef4444'; // default to red for critical
 };
 
 interface AnomaliesCardProps {
@@ -59,12 +64,14 @@ export function AnomaliesCard({ provider, days = 30, autoRefresh = true }: Anoma
   
   // Sort anomalies by priority and get top ones
   const sortedAnomalies = sortByPriority.anomalies(anomalies || []);
-  const itemsPerPage = 6; // 1 principal + 5 na lista
+  const itemsPerPage = 5; // 1 principal + 4 na lista
   const startIndex = currentIndex * itemsPerPage;
   const displayAnomalies = sortedAnomalies.slice(startIndex, startIndex + itemsPerPage);
   
   // Calculate total impact from all anomalies
   const totalImpact = sortedAnomalies.reduce((sum, anomaly) => sum + anomaly.cost_impact, 0);
+  
+  const headerTextColorClass = isDark ? "text-amber-400" : "text-amber-600";
   
   // Estado para rastrear a anomalia selecionada
   const [selectedAnomaly, setSelectedAnomaly] = useState<string | null>(null);
@@ -84,22 +91,22 @@ export function AnomaliesCard({ provider, days = 30, autoRefresh = true }: Anoma
       // mas mantemos a lista original sem reordenar
       mainAnomaly = selected;
       // A lista mantém os outros itens na ordem original, excluindo apenas o selecionado
-      listAnomalies = displayAnomalies.filter(anomaly => anomaly.id !== selected.id).slice(0, 5);
+      listAnomalies = displayAnomalies.filter(anomaly => anomaly.id !== selected.id).slice(0, 4);
     }
   } else {
     // Quando não há seleção, usar a lógica normal
-    listAnomalies = displayAnomalies.slice(1, 6);
+    listAnomalies = displayAnomalies.slice(1, 5);
   }
   
-  // Garantir que sempre tenhamos 5 itens na lista, buscando de outras páginas se necessário
-  if (listAnomalies.length < 5) {
+  // Garantir que sempre tenhamos 4 itens na lista, buscando de outras páginas se necessário
+  if (listAnomalies.length < 4) {
     let nextPageIndex = currentIndex + 1;
-    while (listAnomalies.length < 5 && nextPageIndex * itemsPerPage < sortedAnomalies.length) {
+    while (listAnomalies.length < 4 && nextPageIndex * itemsPerPage < sortedAnomalies.length) {
       const nextPageStart = nextPageIndex * itemsPerPage;
       const nextPageAnomalies = sortedAnomalies.slice(nextPageStart, nextPageStart + itemsPerPage);
       
       for (const anomaly of nextPageAnomalies) {
-        if (anomaly.id !== mainAnomaly.id && listAnomalies.length < 5) {
+        if (anomaly.id !== mainAnomaly.id && listAnomalies.length < 4) {
           listAnomalies.push(anomaly);
         }
       }
@@ -189,9 +196,6 @@ export function AnomaliesCard({ provider, days = 30, autoRefresh = true }: Anoma
               <AlertTriangle className="mr-2 h-5 w-5 text-amber-500" />
               {isMobile ? 'Anomalies' : 'Anomalies Detected'}
             </CardTitle>
-            <Button variant="ghost" size="sm" onClick={refetch}>
-              <RefreshCw className="h-4 w-4" />
-            </Button>
           </div>
         </CardHeader>
         <CardContent className="flex-grow p-3 pt-2 pb-3">
@@ -217,28 +221,15 @@ export function AnomaliesCard({ provider, days = 30, autoRefresh = true }: Anoma
             {isMobile ? 'Anomalies' : 'Anomalies Detected'}
           </CardTitle>
           <div className="flex items-center space-x-2">
-            {severityCounts.critical > 0 && (
-              <Badge className={formatSeverity('critical').color}>
-                {severityCounts.critical} CRITICAL
-              </Badge>
-            )}
-            {severityCounts.high > 0 && (
-              <Badge className={formatSeverity('high').color}>
-                {severityCounts.high} HIGH
-              </Badge>
-            )}
-            <span className="text-xl font-bold text-amber-500">{sortedAnomalies.length}</span>
-            {lastUpdated && (
-              <Button variant="ghost" size="sm" onClick={refetch} title="Refresh">
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            )}
+            <div className={`whitespace-nowrap ${isMobile ? 'text-lg' : 'text-xl'} font-bold ${headerTextColorClass}`}>
+              {formatSmartCurrency(totalImpact)}
+            </div>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="flex-grow p-3 pt-2 pb-0 overflow-auto">
+      <CardContent className="flex-grow p-3 overflow-hidden relative">
           {displayAnomalies.length > 0 ? (
-          <div className="flex flex-col">
+          <div className="h-full flex flex-col">
             {/* Card principal */}
             <div className={`flex-shrink-0 p-2 rounded-lg border mb-1.5 ${formatSeverity(mainAnomaly.severity).bgColor} ${formatSeverity(mainAnomaly.severity).borderColor}`}>
               <div className="flex justify-between items-start">
@@ -250,9 +241,10 @@ export function AnomaliesCard({ provider, days = 30, autoRefresh = true }: Anoma
                         {mainAnomaly.provider} {mainAnomaly.service}
                       </h4>
                       {shouldShowProviderTags && (
-                        <Badge className={cn("text-[10px] px-1.5 py-0", getProviderBadgeColor(mainAnomaly.provider))}>
-                          {mainAnomaly.provider.toUpperCase()}
-                        </Badge>
+                        <ProviderBadge 
+                          provider={mainAnomaly.provider}
+                          size="sm"
+                        />
                       )}
                     </div>
                   </div>
@@ -271,7 +263,7 @@ export function AnomaliesCard({ provider, days = 30, autoRefresh = true }: Anoma
                 <div className="flex items-center text-xs">
                   <span className="text-muted-foreground mr-1">Impact:</span>
                   <span className={`font-medium ${formatSeverity(mainAnomaly.severity).textColor}`}>
-                    {formatCurrency(mainAnomaly.cost_impact, mainAnomaly.currency, 'en-US', true)}
+                    {formatSmartCurrency(mainAnomaly.cost_impact, mainAnomaly.currency)}
                   </span>
                 </div>
                 
@@ -287,121 +279,113 @@ export function AnomaliesCard({ provider, days = 30, autoRefresh = true }: Anoma
               </div>
             </div>
 
-            {/* Lista de outras anomalias */}
-            <div className="space-y-1">
-              {/* Sempre renderiza exatamente 5 itens na lista (slots) */}
-              {Array.from({ length: 5 }).map((_, slotIdx) => {
-                const anomaly = slotIdx < listAnomalies.length ? listAnomalies[slotIdx] : null;
-                
-                // Se não houver anomalia para este slot, renderiza um item vazio
-                if (!anomaly) {
+            {/* Lista de outras anomalias - altura fixa para garantir posicionamento estático da paginação */}
+            <div className="flex-1 flex flex-col">
+              <div className="space-y-1.5 h-[196px] overflow-hidden">
+                {/* Sempre renderiza exatamente 4 itens na lista (slots) */}
+                {Array.from({ length: 4 }).map((_, slotIdx) => {
+                  const anomaly = slotIdx < listAnomalies.length ? listAnomalies[slotIdx] : null;
+                  
+                  // Se não houver anomalia para este slot, renderiza um item vazio
+                  if (!anomaly) {
+                    return (
+                      <div 
+                        key={`empty-slot-${slotIdx}`} 
+                        className={cn(
+                          "flex items-center justify-between p-2 border rounded-lg text-sm opacity-0 h-[40px]",
+                          isDark 
+                            ? "border-slate-700"
+                            : "border-gray-100"
+                        )}
+                      >
+                        <div className="flex items-center flex-1">
+                          <div className="h-2 w-2 rounded-full mr-2" />
+                          <span className="font-medium truncate">Item vazio</span>
+                        </div>
+                        <span className="font-medium ml-2">$0</span>
+                      </div>
+                    );
+                  }
+                  
+                  const severityStyle = formatSeverity(anomaly.severity);
+                  
                   return (
                     <div 
-                      key={`empty-slot-${slotIdx}`} 
+                      key={`${anomaly.id}-${slotIdx}`} 
                       className={cn(
-                        "flex items-center justify-between p-1.5 border rounded-lg text-xs opacity-0",
+                        "flex items-center justify-between p-2 border rounded-lg text-sm cursor-pointer hover:bg-accent/50 transition-colors h-[40px]",
                         isDark 
-                          ? "border-slate-700"
-                          : "border-gray-100"
+                          ? "border-slate-700" 
+                          : "border-gray-100",
+                        selectedAnomaly === anomaly.id && "ring-1 ring-primary"
                       )}
-                    >
-                      <div className="flex items-center flex-1">
-                        <div className="h-2 w-2 rounded-full mr-2" />
-                        <span className="font-medium truncate">Item vazio</span>
-                      </div>
-                      <span className="font-medium ml-2">$0</span>
-                    </div>
-                  );
-                }
-                
-                const severityStyle = formatSeverity(anomaly.severity);
-                
-                return (
-                  <div 
-                    key={`${anomaly.id}-${slotIdx}`} 
-                    className={cn(
-                      "flex items-center justify-between p-1.5 border rounded-lg text-xs cursor-pointer hover:bg-accent/50 transition-colors",
-                      isDark 
-                        ? "border-slate-700" 
-                        : "border-gray-100",
-                      selectedAnomaly === anomaly.id && "ring-1 ring-primary"
-                    )}
-                    onClick={() => {
-                      setSelectedAnomaly(anomaly.id);
-                      setCurrentIndex(Math.floor(sortedAnomalies.findIndex(a => a.id === anomaly.id) / itemsPerPage));
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
+                      onClick={() => {
                         setSelectedAnomaly(anomaly.id);
                         setCurrentIndex(Math.floor(sortedAnomalies.findIndex(a => a.id === anomaly.id) / itemsPerPage));
-                      }
-                    }}
-                  >
-                    <div className="flex items-center flex-1">
-                      <div 
-                        className="h-2 w-2 rounded-full mr-2"
-                        style={{backgroundColor: severityStyle.icon}}
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-medium truncate">
-                            {anomaly.provider} {anomaly.service}
-                          </span>
-                          {shouldShowProviderTags && (
-                            <Badge className={cn("text-[8px] px-1 py-0", getProviderBadgeColor(anomaly.provider))}>
-                              {anomaly.provider.toUpperCase()}
-                            </Badge>
-                          )}
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          setSelectedAnomaly(anomaly.id);
+                          setCurrentIndex(Math.floor(sortedAnomalies.findIndex(a => a.id === anomaly.id) / itemsPerPage));
+                        }
+                      }}
+                    >
+                      <div className="flex items-center flex-1">
+                        <div 
+                          className="h-2 w-2 rounded-full mr-2"
+                          style={{backgroundColor: getSeverityDotColor(anomaly.severity)}}
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-medium truncate">
+                              {anomaly.provider} {anomaly.service}
+                            </span>
+                            {shouldShowProviderTags && (
+                              <ProviderBadge 
+                                provider={anomaly.provider}
+                                size="sm"
+                              />
+                            )}
+                          </div>
                         </div>
                       </div>
+                      <span className={cn(
+                        "font-medium ml-2 whitespace-nowrap",
+                        isMobile && "text-[10px]",
+                        severityStyle.textColor
+                      )}>
+                        {formatSmartCurrency(anomaly.cost_impact, anomaly.currency)}
+                      </span>
                     </div>
-                    <span className={cn(
-                      "font-medium ml-2 whitespace-nowrap",
-                      isMobile && "text-[10px]",
-                      severityStyle.textColor
-                    )}>
-                      {formatCurrency(anomaly.cost_impact, anomaly.currency, 'en-US', true)}
-                    </span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
             
-            {/* Total Impact Summary */}
-            <div className={cn(
-              "mt-2 pt-2 border-t flex justify-between items-center",
-              isDark ? "border-slate-700" : "border-gray-100"
-            )}>
-              <span className="text-sm font-medium">Total Impact:</span>
-              <span className="text-sm font-bold text-amber-500">
-                {formatCurrency(totalImpact, 'USD', 'en-US', true)}
-              </span>
-            </div>
-            
-            {/* Paginação - só exibe se tiver mais de 1 página */}
+            {/* Paginação - posição fixa na parte inferior */}
             {shouldShowPagination && (
               <div className={cn(
-                "flex justify-center items-center border-t mt-3 py-1",
+                "flex justify-center items-center border-t pt-2 h-8 mt-auto",
                 isDark ? "border-slate-700" : "border-gray-100"
               )}>
-                <div className="text-xs flex items-center">
+                <div className="text-xs flex items-center justify-center">
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-6 w-6" 
+                    className="h-6 w-6 flex items-center justify-center" 
                     onClick={handlePrevious}
                   >
                     <ChevronLeft className="h-3 w-3" />
                   </Button>
-                  <span className="px-1 text-muted-foreground">
+                  <span className="px-1 text-muted-foreground flex items-center">
                     {currentIndex + 1}/{totalPages}
                   </span>
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-6 w-6" 
+                    className="h-6 w-6 flex items-center justify-center" 
                     onClick={handleNext}
                   >
                     <ChevronRight className="h-3 w-3" />

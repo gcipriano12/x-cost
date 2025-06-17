@@ -22,6 +22,7 @@ import CostGuard from "./pages/CostGuard";
 import MyCommitments from "./pages/MyCommitments";
 import CommitmentsLog from "./pages/CommitmentsLog";
 import Anomalies from "./pages/Anomalies";
+import SavingsOpportunities from "./pages/SavingsOpportunities";
 import Reports from "./pages/Reports";
 import Governance from "./pages/Governance";
 import Analytics from "./pages/Analytics";
@@ -52,6 +53,7 @@ const App = () => (
               <Route path="/my-commitments" element={<ProtectedRoute><MyCommitments /></ProtectedRoute>} />
               <Route path="/commitments-log" element={<ProtectedRoute><CommitmentsLog /></ProtectedRoute>} />
               <Route path="/anomalies" element={<ProtectedRoute><Anomalies /></ProtectedRoute>} />
+              <Route path="/savings-opportunities" element={<ProtectedRoute><SavingsOpportunities /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
               <Route path="/governance" element={<ProtectedRoute><Governance /></ProtectedRoute>} />
               <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />

@@ -17,6 +17,7 @@ import {
   CalendarCheck, 
   ClipboardList, 
   AlertTriangle, 
+  DollarSign,
   FileText, 
   GanttChart, 
 } from 'lucide-react';
@@ -47,7 +48,8 @@ export const SidebarSections = () => {
     { name: t('common.costGuard'), href: '/costguard', icon: <ShieldCheck className="h-5 w-5" /> },
     { name: t('common.myCommitments'), href: '/my-commitments', icon: <CalendarCheck className="h-5 w-5" /> },
     { name: t('common.commitmentsLog'), href: '/commitments-log', icon: <ClipboardList className="h-5 w-5" /> },
-    { name: t('common.anomalies'), href: '/anomalies', icon: <AlertTriangle className="h-5 w-5" /> }
+    { name: t('common.anomalies'), href: '/anomalies', icon: <AlertTriangle className="h-5 w-5" /> },
+    { name: t('common.savingsOpportunities'), href: '/savings-opportunities', icon: <DollarSign className="h-5 w-5" /> }
   ];
 
   // Seção Operate

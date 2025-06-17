@@ -4,6 +4,7 @@ import { CheckCircle, Lightbulb, ArrowUpRight, ChevronLeft, ChevronRight, Refres
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ProviderBadge } from '@/components/ui/provider-badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
@@ -12,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useNavigate } from 'react-router-dom';
 import { useSavingsOpportunities } from '@/hooks/useOptimization';
-import { formatEffortLevel, formatCurrency, sortByPriority } from '@/utils/optimizationUtils';
+import { formatEffortLevel, sortByPriority } from '@/utils/optimizationUtils';
 
 // Função para formatar valores de forma inteligente
 const formatSmartCurrency = (amount: number, currency: string = 'USD'): string => {
@@ -25,21 +26,12 @@ const formatSmartCurrency = (amount: number, currency: string = 'USD'): string =
   }
 };
 
-// Função para obter a cor da badge do provider
-const getProviderBadgeColor = (provider: string) => {
-  switch (provider?.toLowerCase()) {
-    case 'aws':
-      return 'bg-orange-100 text-orange-700 border-orange-200';
-    case 'azure':
-      return 'bg-blue-100 text-blue-700 border-blue-200';
-    case 'gcp':
-    case 'google':
-      return 'bg-green-100 text-green-700 border-green-200';
-    case 'oracle':
-      return 'bg-red-500 text-white border-red-600';
-    default:
-      return 'bg-gray-100 text-gray-700 border-gray-200';
-  }
+// Helper function to get effort color for dots
+const getEffortDotColor = (effort: string): string => {
+  const effortStyle = formatEffortLevel(effort as any);
+  if (effortStyle.textColor.includes('green')) return '#10b981';
+  if (effortStyle.textColor.includes('yellow') || effortStyle.textColor.includes('amber')) return '#f59e0b';
+  return '#ef4444'; // red for high effort
 };
 
 interface SavingsOpportunitiesCardProps {
@@ -80,7 +72,7 @@ export function SavingsOpportunitiesCard({
   
   // Sort and process opportunities
   const sortedOpportunities = sortByPriority.opportunities(opportunities || []);
-  const itemsPerPage = 6; // 1 principal + 5 na lista
+  const itemsPerPage = 5; // 1 principal + 4 na lista
   const startIndex = currentIndex * itemsPerPage;
   const displayOpportunities = sortedOpportunities.slice(startIndex, startIndex + itemsPerPage);
   
@@ -138,22 +130,22 @@ export function SavingsOpportunitiesCard({
       // mas mantemos a lista original sem reordenar
       mainOpportunity = selected;
       // A lista mantém os outros itens na ordem original, excluindo apenas o selecionado
-      listOpportunities = displayOpportunities.filter(opp => opp.id !== selected.id).slice(0, 5);
+      listOpportunities = displayOpportunities.filter(opp => opp.id !== selected.id).slice(0, 4);
     }
   } else {
     // Quando não há seleção, usar a lógica normal
-    listOpportunities = displayOpportunities.slice(1, 6);
+    listOpportunities = displayOpportunities.slice(1, 5);
   }
   
-  // Garantir que sempre tenhamos 5 itens na lista, buscando de outras páginas se necessário
-  if (listOpportunities.length < 5) {
+  // Garantir que sempre tenhamos 4 itens na lista, buscando de outras páginas se necessário
+  if (listOpportunities.length < 4) {
     let nextPageIndex = currentIndex + 1;
-    while (listOpportunities.length < 5 && nextPageIndex * itemsPerPage < sortedOpportunities.length) {
+    while (listOpportunities.length < 4 && nextPageIndex * itemsPerPage < sortedOpportunities.length) {
       const nextPageStart = nextPageIndex * itemsPerPage;
       const nextPageOpportunities = sortedOpportunities.slice(nextPageStart, nextPageStart + itemsPerPage);
       
       for (const opp of nextPageOpportunities) {
-        if (opp.id !== mainOpportunity.id && listOpportunities.length < 5) {
+        if (opp.id !== mainOpportunity.id && listOpportunities.length < 4) {
           listOpportunities.push(opp);
         }
       }
@@ -196,9 +188,6 @@ export function SavingsOpportunitiesCard({
               <Lightbulb className="mr-2 h-5 w-5 text-green-500" />
               {isMobile ? 'Opportunities' : 'Savings Opportunities'}
             </CardTitle>
-            <Button variant="ghost" size="sm" onClick={refetch}>
-              <RefreshCw className="h-4 w-4" />
-            </Button>
           </div>
         </CardHeader>
         <CardContent className="flex-grow p-3 pt-2 pb-3">
@@ -227,17 +216,12 @@ export function SavingsOpportunitiesCard({
             <div className={`whitespace-nowrap ${isMobile ? 'text-lg' : 'text-xl'} font-bold ${headerTextColorClass}`}>
               {formatSmartCurrency(totalPotentialSavings)}
             </div>
-            {lastUpdated && (
-              <Button variant="ghost" size="sm" onClick={refetch} title="Refresh">
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            )}
           </div>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 p-3 pt-2 pb-0 overflow-auto flex flex-col">
+      <CardContent className="flex-grow p-3 overflow-hidden relative">
         {displayOpportunities.length > 0 && mainOpportunity ? (
-          <div className="flex flex-col flex-1">
+          <div className="h-full flex flex-col">
             {/* Card principal */}
             <div className={`flex-shrink-0 p-2 rounded-lg border mb-1.5 ${formatEffortLevel(mainOpportunity.implementation_effort).bgColor} ${formatEffortLevel(mainOpportunity.implementation_effort).borderColor}`}>
               <div className="flex justify-between items-start">
@@ -249,14 +233,15 @@ export function SavingsOpportunitiesCard({
                         {mainOpportunity.opportunity_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                       </h4>
                       {shouldShowProviderTags && mainOpportunity.provider && (
-                        <Badge className={cn("text-[10px] px-1.5 py-0", getProviderBadgeColor(mainOpportunity.provider))}>
-                          {mainOpportunity.provider.toUpperCase()}
-                        </Badge>
+                        <ProviderBadge 
+                          provider={mainOpportunity.provider}
+                          size="sm"
+                        />
                       )}
                     </div>
                   </div>
                 </div>
-                <Badge className={`${isMobile ? 'text-[10px] px-1.5 py-0' : 'text-xs px-2 py-0.5'} ${formatEffortLevel(mainOpportunity.implementation_effort).color}`}>
+                <Badge className={`${isMobile ? 'text-[8px] px-1.5 py-0' : 'text-[10px] px-2 py-0.5'} whitespace-nowrap ${formatEffortLevel(mainOpportunity.implementation_effort).color}`}>
                   {formatEffortLevel(mainOpportunity.implementation_effort).label}
                 </Badge>
               </div>
@@ -278,7 +263,7 @@ export function SavingsOpportunitiesCard({
               <div className={`flex justify-between items-center mt-1 ml-${isMobile ? '5' : '6'}`}>
                 <div className="flex items-center">
                   <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium ${formatEffortLevel(mainOpportunity.implementation_effort).textColor}`}>
-                    {formatCurrency(mainOpportunity.estimated_savings, mainOpportunity.currency, 'en-US', true)}
+                    {formatSmartCurrency(mainOpportunity.estimated_savings, mainOpportunity.currency)}
                   </span>
                   <span className={`text-muted-foreground ml-1 ${isMobile ? 'text-[10px]' : 'text-xs'}`}>annual</span>
                 </div>
@@ -295,106 +280,109 @@ export function SavingsOpportunitiesCard({
               </div>
             </div>
 
-            {/* Lista de outras oportunidades */}
-            <div className="space-y-1">
-              {/* Sempre renderiza exatamente 5 itens na lista (slots) */}
-              {Array.from({ length: 5 }).map((_, slotIdx) => {
-                const opportunity = slotIdx < listOpportunities.length ? listOpportunities[slotIdx] : null;
-                
-                // Se não houver oportunidade para este slot, renderiza um item vazio
-                if (!opportunity) {
+            {/* Lista de outras oportunidades - altura fixa para garantir posicionamento estático da paginação */}
+            <div className="flex-1 flex flex-col">
+              <div className="space-y-1.5 h-[190px] overflow-hidden">
+                {/* Sempre renderiza exatamente 4 itens na lista (slots) */}
+                {Array.from({ length: 4 }).map((_, slotIdx) => {
+                  const opportunity = slotIdx < listOpportunities.length ? listOpportunities[slotIdx] : null;
+                  
+                  // Se não houver oportunidade para este slot, renderiza um item vazio
+                  if (!opportunity) {
+                    return (
+                      <div 
+                        key={`empty-slot-${slotIdx}`} 
+                        className={cn(
+                          "flex items-center justify-between p-2 border rounded-lg text-sm opacity-0 h-[40px]",
+                          isDark 
+                            ? "border-slate-700"
+                            : "border-gray-100"
+                        )}
+                      >
+                        <div className="flex items-center flex-1">
+                          <div className="h-2 w-2 rounded-full mr-2" />
+                          <span className="font-medium truncate">Item vazio</span>
+                        </div>
+                        <span className="font-medium ml-2">$0</span>
+                      </div>
+                    );
+                  }
+                  
+                  const effortStyle = formatEffortLevel(opportunity.implementation_effort);
+                  
                   return (
                     <div 
-                      key={`empty-slot-${slotIdx}`} 
+                      key={`${opportunity.id}-${slotIdx}`} 
                       className={cn(
-                        "flex items-center justify-between p-1.5 border rounded-lg text-xs opacity-0",
+                        "flex items-center justify-between p-2 border rounded-lg text-sm cursor-pointer hover:bg-accent/50 transition-colors h-[40px]",
                         isDark 
-                          ? "border-slate-700"
-                          : "border-gray-100"
+                          ? "border-slate-700" 
+                          : "border-gray-100",
+                        selectedOpportunity === opportunity.id && "ring-1 ring-primary"
                       )}
-                    >
-                      <div className="flex items-center flex-1">
-                        <div className="h-2 w-2 rounded-full mr-2" />
-                        <span className="font-medium truncate">Item vazio</span>
-                      </div>
-                      <span className="font-medium ml-2">$0</span>
-                    </div>
-                  );
-                }
-                
-                const effortStyle = formatEffortLevel(opportunity.implementation_effort);
-                
-                return (
-                  <div 
-                    key={`${opportunity.id}-${slotIdx}`} 
-                    className={cn(
-                      "flex items-center justify-between p-1.5 border rounded-lg text-xs cursor-pointer hover:bg-accent/50 transition-colors",
-                      isDark 
-                        ? "border-slate-700" 
-                        : "border-gray-100",
-                      selectedOpportunity === opportunity.id && "ring-1 ring-primary"
-                    )}
-                    onClick={() => {
-                      setSelectedOpportunity(opportunity.id);
-                      setCurrentIndex(Math.floor(sortedOpportunities.findIndex(opp => opp.id === opportunity.id) / itemsPerPage));
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
+                      onClick={() => {
                         setSelectedOpportunity(opportunity.id);
                         setCurrentIndex(Math.floor(sortedOpportunities.findIndex(opp => opp.id === opportunity.id) / itemsPerPage));
-                      }
-                    }}
-                  >
-                    <div className="flex items-center flex-1">
-                      <div 
-                        className="h-2 w-2 rounded-full mr-2"
-                        style={{backgroundColor: effortStyle.textColor.includes('green') ? '#22c55e' : effortStyle.textColor.includes('amber') ? '#f59e0b' : '#ef4444'}}
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-medium truncate">
-                            {opportunity.opportunity_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                          </span>
-                          {shouldShowProviderTags && opportunity.provider && (
-                            <Badge className={cn("text-[8px] px-1 py-0", getProviderBadgeColor(opportunity.provider))}>
-                              {opportunity.provider.toUpperCase()}
-                            </Badge>
-                          )}
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          setSelectedOpportunity(opportunity.id);
+                          setCurrentIndex(Math.floor(sortedOpportunities.findIndex(opp => opp.id === opportunity.id) / itemsPerPage));
+                        }
+                      }}
+                    >
+                      <div className="flex items-center flex-1">
+                        <div 
+                          className="h-2 w-2 rounded-full mr-2"
+                          style={{backgroundColor: getEffortDotColor(opportunity.implementation_effort)}}
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-medium truncate">
+                              {opportunity.opportunity_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </span>
+                            {shouldShowProviderTags && opportunity.provider && (
+                              <ProviderBadge 
+                                provider={opportunity.provider}
+                                size="sm"
+                              />
+                            )}
+                          </div>
                         </div>
                       </div>
+                      <span className={`font-medium ml-2 ${effortStyle.textColor}`}>
+                        {formatSmartCurrency(opportunity.estimated_savings, opportunity.currency)}
+                      </span>
                     </div>
-                    <span className={`font-medium ml-2 ${effortStyle.textColor}`}>
-                      {formatCurrency(opportunity.estimated_savings, opportunity.currency, 'en-US', true)}
-                    </span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
             
-            {/* Paginação - só exibe se tiver mais de 1 página */}
+            {/* Paginação - posição fixa na parte inferior */}
             {shouldShowPagination && (
               <div className={cn(
-                "flex justify-center items-center border-t mt-2 pt-1",
+                "flex justify-center items-center border-t pt-2 h-8 mt-auto",
                 isDark ? "border-slate-700" : "border-gray-100"
               )}>
-                <div className="text-xs flex items-center">
+                <div className="text-xs flex items-center justify-center">
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-6 w-6" 
+                    className="h-6 w-6 flex items-center justify-center" 
                     onClick={handlePrevious}
                   >
                     <ChevronLeft className="h-3 w-3" />
                   </Button>
-                  <span className="px-1 text-muted-foreground">
+                  <span className="px-1 text-muted-foreground flex items-center">
                     {currentIndex + 1}/{totalPages}
                   </span>
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-6 w-6" 
+                    className="h-6 w-6 flex items-center justify-center" 
                     onClick={handleNext}
                   >
                     <ChevronRight className="h-3 w-3" />

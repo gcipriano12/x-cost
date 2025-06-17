@@ -52,7 +52,33 @@ export const optimizationService = {
     apiClient.get<string[]>('/api/v1/optimization/providers'),
 
   getTypes: () =>
-    apiClient.get<string[]>('/api/v1/optimization/types')
+    apiClient.get<string[]>('/api/v1/optimization/types'),
+
+  // Bulk actions
+  bulkActionOpportunities: (data: {
+    action: string;
+    opportunity_ids: string[];
+    plan_id?: string;
+    notes?: string;
+  }) =>
+    apiClient.post('/api/v1/savings-opportunities/bulk-action', data),
+
+  // Implementation plans
+  getImplementationPlans: (filters?: {
+    status?: string;
+    page?: number;
+    per_page?: number;
+  }) =>
+    apiClient.get('/api/v1/implementation-plans', { params: filters }),
+
+  createImplementationPlan: (data: {
+    name: string;
+    description: string;
+    opportunity_ids?: string[];
+    timeline_months?: number;
+    risk_assessment?: string;
+  }) =>
+    apiClient.post('/api/v1/implementation-plans', data)
 };
 
 // Hook for anomalies
@@ -198,6 +224,10 @@ export const useAnomalies = ({
 
 // Hook for savings opportunities
 interface UseSavingsOpportunitiesOptions extends SavingsFilters {
+  implementation_effort?: string;
+  risk_level?: string;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
   autoRefresh?: boolean;
   refreshInterval?: number;
 }
@@ -223,8 +253,12 @@ export const useSavingsOpportunities = ({
   max_savings,
   category,
   confidence_level,
+  implementation_effort,
+  risk_level,
   service_name,
   search,
+  sort_by,
+  sort_order,
   page = 1,
   per_page = 10,
   autoRefresh = false,
@@ -242,7 +276,7 @@ export const useSavingsOpportunities = ({
   const lastParamsRef = useRef<string>('');
 
   const fetchSavings = useCallback(async (showLoadingState = true) => {
-    const currentParams = `savings-${provider || 'all'}-${days}-${min_savings || 0}-${max_savings || 0}-${category || ''}-${confidence_level || ''}-${service_name || ''}-${search || ''}-${page}-${per_page}`;
+    const currentParams = `savings-${provider || 'all'}-${days}-${min_savings || 0}-${max_savings || 0}-${category || ''}-${confidence_level || ''}-${implementation_effort || ''}-${risk_level || ''}-${service_name || ''}-${search || ''}-${sort_by || ''}-${sort_order || ''}-${page}-${per_page}`;
     
     if (isLoadingRef.current) {
       return;
@@ -271,8 +305,12 @@ export const useSavingsOpportunities = ({
         max_savings,
         category,
         confidence_level,
+        implementation_effort,
+        risk_level,
         service_name,
         search,
+        sort_by,
+        sort_order,
         page,
         per_page
       });
@@ -307,7 +345,7 @@ export const useSavingsOpportunities = ({
       isLoadingRef.current = false;
       if (showLoadingState) setLoading(false);
     }
-  }, [provider, days, min_savings, max_savings, category, confidence_level, service_name, search, page, per_page, toast, data?.length]);
+  }, [provider, days, min_savings, max_savings, category, confidence_level, implementation_effort, risk_level, service_name, search, sort_by, sort_order, page, per_page, toast, data?.length]);
 
   const refetch = useCallback(async () => {
     lastParamsRef.current = '';
@@ -315,11 +353,11 @@ export const useSavingsOpportunities = ({
   }, [fetchSavings]);
 
   useEffect(() => {
-    const currentParams = `savings-${provider || 'all'}-${days}-${min_savings || 0}-${max_savings || 0}-${category || ''}-${confidence_level || ''}-${service_name || ''}-${search || ''}-${page}-${per_page}`;
+    const currentParams = `savings-${provider || 'all'}-${days}-${min_savings || 0}-${max_savings || 0}-${category || ''}-${confidence_level || ''}-${implementation_effort || ''}-${risk_level || ''}-${service_name || ''}-${search || ''}-${sort_by || ''}-${sort_order || ''}-${page}-${per_page}`;
     if (currentParams !== lastParamsRef.current) {
       fetchSavings(true);
     }
-  }, [provider, days, min_savings, max_savings, category, confidence_level, service_name, search, page, per_page, fetchSavings]);
+  }, [provider, days, min_savings, max_savings, category, confidence_level, implementation_effort, risk_level, service_name, search, sort_by, sort_order, page, per_page, fetchSavings]);
 
   // Auto-refresh
   useEffect(() => {
@@ -656,5 +694,231 @@ export const useOptimizationMetadata = () => {
     types,
     loading,
     error
+  };
+};
+
+// Hook for bulk actions on savings opportunities
+export const useBulkActions = () => {
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const performBulkAction = useCallback(async (
+    action: string,
+    opportunityIds: string[],
+    options?: { planId?: string; notes?: string }
+  ) => {
+    try {
+      setLoading(true);
+      
+      const response = await optimizationService.bulkActionOpportunities({
+        action,
+        opportunity_ids: opportunityIds,
+        plan_id: options?.planId,
+        notes: options?.notes
+      });
+
+      toast({
+        title: "Bulk action completed",
+        description: `Successfully ${action.replace('_', ' ')} ${opportunityIds.length} opportunities`,
+      });
+
+      return response.data;
+    } catch (err: unknown) {
+      const errorMessage = getErrorMessage(err, 'Error performing bulk action');
+      toast({
+        title: "Bulk action failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  return {
+    performBulkAction,
+    loading
+  };
+};
+
+// Hook for implementation plans
+interface UseImplementationPlansOptions {
+  status?: string;
+  page?: number;
+  per_page?: number;
+  autoRefresh?: boolean;
+  refreshInterval?: number;
+}
+
+interface ImplementationPlan {
+  id: string;
+  name: string;
+  description: string;
+  opportunity_ids: string[];
+  estimated_total_savings: number;
+  timeline_months: number;
+  risk_assessment: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface UseImplementationPlansReturn {
+  data: ImplementationPlan[];
+  total: number;
+  loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+  createPlan: (planData: {
+    name: string;
+    description: string;
+    opportunity_ids?: string[];
+    timeline_months?: number;
+    risk_assessment?: string;
+  }) => Promise<ImplementationPlan>;
+  pagination: {
+    page: number;
+    per_page: number;
+    total_pages: number;
+  };
+}
+
+export const useImplementationPlans = ({
+  status,
+  page = 1,
+  per_page = 20,
+  autoRefresh = false,
+  refreshInterval = 5 * 60 * 1000
+}: UseImplementationPlansOptions = {}): UseImplementationPlansReturn => {
+  const [data, setData] = useState<ImplementationPlan[]>([]);
+  const [total, setTotal] = useState(0);
+  const [pagination, setPagination] = useState({ page: 1, per_page: 20, total_pages: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+  
+  const isLoadingRef = useRef(false);
+  const lastParamsRef = useRef<string>('');
+
+  const fetchPlans = useCallback(async (showLoadingState = true) => {
+    const currentParams = `plans-${status || 'all'}-${page}-${per_page}`;
+    
+    if (isLoadingRef.current) {
+      return;
+    }
+    
+    if (currentParams === lastParamsRef.current && !showLoadingState && (data?.length ?? 0) > 0) {
+      return;
+    }
+    
+    try {
+      isLoadingRef.current = true;
+      
+      if (showLoadingState || currentParams !== lastParamsRef.current) {
+        lastParamsRef.current = currentParams;
+      }
+      
+      if (showLoadingState) setLoading(true);
+      setError(null);
+
+      const response = await optimizationService.getImplementationPlans({
+        status,
+        page,
+        per_page
+      });
+
+      setData(response.data.plans);
+      setTotal(response.data.total_count);
+      setPagination({
+        page: response.data.page,
+        per_page: response.data.per_page,
+        total_pages: response.data.total_pages
+      });
+
+      if (!showLoadingState && (data?.length ?? 0) > 0) {
+        toast({
+          title: "Plans updated",
+          description: "Implementation plans refreshed successfully",
+        });
+      }
+    } catch (err: unknown) {
+      const errorMessage = getErrorMessage(err, 'Error loading implementation plans');
+      setError(errorMessage);
+      
+      if (showLoadingState) {
+        toast({
+          title: "Error loading plans",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
+    } finally {
+      isLoadingRef.current = false;
+      if (showLoadingState) setLoading(false);
+    }
+  }, [status, page, per_page, toast, data?.length]);
+
+  const createPlan = useCallback(async (planData: {
+    name: string;
+    description: string;
+    opportunity_ids?: string[];
+    timeline_months?: number;
+    risk_assessment?: string;
+  }) => {
+    try {
+      const response = await optimizationService.createImplementationPlan(planData);
+      
+      toast({
+        title: "Plan created",
+        description: `Implementation plan "${planData.name}" created successfully`,
+      });
+
+      // Refresh the plans list
+      await fetchPlans(false);
+      
+      return response.data.plan;
+    } catch (err: unknown) {
+      const errorMessage = getErrorMessage(err, 'Error creating implementation plan');
+      toast({
+        title: "Error creating plan",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      throw err;
+    }
+  }, [fetchPlans, toast]);
+
+  const refetch = useCallback(async () => {
+    lastParamsRef.current = '';
+    await fetchPlans(true);
+  }, [fetchPlans]);
+
+  useEffect(() => {
+    const currentParams = `plans-${status || 'all'}-${page}-${per_page}`;
+    if (currentParams !== lastParamsRef.current) {
+      fetchPlans(true);
+    }
+  }, [status, page, per_page, fetchPlans]);
+
+  // Auto-refresh
+  useEffect(() => {
+    if (!autoRefresh) return;
+
+    const interval = setInterval(() => {
+      fetchPlans(false);
+    }, refreshInterval);
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, refreshInterval, fetchPlans]);
+
+  return {
+    data,
+    total,
+    loading,
+    error,
+    refetch,
+    createPlan,
+    pagination
   };
 };

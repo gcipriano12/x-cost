@@ -39,14 +39,22 @@ export interface SavingsOpportunity {
   service: string;
   region?: string;
   opportunity_type: OpportunityType;
-  estimated_savings: number;
-  currency: string;
-  confidence_level: number;
-  implementation_effort: EffortLevel;
+  title: string;
   description: string;
-  resources_affected: string[];
-  action_required: string;
+  category: string;
+  monthly_savings: number;
+  annual_savings?: number;
+  estimated_savings: number; // Legacy field for compatibility
+  currency: string;
+  confidence_level: string; // 'high', 'medium', 'low'
+  confidence: number; // Numeric confidence level (0-100)
+  implementation_effort: EffortLevel;
+  implementation_effort_hours?: number;
   risk_level: RiskLevel;
+  affected_resources: string[];
+  resource_name?: string;
+  action_required: string;
+  detected_at: string;
   created_at: string;
 }
 
@@ -68,22 +76,49 @@ export interface OptimizationRecommendation {
   created_at: string;
 }
 
-// Optimization Summary Interface
+// Optimization Summary Interface - updated to match API response
 export interface OptimizationSummary {
-  total_anomalies: number;
-  total_opportunities: number;
-  total_recommendations: number;
-  total_estimated_savings: number;
-  optimization_score: number;
-  health_status: HealthStatus;
-  currency: string;
-  last_updated: string;
-  providers_summary: Record<string, {
-    anomalies_count: number;
-    opportunities_count: number;
-    estimated_savings: number;
+  anomalies: {
+    total_count: number;
+    total_cost_impact: number;
+    severity_breakdown: {
+      high: number;
+      medium: number;
+      low: number;
+      critical: number;
+    };
+    top_anomaly: {
+      description: string;
+      cost_impact: number;
+      severity: string;
+    };
+  };
+  savings_opportunities: {
+    total_count: number;
+    total_potential_savings: number;
+    top_opportunity: {
+      description: string;
+      potential_savings: number;
+      category: string;
+    };
+  };
+  recommendations: {
+    total_count: number;
+    type_breakdown: Record<string, unknown>;
+    high_priority_count: number;
+  };
+  optimization_metrics: {
     optimization_score: number;
-  }>;
+    total_potential_impact: number;
+    health_status: HealthStatus;
+  };
+  metadata: {
+    provider: string | null;
+    analysis_scope: string;
+    last_updated: string;
+    processing_time_seconds: number;
+    requested_by: string;
+  };
 }
 
 // API Response Types
@@ -138,6 +173,8 @@ export interface AnomaliesFilters extends OptimizationFilters {
 export interface SavingsFilters extends OptimizationFilters {
   max_savings?: number;
   confidence_level?: string;
+  implementation_effort?: string;
+  risk_level?: string;
   service_name?: string;
   search?: string;
   sort_by?: string;

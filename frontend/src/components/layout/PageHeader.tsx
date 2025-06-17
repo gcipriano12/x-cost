@@ -8,7 +8,7 @@ import { LucideIcon } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, RefreshCw } from 'lucide-react';
 
 interface PageHeaderProps {
   icon: LucideIcon;
@@ -24,6 +24,8 @@ interface PageHeaderProps {
   customDateRange?: DateRange;
   selectedProvider?: string;
   onProviderChange?: (provider: string) => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export const PageHeader: React.FC<PageHeaderProps> = ({
@@ -39,7 +41,9 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   onCustomDateRange,
   customDateRange,
   selectedProvider,
-  onProviderChange = () => {}
+  onProviderChange = () => {},
+  onRefresh,
+  isRefreshing = false
 }) => {
   const { isDark } = useTheme();
   const isMobile = useIsMobile();
@@ -73,7 +77,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
             <div></div>
           )}
 
-          {/* Coluna 3: Filtros de Tempo (sempre à direita) */}
+          {/* Coluna 3: Filtros de Tempo e Refresh (sempre à direita) */}
           <div className="flex items-center gap-2 justify-start lg:justify-end">
             {showTimeFilter && (
               <TimeFilter
@@ -82,6 +86,22 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
                 onCustomDateRange={onCustomDateRange}
                 currentCustomRange={customDateRange}
               />
+            )}
+            
+            {onRefresh && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={onRefresh} 
+                disabled={isRefreshing}
+                title="Refresh all data"
+                className="h-8 w-8 p-0"
+              >
+                <RefreshCw className={cn(
+                  "h-4 w-4",
+                  isRefreshing && "animate-spin"
+                )} />
+              </Button>
             )}
             
             {actions}

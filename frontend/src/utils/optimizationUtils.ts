@@ -42,33 +42,33 @@ export const formatSeverity = (severity: SeverityLevel) => {
   const severityConfig = {
     critical: {
       color: 'bg-red-500 text-white',
-      textColor: 'text-red-700',
-      bgColor: 'bg-red-50',
-      borderColor: 'border-red-200',
+      textColor: 'text-red-700 dark:text-red-400',
+      bgColor: 'bg-red-50 dark:bg-red-900/50 border border-red-100 dark:border-red-800',
+      borderColor: 'border-red-200/20',
       icon: '🔴',
       label: 'Critical'
     },
     high: {
       color: 'bg-orange-500 text-white',
-      textColor: 'text-orange-700',
-      bgColor: 'bg-orange-50',
-      borderColor: 'border-orange-200',
+      textColor: 'text-orange-700 dark:text-orange-400',
+      bgColor: 'bg-orange-50 dark:bg-orange-900/50 border border-orange-100 dark:border-orange-800',
+      borderColor: 'border-orange-200/20',
       icon: '🟠',
       label: 'High'
     },
     medium: {
       color: 'bg-yellow-500 text-white',
-      textColor: 'text-yellow-700',
-      bgColor: 'bg-yellow-50',
-      borderColor: 'border-yellow-200',
+      textColor: 'text-yellow-700 dark:text-yellow-400',
+      bgColor: 'bg-yellow-50 dark:bg-yellow-900/50 border border-yellow-100 dark:border-yellow-800',
+      borderColor: 'border-yellow-200/20',
       icon: '🟡',
       label: 'Medium'
     },
     low: {
       color: 'bg-green-500 text-white',
-      textColor: 'text-green-700',
-      bgColor: 'bg-green-50',
-      borderColor: 'border-green-200',
+      textColor: 'text-green-700 dark:text-green-400',
+      bgColor: 'bg-green-50 dark:bg-green-900/50 border border-green-100 dark:border-green-800',
+      borderColor: 'border-green-200/20',
       icon: '🟢',
       label: 'Low'
     }
@@ -88,7 +88,23 @@ export const formatEffortLevel = (effort: EffortLevel) => {
       dots: '●○○',
       label: 'Low Effort'
     },
+    'low': {
+      color: 'bg-green-500 text-white',
+      textColor: 'text-XCost-green dark:text-green-400',
+      bgColor: 'bg-green-50 dark:bg-green-900/50 border border-green-100 dark:border-green-800',
+      borderColor: 'border-green-200/20',
+      dots: '●○○',
+      label: 'Low Effort'
+    },
     'Médio': {
+      color: 'bg-yellow-500 text-white',
+      textColor: 'text-yellow-700 dark:text-yellow-400',
+      bgColor: 'bg-yellow-50 dark:bg-yellow-900/50 border border-yellow-100 dark:border-yellow-800',
+      borderColor: 'border-yellow-200/20',
+      dots: '●●○',
+      label: 'Medium Effort'
+    },
+    'medium': {
       color: 'bg-yellow-500 text-white',
       textColor: 'text-yellow-700 dark:text-yellow-400',
       bgColor: 'bg-yellow-50 dark:bg-yellow-900/50 border border-yellow-100 dark:border-yellow-800',
@@ -103,10 +119,18 @@ export const formatEffortLevel = (effort: EffortLevel) => {
       borderColor: 'border-red-200/20',
       dots: '●●●',
       label: 'High Effort'
+    },
+    'high': {
+      color: 'bg-red-500 text-white',
+      textColor: 'text-XCost-red dark:text-red-400',
+      bgColor: 'bg-red-50 dark:bg-red-900/50 border border-red-100 dark:border-red-800',
+      borderColor: 'border-red-200/20',
+      dots: '●●●',
+      label: 'High Effort'
     }
   };
 
-  return effortConfig[effort] || effortConfig['Médio'];
+  return effortConfig[effort] || effortConfig['medium'];
 };
 
 // Risk level badge styling

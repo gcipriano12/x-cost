@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate } from 'react-router-dom';
@@ -8,10 +8,14 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Globe } from 'lucide-react';
 import { DashboardContent } from '@/components/dashboard/DashboardContent';
 import { useDashboardData } from '@/hooks/useDashboardData';
+import { useAnomalies, useSavingsOpportunities } from '@/hooks/useOptimization';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const { t } = useTranslation();
   const { isAuthenticated, loading } = useAuth();
+  const { toast } = useToast();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Obter os dados do dashboard (hooks devem ser chamados antes de qualquer return condicional)
   const {
@@ -39,6 +43,35 @@ const Index = () => {
     regionHeatmapData,
     currency
   } = useDashboardData();
+
+  // Hooks de otimização para refetch
+  const { refetch: refetchAnomalies } = useAnomalies({});
+  const { refetch: refetchSavings } = useSavingsOpportunities({});
+
+  // Função de refresh global
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // Refresh optimization data
+      await Promise.all([
+        refetchAnomalies(),
+        refetchSavings()
+      ]);
+      
+      toast({
+        title: "Data refreshed",
+        description: "All dashboard data has been updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh failed",
+        description: "Failed to refresh some data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Show loading while checking authentication
   if (loading) {
@@ -69,6 +102,8 @@ const Index = () => {
           customDateRange={customDateRange}
           selectedProvider={selectedProvider}
           onProviderChange={setSelectedProvider}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
         />
         
         <div className="p-4 space-y-6">

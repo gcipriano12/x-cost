@@ -76,49 +76,22 @@ export interface OptimizationRecommendation {
   created_at: string;
 }
 
-// Optimization Summary Interface - updated to match API response
+// Optimization Summary Interface
 export interface OptimizationSummary {
-  anomalies: {
-    total_count: number;
-    total_cost_impact: number;
-    severity_breakdown: {
-      high: number;
-      medium: number;
-      low: number;
-      critical: number;
-    };
-    top_anomaly: {
-      description: string;
-      cost_impact: number;
-      severity: string;
-    };
-  };
-  savings_opportunities: {
-    total_count: number;
-    total_potential_savings: number;
-    top_opportunity: {
-      description: string;
-      potential_savings: number;
-      category: string;
-    };
-  };
-  recommendations: {
-    total_count: number;
-    type_breakdown: Record<string, unknown>;
-    high_priority_count: number;
-  };
-  optimization_metrics: {
+  total_anomalies: number;
+  total_opportunities: number;
+  total_recommendations: number;
+  total_estimated_savings: number;
+  optimization_score: number;
+  health_status: HealthStatus;
+  currency: string;
+  last_updated: string;
+  providers_summary: Record<string, {
+    anomalies_count: number;
+    opportunities_count: number;
+    estimated_savings: number;
     optimization_score: number;
-    total_potential_impact: number;
-    health_status: HealthStatus;
-  };
-  metadata: {
-    provider: string | null;
-    analysis_scope: string;
-    last_updated: string;
-    processing_time_seconds: number;
-    requested_by: string;
-  };
+  }>;
 }
 
 // API Response Types

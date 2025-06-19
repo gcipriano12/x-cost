@@ -48,7 +48,7 @@ export function OptimizationScoreCard({
     total: recommendationsTotal,
     loading: recommendationsLoading
   } = useOptimizationRecommendations({ 
-    provider_name: provider,
+    provider: provider,
     per_page: 1 // Just need the count
   });
 
@@ -231,7 +231,7 @@ export function OptimizationScoreCard({
       return providerSpecificData?.efficiencyScore ?? 0;
     } else {
       // When not filtering, calculate weighted average of all providers
-      if (sortedProviders.length === 0) return summary.optimization_metrics?.optimization_score || 0;
+      if (sortedProviders.length === 0) return summary.optimization_score || 0;
       const totalWeight = sortedProviders.reduce((sum, p) => sum + (p.anomalyCount + p.opportunityCount), 0);
       if (totalWeight === 0) {
         // If no weight, use simple average
@@ -247,16 +247,16 @@ export function OptimizationScoreCard({
   };
 
   const score = calculateOverallScore();
-  const healthStatus = summary.optimization_metrics?.health_status || 'needs_attention';
+  const healthStatus = summary.health_status || 'needs_attention';
   const healthStyle = formatHealthStatus(healthStatus);
   const scoreColor = getScoreColor(score);
   const scoreDots = getScoreDots(score, 10);
 
   // Determine trend and status
-  const hasIssues = summary.anomalies?.total_count > 0;
-  const hasOpportunities = summary.savings_opportunities?.total_count > 0;
-  const totalAnomalies = summary.anomalies?.total_count || 0;
-  const totalOpportunities = summary.savings_opportunities?.total_count || 0;
+  const hasIssues = summary.total_anomalies > 0;
+  const hasOpportunities = summary.total_opportunities > 0;
+  const totalAnomalies = summary.total_anomalies || 0;
+  const totalOpportunities = summary.total_opportunities || 0;
 
   // Get dynamic status icon based on score
   const getStatusIcon = (optimizationScore: number) => {
@@ -294,7 +294,6 @@ export function OptimizationScoreCard({
           <div className="flex items-center space-x-2">
             <statusIcon.icon 
               className={`h-4 w-4 ${statusIcon.color}`} 
-              title={statusIcon.title}
             />
           </div>
         </div>

@@ -5,6 +5,8 @@ import { PieChart, BarChart3, Disc } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
+import { useCategoryDistribution } from '@/hooks/useCategoryDistribution';
+import { timeFilterToDays } from '@/utils/timeFrame';
 
 interface CategoryData {
   name: string;
@@ -13,15 +15,43 @@ interface CategoryData {
 }
 
 interface CategoryDistributionProps {
-  data: CategoryData[];
+  data?: CategoryData[]; // Tornar opcional para usar dados reais
   currency: string;
   isLoading?: boolean;
+  timeFilter?: string;
+  providerName?: string;
+  credentialId?: string;
 }
 
-export function CategoryDistributionCard({ data, currency, isLoading = false }: CategoryDistributionProps) {
+export function CategoryDistributionCard({ 
+  data, 
+  currency, 
+  isLoading = false, 
+  timeFilter, 
+  providerName, 
+  credentialId 
+}: CategoryDistributionProps) {
   const { isDark } = useTheme();
   const { t } = useTranslation();
-  const total = data.reduce((sum, category) => sum + category.value, 0);
+  
+  // Usar dados reais da API quando disponível
+  const {
+    categoryData: realCategoryData,
+    loading: categoryLoading,
+    error: categoryError,
+    hasData: hasCategoryData
+  } = useCategoryDistribution({
+    timeFilter: timeFilter || '30d',
+    credentialId,
+    providerName
+  });
+  
+  // Usar apenas dados reais da API - não usar dados mockados como fallback
+  // Garantir que finalData seja sempre um array
+  const finalData = Array.isArray(realCategoryData) ? realCategoryData : [];
+  const finalLoading = categoryLoading;
+  
+  const total = finalData.reduce((sum, category) => sum + category.value, 0);
   
   const formatCurrency = (value: number) => {
     if (value >= 1000000) {
@@ -53,6 +83,10 @@ export function CategoryDistributionCard({ data, currency, isLoading = false }: 
   
   // Função para traduzir nome da categoria
   const translateCategoryName = (categoryName: string) => {
+    if (!categoryName || typeof categoryName !== 'string') {
+      return 'Unknown';
+    }
+    
     const translationKey = `categoryDistribution.categories.${categoryName}`;
     const translated = t(translationKey);
     // Se a tradução não existir, retorna o nome original
@@ -77,6 +111,11 @@ export function CategoryDistributionCard({ data, currency, isLoading = false }: 
 
   // Função para intensificar cores mantendo a identidade de cada categoria
   const intensifyColor = (color: string): string => {
+    // Verificação de segurança
+    if (!color || typeof color !== 'string') {
+      return isDark ? '#EF4444' : '#DC2626'; // Cor padrão vermelha
+    }
+    
     // Mapeamento para cores mais vibrantes baseadas nas categorias
     const intensifiedColors: { [key: string]: string } = {
       '#34D399': '#10B981', // Computation (verde) -> verde vivo
@@ -96,6 +135,11 @@ export function CategoryDistributionCard({ data, currency, isLoading = false }: 
 
   // Função para obter cor de borda específica para cada categoria
   const getBorderColor = (originalColor: string): string => {
+    // Verificação de segurança
+    if (!originalColor || typeof originalColor !== 'string') {
+      return isDark ? '#475569' : '#6B7280'; // Cor padrão cinza
+    }
+    
     // Mapeamento para bordas mais intensas mantendo identidade de cada categoria
     const borderColors: { [key: string]: string } = {
       '#34D399': '#059669', // Computation (verde) -> verde escuro
@@ -113,27 +157,143 @@ export function CategoryDistributionCard({ data, currency, isLoading = false }: 
     return borderColors[originalColor] || originalColor;
   };
 
+  // Loading state
+  if (finalLoading) {
+    return (
+      <Card className="h-full flex flex-col">
+        <CardHeader className="pb-1 flex-shrink-0">
+          <CardTitle className="flex items-center text-lg font-medium whitespace-nowrap">
+            <Disc className="mr-2 h-5 w-5 text-XCost-blue" />
+            {t('dashboard.categoryDistribution')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex-grow p-3">
+          <div className="h-[360px] flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Error state
+  if (categoryError) {
+    return (
+      <Card className="h-full flex flex-col">
+        <CardHeader className="pb-1 flex-shrink-0">
+          <CardTitle className="flex items-center text-lg font-medium whitespace-nowrap">
+            <Disc className="mr-2 h-5 w-5 text-XCost-blue" />
+            {t('dashboard.categoryDistribution')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex-grow p-3">
+          <div className="h-[360px] flex items-center justify-center text-muted-foreground">
+            <div className="text-center">
+              <p className="text-sm">{t('common.errorLoadingData')}</p>
+              <p className="text-xs mt-1">{categoryError}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Empty state - verificar se finalData é array vazio ou não tem dados válidos
+  if (!Array.isArray(finalData) || finalData.length === 0) {
+    return (
+      <Card className="h-full flex flex-col">
+        <CardHeader className="pb-1 flex-shrink-0">
+          <CardTitle className="flex items-center text-lg font-medium whitespace-nowrap">
+            <Disc className="mr-2 h-5 w-5 text-XCost-blue" />
+            {t('dashboard.categoryDistribution')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex-grow p-3">
+          <div className="h-[360px] flex flex-col items-center justify-center text-center">
+            <div className={cn(
+              "w-16 h-16 rounded-full flex items-center justify-center mb-4",
+              isDark ? "bg-slate-800" : "bg-gray-100"
+            )}>
+              <BarChart3 className={cn(
+                "h-8 w-8",
+                isDark ? "text-slate-600" : "text-gray-400"
+              )} />
+            </div>
+            <h3 className={cn(
+              "text-sm font-medium mb-2",
+              isDark ? "text-slate-300" : "text-gray-700"
+            )}>
+              {t('categoryDistribution.noData')}
+            </h3>
+            <p className={cn(
+              "text-xs max-w-xs leading-relaxed",
+              isDark ? "text-slate-500" : "text-gray-500"
+            )}>
+              {providerName 
+                ? t('categoryDistribution.noDataForProvider', { provider: providerName })
+                : timeFilter === '7d' 
+                  ? t('categoryDistribution.noDataForPeriod', { period: '7 dias' })
+                  : t('categoryDistribution.noDataGeneral')
+              }
+            </p>
+            <p className={cn(
+              "text-xs mt-2",
+              isDark ? "text-slate-600" : "text-gray-400"
+            )}>
+              {t('categoryDistribution.tryDifferentPeriod')}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Transformar dados para o formato adequado ao Treemap
+  // Garantir que finalData seja sempre um array antes de processar
+  const safeData = Array.isArray(finalData) ? finalData.filter(item => {
+    console.log('🔍 Filtering item:', item);
+    return item && 
+           typeof item.name === 'string' && 
+           typeof item.value === 'number' &&
+           !isNaN(item.value) &&
+           isFinite(item.value) &&
+           item.value > 0;
+  }) : [];
+  
+  console.log('📊 SafeData after filtering:', safeData);
+  
   const treeMapData = {
     name: 'Categorias',
-    children: data
+    children: safeData
       // Filtrar para remover entradas com valor total (que mostrariam 100%)
       .filter(category => {
-        // Remover categorias com valor igual ao total ou entradas especiais
-        return category.name !== 'Total' && 
+        console.log('🔍 Processing category:', category);
+        // Remover categorias inválidas ou com valores muito pequenos
+        const isValid = category && 
+               category.name !== 'Total' && 
                category.name !== 'Others 100.0%' &&
                category.name !== 'All' &&
-               Math.abs(category.value - total) > 0.1 && // Usar uma margem maior para evitar valores próximos ao total
-               !category.name.includes('100') &&
-               !category.name.includes('99.9');
+               typeof category.value === 'number' &&
+               !isNaN(category.value) &&
+               isFinite(category.value) &&
+               category.value > 0 && // Garantir que o valor seja positivo
+               category.value >= 0.1 && // Filtrar valores menores que 0.1% (agora value é percentual)
+               category.name && !category.name.includes('100') &&
+               category.name && !category.name.includes('99.9');
+        console.log(`✅ Category ${category?.name} is valid:`, isValid);
+        return isValid;
       })
-      .map(category => ({
-        name: translateCategoryName(category.name),
-        originalName: category.name,
-        value: category.value,
-        color: category.name === 'Others' ? '#6B7280' : (category.color || '#9CA3AF'), // Usar um tom de cinza mais escuro para "Others" para diferenciar do "Storage"
-        percentage: formatPercentage(category.value)
-      }))
+      .map(category => {
+        const mappedCategory = {
+          name: translateCategoryName(category.name),
+          originalName: category.name,
+          value: Math.max(Number(category.value) || 1, 1), // Garantir valor mínimo de 1
+          color: category.name === 'Others' ? '#6B7280' : (category.color || '#9CA3AF'), // Usar um tom de cinza mais escuro para "Others" para diferenciar do "Storage"
+          percentage: formatPercentage(category.value)
+        };
+        console.log('✅ Mapped category:', mappedCategory);
+        return mappedCategory;
+      })
   };
   
   // Custom tooltip para o treemap
@@ -167,10 +327,36 @@ export function CategoryDistributionCard({ data, currency, isLoading = false }: 
   
   // Componente de conteúdo customizado para o treemap com estilo do card "Estimated Waste"
   const CustomizedContent = (props: any) => {
-    const { x, y, width, height, name, value, color, index } = props;
+    console.log('🔍 CustomizedContent props:', props);
     
-    // Verificar se este item tem um valor próximo ao total e não deve ser exibido
-    if (Math.abs(value - total) < 0.1 || name.includes('100') || name.includes('99.9')) {
+    const { x, y, width, height, name, value, color, index } = props || {};
+    
+    // Verificações de segurança mais robustas para props undefined
+    if (!props || 
+        typeof x !== 'number' || isNaN(x) ||
+        typeof y !== 'number' || isNaN(y) ||
+        typeof width !== 'number' || isNaN(width) ||
+        typeof height !== 'number' || isNaN(height) ||
+        typeof value !== 'number' || isNaN(value) || !isFinite(value) ||
+        width <= 0 || height <= 0 || width < 2 || height < 2 ||
+        value <= 0) {
+      console.warn('🚨 CategoryDistribution: Invalid props for CustomizedContent:', { 
+        x, y, width, height, value, name, 
+        types: { x: typeof x, y: typeof y, width: typeof width, height: typeof height, value: typeof value },
+        valid: { x: !isNaN(x), y: !isNaN(y), width: !isNaN(width), height: !isNaN(height), value: !isNaN(value) && isFinite(value) }
+      });
+      return null;
+    }
+    
+    // Garantir valores mínimos seguros para width e height
+    const safeWidth = Math.max(Math.floor(width), 2);
+    const safeHeight = Math.max(Math.floor(height), 2);
+    
+    // Verificar se o name é válido
+    const safeName = name && typeof name === 'string' ? name : 'Unknown';
+    
+    // Verificar se este item tem nome problemático (já filtrado anteriormente, mas dupla verificação)
+    if (safeName.includes('100') || safeName.includes('99.9') || value >= 99.9) {
       return null; // Não renderizar este item para evitar o problema de 100%/99.9%
     }
     
@@ -197,8 +383,8 @@ export function CategoryDistributionCard({ data, currency, isLoading = false }: 
         <rect
           x={x}
           y={y}
-          width={width}
-          height={height}
+          width={safeWidth}
+          height={safeHeight}
           style={{
             fill: backgroundGlass,
             stroke: borderColor,
@@ -213,8 +399,8 @@ export function CategoryDistributionCard({ data, currency, isLoading = false }: 
         <rect
           x={x + 1}
           y={y + 1}
-          width={width - 2}
-          height={height - 2}
+          width={safeWidth - 2}
+          height={safeHeight - 2}
           style={{
             fill: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.1)', // Mais sutil como no gráfico de pizza
             stroke: 'none',
@@ -225,11 +411,11 @@ export function CategoryDistributionCard({ data, currency, isLoading = false }: 
         />
         
         {/* Texto com melhor contraste - estilo similar ao gráfico de pizza */}
-        {width > 40 && height > 30 && (
+        {safeWidth > 40 && safeHeight > 30 && (
           <>
             <text
-              x={x + width / 2}
-              y={y + height / 2 - 8}
+              x={x + safeWidth / 2}
+              y={y + safeHeight / 2 - 8}
               textAnchor="middle"
               dominantBaseline="middle"
               style={{
@@ -241,11 +427,11 @@ export function CategoryDistributionCard({ data, currency, isLoading = false }: 
                 paintOrder: 'stroke',
               }}
             >
-              {name}
+              {safeName}
             </text>
             <text
-              x={x + width / 2}
-              y={y + height / 2 + 8}
+              x={x + safeWidth / 2}
+              y={y + safeHeight / 2 + 8}
               textAnchor="middle"
               dominantBaseline="middle"
               style={{
@@ -289,24 +475,54 @@ export function CategoryDistributionCard({ data, currency, isLoading = false }: 
             <div className="flex items-center justify-center h-full">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-XCost-blue"></div>
             </div>
-          ) : data.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
-              <p className={cn(
-                "text-sm",
-                isDark ? "text-slate-400" : "text-muted-foreground"
+          ) : (!Array.isArray(finalData) || finalData.length === 0) ? (
+            <div className="flex flex-col items-center justify-center h-full text-center px-4">
+              <div className={cn(
+                "w-12 h-12 rounded-full flex items-center justify-center mb-3",
+                isDark ? "bg-slate-800/50" : "bg-gray-100/50"
+              )}>
+                <BarChart3 className={cn(
+                  "h-6 w-6",
+                  isDark ? "text-slate-600" : "text-gray-400"
+                )} />
+              </div>
+              <h4 className={cn(
+                "text-sm font-medium mb-1",
+                isDark ? "text-slate-300" : "text-gray-700"
               )}>
                 {t('categoryDistribution.noData')}
+              </h4>
+              <p className={cn(
+                "text-xs max-w-xs",
+                isDark ? "text-slate-500" : "text-gray-500"
+              )}>
+                {providerName 
+                  ? t('categoryDistribution.noDataForProvider', { provider: providerName })
+                  : timeFilter === '7d' 
+                    ? t('categoryDistribution.noDataForPeriod', { period: '7 dias' })
+                    : t('categoryDistribution.noDataGeneral')
+                }
               </p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <Treemap
-                data={treeMapData.children.filter(item => 
+                data={treeMapData.children.filter(item => {
                   // Filtrar novamente para garantir que não exibimos valores problemáticos
-                  item.name !== 'Total' && 
-                  !item.name.includes('100') && 
-                  Math.abs(item.value - total) > 0.1
-                )}
+                  const isValidItem = item && 
+                    item.name !== 'Total' && 
+                    item.name && 
+                    typeof item.name === 'string' &&
+                    !item.name.includes('100') && 
+                    item.value !== undefined &&
+                    typeof item.value === 'number' &&
+                    !isNaN(item.value) &&
+                    isFinite(item.value) &&
+                    item.value > 0;
+                  
+                  console.log(`🔍 Final filter for ${item?.name}:`, isValidItem, item);
+                  return isValidItem;
+                })}
                 dataKey="value"
                 stroke={isDark ? "#333" : "#fff"}
                 animationDuration={500}

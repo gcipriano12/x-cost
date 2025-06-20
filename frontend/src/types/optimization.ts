@@ -78,37 +78,96 @@ export interface OptimizationRecommendation {
 
 // Optimization Summary Interface
 export interface OptimizationSummary {
-  total_anomalies: number;
-  total_opportunities: number;
-  total_recommendations: number;
-  total_estimated_savings: number;
-  optimization_score: number;
-  health_status: HealthStatus;
-  currency: string;
-  last_updated: string;
-  providers_summary: Record<string, {
-    anomalies_count: number;
-    opportunities_count: number;
-    estimated_savings: number;
-    optimization_score: number;
-  }>;
+  success: boolean;
+  data: {
+    anomalies: {
+      total_count: number;
+      total_cost_impact: number;
+      severity_breakdown: Record<string, number>;
+      top_anomaly: {
+        description: string;
+        cost_impact: number;
+        severity: string;
+      };
+    };
+    savings_opportunities: {
+      total_count: number;
+      total_potential_savings: number;
+      top_opportunity: {
+        description: string;
+        potential_savings: number;
+        category: string;
+      };
+    };
+    recommendations: {
+      total_count: number;
+      type_breakdown: Record<string, number>;
+      high_priority_count: number;
+    };
+    optimization_metrics: {
+      optimization_score: number;
+      total_potential_impact: number;
+      health_status: string;
+    };
+    metadata: {
+      provider: string | null;
+      analysis_scope: string;
+      requested_by: string;
+    };
+  };
+  metadata: {
+    timestamp: string;
+    api_version: string;
+    processing_time: number;
+  };
 }
 
 // API Response Types
 export interface AnomaliesResponse {
-  anomalies: CloudAnomaly[];
-  total_count: number;
-  page: number;
-  per_page: number;
-  total_pages: number;
+  success: boolean;
+  data: {
+    anomalies: CloudAnomaly[];
+    total_count: number;
+    page: number;
+    per_page: number;
+    total_pages: number;
+    total_cost_impact: number;
+    severity_breakdown: Record<string, number>;
+    filters: Record<string, any>;
+    sort: {
+      sort_by: string;
+      sort_order: string;
+    };
+    requested_by: string;
+  };
+  metadata: {
+    timestamp: string;
+    api_version: string;
+    processing_time: number;
+  };
 }
 
 export interface SavingsOpportunitiesResponse {
-  opportunities: SavingsOpportunity[];
-  total_count: number;
-  page: number;
-  per_page: number;
-  total_pages: number;
+  success: boolean;
+  data: {
+    savings_opportunities: SavingsOpportunity[];
+    total_count: number;
+    page: number;
+    per_page: number;
+    total_pages: number;
+    total_potential_savings: number;
+    filters: Record<string, any>;
+    sort: {
+      sort_by: string;
+      sort_order: string;
+    };
+    requested_by: string;
+  };
+  metadata: {
+    timestamp: string;
+    api_version: string;
+    processing_time: number;
+  };
 }
 
 export interface OptimizationRecommendationsResponse {

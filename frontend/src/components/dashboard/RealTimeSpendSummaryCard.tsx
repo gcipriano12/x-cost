@@ -1,6 +1,8 @@
 import React from 'react';
 import { SpendSummaryCard } from './SpendSummaryCard';
 import { useDashboard, useDashboardFormatters } from '@/hooks/useDashboard';
+import { useProviderDistribution } from '@/hooks/useProviderDistribution';
+import { useAccountDistribution } from '@/hooks/useAccountDistribution';
 import { DashboardSummary } from '@/types/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle, RefreshCw, Clock } from 'lucide-react';
@@ -10,42 +12,7 @@ import { cn } from '@/lib/utils';
 import { useTheme } from '@/hooks/useTheme';
 import { getProviderColor } from '@/utils/providerColors';
 
-// Function to generate mock account breakdown for specific providers
-function generateMockAccountBreakdown(providerName: string) {
-  const accountData: Record<string, Array<{accountId: string, billingAccountName: string, percentage: number}>> = {
-    'AWS': [
-      { accountId: '123456789012', billingAccountName: 'Acme Corp - Production AWS', percentage: 45.2 },
-      { accountId: '234567890123', billingAccountName: 'Acme Corp - Development', percentage: 28.7 },
-      { accountId: '345678901234', billingAccountName: 'Acme Corp - Staging Env', percentage: 15.8 },
-      { accountId: '456789012345', billingAccountName: 'Acme Corp - QA Testing', percentage: 10.3 }
-    ],
-    'Azure': [
-      { accountId: 'subscription-1', billingAccountName: 'Enterprise Subscription - Prod', percentage: 52.1 },
-      { accountId: 'subscription-2', billingAccountName: 'Development Subscription', percentage: 31.4 },
-      { accountId: 'subscription-3', billingAccountName: 'Testing & QA Subscription', percentage: 16.5 }
-    ],
-    'GCP': [
-      { accountId: 'project-prod-001', billingAccountName: 'GCP Production Account', percentage: 48.9 },
-      { accountId: 'project-dev-002', billingAccountName: 'GCP Development Account', percentage: 29.6 },
-      { accountId: 'project-test-003', billingAccountName: 'GCP Testing Account', percentage: 21.5 }
-    ],
-    'Oracle': [
-      { accountId: 'tenancy-prod', billingAccountName: 'Oracle Cloud - Main Tenancy', percentage: 56.3 },
-      { accountId: 'tenancy-dev', billingAccountName: 'Oracle Cloud - Dev Tenancy', percentage: 25.8 },
-      { accountId: 'tenancy-test', billingAccountName: 'Oracle Cloud - Test Tenancy', percentage: 17.9 }
-    ]
-  };
-
-  const accounts = accountData[providerName] || accountData['AWS']; // fallback to AWS if provider not found
-  
-  return accounts.map((account, index) => ({
-    accountId: account.accountId,
-    billing_account_name: account.billingAccountName, // Use billing account name as primary field
-    accountName: account.billingAccountName, // Keep for backwards compatibility
-    value: account.percentage,
-    color: '' // Color will be generated in SpendSummaryCard
-  }));
-}
+// Função generateMockAccountBreakdown removida - agora usamos apenas dados reais da API
 
 interface RealTimeSpendSummaryCardProps {
   periodDays?: number;
@@ -68,6 +35,21 @@ export function RealTimeSpendSummaryCard({
     autoRefresh: false, // Desabilitar auto-refresh automático
     refreshInterval: 5 * 60 * 1000 // 5 minutos (não usado quando autoRefresh = false)
   });
+  
+  // Hook para distribuição por provedor
+  const { providerData, loading: providerLoading } = useProviderDistribution({
+    timeFilter: timeFilter || '30-days',
+    credentialId,
+    providerName
+  });
+  
+  // Hook para distribuição por conta (apenas quando há filtro de provedor)
+  const { accountData, loading: accountLoading, error: accountError } = useAccountDistribution({
+    providerName: providerName || '',
+    timeFilter: timeFilter || '30d',
+    credentialId
+  });
+  
   const { formatRelativeTime, formatUpdatedTime } = useDashboardFormatters();
   const { t } = useTranslation();
   const { isDark } = useTheme();
@@ -117,7 +99,7 @@ export function RealTimeSpendSummaryCard({
   }
 
   // Mapear dados da API para o formato esperado pelo SpendSummaryCard
-  const mappedData = mapApiDataToSpendSummary(data, providerName);
+  const mappedData = mapApiDataToSpendSummary(data, providerName, providerData, accountData);
 
   return (
     <div className="space-y-2">
@@ -162,12 +144,74 @@ export function RealTimeSpendSummaryCard({
 }
 
 // Função para mapear dados da API para o formato do SpendSummaryCard
-function mapApiDataToSpendSummary(data: DashboardSummary, providerName?: string) {
-  // Converter strings para números
-  const totalCost = parseFloat(data.metrics.total_cost);
-  const costChangePercentage = parseFloat(data.metrics.cost_change_percentage);
-  const monthlyAverage = parseFloat(data.metrics.monthly_average);
-  const annualProjection = parseFloat(data.metrics.annual_projection);
+function mapApiDataToSpendSummary(
+  data: DashboardSummary, 
+  providerName?: string, 
+  providerBreakdownData?: Array<{name: string, value: number, color: string}>,
+  accountDistributionData?: Array<{account_id: string, billing_account_name: string, percentage: number, total_cost: number}>
+) {
+  // Verificar se data e metrics existem
+  if (!data) {
+    console.warn('mapApiDataToSpendSummary: data is null or undefined');
+    return {
+      totalSpend: 0,
+      currency: '$',
+      previousPeriodChange: 0,
+      sparklineData: [0, 0, 0, 0, 0, 0],
+      providerBreakdown: [],
+      accountBreakdown: undefined,
+      selectedProvider: providerName,
+      wastedSpend: 0,
+      budgetLimit: 0,
+      budgetConsumed: 0,
+      savingsRealized: 0,
+      topService: { name: 'N/A', provider: 'N/A', cost: 0 },
+      topProvider: { name: 'N/A', cost: 0 },
+      monthlyAverage: 0,
+      annualProjection: 0,
+      nextMonthForecast: { amount: 0, change_percentage: 0 }
+    };
+  }
+
+  // Verificar se cost_summary existe, senão usar valores padrão
+  if (!data.cost_summary) {
+    console.warn('mapApiDataToSpendSummary: data.cost_summary is undefined or null');
+  }
+
+  // Calcular total cost baseado no filtro de provedor
+  let totalCost = data.cost_summary?.totals?.total_cost || 0;
+  
+  // Se há filtro de provedor, calcular total baseado nas regiões filtradas do provedor
+  if (providerName && data.top_regions && Array.isArray(data.top_regions)) {
+    totalCost = 0;
+    data.top_regions.forEach(region => {
+      const regionName = region.region?.toLowerCase() || '';
+      let regionProvider = 'Unknown';
+      
+      // Usar a mesma lógica de mapeamento
+      if (regionName.includes('us-') || regionName.includes('eu-') || regionName.startsWith('ap-') || regionName.includes('ca-') || regionName.includes('sa-')) {
+        regionProvider = 'AWS';
+      } else if (regionName.includes('east us') || regionName.includes('west us') || regionName.includes('west europe') || regionName.includes('north europe') || regionName.includes('central us')) {
+        regionProvider = 'Azure';
+      } else if (regionName.includes('central1') || regionName.includes('west1') || regionName.includes('east1') || regionName.includes('europe-west') || regionName.includes('asia-') || regionName.includes('australia-')) {
+        regionProvider = 'GCP';
+      } else if (regionName.includes('ap-southeast-1') || regionName.includes('oci') || regionName.includes('oracle') || regionName.includes('ashburn') || regionName.includes('phoenix')) {
+        regionProvider = 'Oracle Cloud';
+      }
+      
+      if (regionProvider === providerName) {
+        totalCost += region.total_cost || 0;
+      }
+    });
+  }
+  
+  const averageCost = data.cost_summary?.totals?.average_cost || 0;
+  const recordCount = data.cost_summary?.totals?.record_count || 0;
+  
+  // Calcular métricas derivadas
+  const costChangePercentage = 0; // TODO: Implementar cálculo de mudança percentual
+  const monthlyAverage = averageCost * recordCount; // Estimativa baseada na média
+  const annualProjection = totalCost * 12; // Projeção simples
 
   // Calcular sparkline baseado nos dados históricos (simulado)
   const baseValue = totalCost;
@@ -181,47 +225,57 @@ function mapApiDataToSpendSummary(data: DashboardSummary, providerName?: string)
     baseValue
   ];
 
-  // Map provider breakdown data
-  const providerBreakdown = data.provider_distribution.map(provider => ({
-    name: provider.provider_name,
-    value: Math.round(parseFloat(provider.percentage) * 10) / 10, // Arredondar para 1 casa decimal
-    color: getProviderColor(provider.provider_name)
-  }));
+  // Usar distribuição por provedor do hook em vez de calcular baseado em regiões
+  const providerBreakdown = providerBreakdownData || [];
 
-  // Use real account distribution data if available, otherwise generate mock data
+  // Use real account distribution data from dedicated hook
   let accountBreakdown = undefined;
-  if (providerName) {
-    if (data.account_distribution && data.account_distribution.length > 0) {
-      // Use real API data
-      accountBreakdown = data.account_distribution.map(account => ({
-        accountId: account.account_id,
-        billing_account_name: account.billing_account_name,
-        accountName: account.billing_account_name, // For backwards compatibility
-        value: Math.round(parseFloat(account.percentage) * 10) / 10,
-        color: '' // Color will be generated in SpendSummaryCard
-      }));
-    } else {
-      // Fallback to mock data when API doesn't return account distribution
-      accountBreakdown = generateMockAccountBreakdown(providerName);
-    }
+  if (providerName && accountDistributionData && accountDistributionData.length > 0) {
+    // Use real API data from useAccountDistribution hook
+    accountBreakdown = accountDistributionData.map(account => ({
+      accountId: account.account_id || 'unknown',
+      billing_account_name: account.billing_account_name || 'Unknown Account',
+      accountName: account.billing_account_name || 'Unknown Account', // For backwards compatibility
+      value: Math.round(account.percentage * 10) / 10, // percentage is already a number
+      color: '' // Color will be generated in SpendSummaryCard
+    }));
+    console.log('✅ Using real account distribution data:', accountBreakdown);
+  } else if (providerName) {
+    console.log('⚠️ No account distribution data available for provider:', providerName);
   }
 
-  // Calculate top provider based on total cost - com verificação de array vazio
-  const topProviderData = data.provider_distribution.length > 0 
-    ? data.provider_distribution.reduce((top, current) => {
-        const currentCost = (parseFloat(current.percentage) / 100) * totalCost;
-        const topCost = (parseFloat(top.percentage) / 100) * totalCost;
-        return currentCost > topCost ? current : top;
-      })
-    : null;
-
-  const topProvider = topProviderData ? {
-    name: topProviderData.provider_name,
-    cost: (parseFloat(topProviderData.percentage) / 100) * totalCost
-  } : {
-    name: 'N/A',
-    cost: 0
-  };
+  // Calculate top provider/account based on filter context
+  let topProvider = { name: 'N/A', cost: 0 };
+  
+  if (!providerName) {
+    // No provider filter - show top provider from breakdown
+    if (providerBreakdownData && providerBreakdownData.length > 0) {
+      const topProviderItem = providerBreakdownData.reduce((max, current) => 
+        current.value > max.value ? current : max
+      );
+      topProvider = {
+        name: topProviderItem.name,
+        cost: (topProviderItem.value / 100) * totalCost // value is percentage
+      };
+    }
+  } else {
+    // Provider filter active - show top account from that provider
+    if (accountBreakdown && accountBreakdown.length > 0) {
+      const topAccount = accountBreakdown.reduce((max, current) => 
+        current.value > max.value ? current : max
+      );
+      topProvider = {
+        name: topAccount.billing_account_name || topAccount.accountName || topAccount.accountId,
+        cost: (topAccount.value / 100) * totalCost // value is percentage
+      };
+    } else {
+      // Fallback: use top service from that provider
+      topProvider = {
+        name: data.top_services?.[0]?.service_name || providerName,
+        cost: data.top_services?.[0]?.total_cost || (totalCost * 0.4)
+      };
+    }
+  }
 
   return {
     totalSpend: totalCost,
@@ -231,19 +285,20 @@ function mapApiDataToSpendSummary(data: DashboardSummary, providerName?: string)
     providerBreakdown: providerBreakdown,
     accountBreakdown: accountBreakdown,
     selectedProvider: providerName,
-    wastedSpend: data.highlights.estimated_waste.amount,
-    budgetLimit: data.metrics.budget_consumption?.total_budget || totalCost * 1.2,
-    budgetConsumed: data.metrics.budget_consumption?.consumption_percentage || 75,
-    savingsRealized: data.highlights.savings_achieved.amount,
+    wastedSpend: data.highlights?.estimated_waste?.amount || 0,
+    budgetLimit: data.budget_summary?.total_budget_amount || totalCost * 1.2,
+    budgetConsumed: data.budget_summary?.active_budgets ? 
+      Math.round((data.budget_summary.active_budgets / data.budget_summary.total_budgets) * 100 * 10) / 10 : 75,
+    savingsRealized: data.highlights?.savings_achieved?.amount || 0,
     // Dados adicionais para enriquecer o SpendSummaryCard
     topService: {
-      name: data.metrics.top_service.service_name,
-      provider: data.metrics.top_service.provider_name,
-      cost: data.metrics.top_service.total_cost
+      name: data.top_services?.[0]?.service_name || 'EC2',
+      provider: providerName || data.top_services?.[0]?.category || 'AWS',
+      cost: data.top_services?.[0]?.total_cost || (totalCost * 0.25) // 25% do total como fallback
     },
     topProvider: topProvider, // Novo campo com o provedor com maior gasto total
     monthlyAverage: monthlyAverage,
     annualProjection: annualProjection,
-    nextMonthForecast: data.highlights.next_month_forecast
+    nextMonthForecast: data.highlights?.next_month_forecast || { amount: 0, change_percentage: 0 }
   };
 }

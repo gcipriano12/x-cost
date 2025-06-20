@@ -562,7 +562,35 @@ export function SpendSummaryCard({
 
             <div className="h-64 w-full relative">
               <div className="absolute inset-0 backdrop-blur-sm bg-white/5 dark:bg-black/5 rounded-lg"></div>
-              <ResponsiveContainer width="100%" height="100%">
+              {pieData.length === 0 ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+                  <div className={cn(
+                    "w-12 h-12 rounded-full flex items-center justify-center mb-3",
+                    isDark ? "bg-slate-800/50" : "bg-gray-100/50"
+                  )}>
+                    <PieChartIcon className={cn(
+                      "h-6 w-6",
+                      isDark ? "text-slate-600" : "text-gray-400"
+                    )} />
+                  </div>
+                  <h4 className={cn(
+                    "text-sm font-medium mb-1",
+                    isDark ? "text-slate-300" : "text-gray-700"
+                  )}>
+                    {t('spendSummary.noDistributionData')}
+                  </h4>
+                  <p className={cn(
+                    "text-xs max-w-xs",
+                    isDark ? "text-slate-500" : "text-gray-500"
+                  )}>
+                    {showAccountDistribution 
+                      ? t('spendSummary.noAccountDataForProvider')
+                      : t('spendSummary.noProviderData')
+                    }
+                  </p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     activeIndex={activeIndex !== null ? activeIndex : undefined}
@@ -611,7 +639,8 @@ export function SpendSummaryCard({
                     wrapperStyle={{ outline: 'none' }}
                   />
                 </PieChart>
-              </ResponsiveContainer>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
           

@@ -85,31 +85,70 @@ export interface AccountDistribution {
 
 // Tipos para Dashboard Summary - Atualizado para corresponder à API real
 export interface DashboardSummary {
-  metrics: {
-    total_cost: string; // API retorna como string
-    cost_change_percentage: string; // API retorna como string
-    monthly_average: string; // API retorna como string
-    top_service: {
-      service_name: string;
-      provider_name: string;
-      total_cost: number;
-    };
-    annual_projection: string; // API retorna como string
-    budget_consumption: {
-      total_budget: number;
-      current_spend: number;
-      consumption_percentage: number;
-      remaining_budget: number;
-    };
+  period: {
+    start_date: string;
+    end_date: string;
+    label: string;
   };
-  provider_distribution: {
+  generated_at: string;
+  cost_summary: {
+    period: {
+      start_date: string;
+      end_date: string;
+      label: string;
+    };
+    totals: {
+      total_cost: number;
+      average_cost: number;
+      record_count: number;
+    };
+    provider: string;
+    generated_at: string;
+  };
+  top_services: {
+    service_name: string;
+    category: string;
+    total_cost: number;
+    avg_cost: number;
+    record_count: number;
+    percentage_of_total: number;
+  }[];
+  top_regions: {
+    region: string;
+    total_cost: number;
+    avg_cost: number;
+    record_count: number;
+    percentage_of_total: number;
+  }[];
+  budget_summary: {
+    total_budgets: number;
+    active_budgets: number;
+    total_budget_amount: number;
+    budgets: {
+      id: number;
+      name: string;
+      amount: number;
+      is_active: boolean;
+    }[];
+  };
+  cost_trend: {
+    period: string;
+    total_cost: number;
+    record_count: number;
+    trend_percentage: number | null;
+    cost_change: number;
+    trend_direction: string;
+    growth_rate: number;
+  }[];
+  // Campos opcionais para compatibilidade com componentes existentes
+  provider_distribution?: {
     provider_name: string;
-    total_cost: string; // API retorna como string
-    percentage: string; // API retorna como string
+    total_cost: string;
+    percentage: string;
     cost_change: number | null;
   }[];
-  account_distribution?: AccountDistribution[]; // Optional - only when provider filter is applied
-  highlights: {
+  account_distribution?: AccountDistribution[];
+  highlights?: {
     next_month_forecast: {
       amount: number;
       change_percentage: number;
@@ -124,10 +163,21 @@ export interface DashboardSummary {
       percentage: number;
     };
   };
-  generated_at: string;
-  period: {
-    start_date: string;
-    end_date: string;
-    days: number;
+  metrics?: {
+    total_cost: string;
+    cost_change_percentage: string;
+    monthly_average: string;
+    top_service: {
+      service_name: string;
+      provider_name: string;
+      total_cost: number;
+    };
+    annual_projection: string;
+    budget_consumption: {
+      total_budget: number;
+      current_spend: number;
+      consumption_percentage: number;
+      remaining_budget: number;
+    };
   };
 }

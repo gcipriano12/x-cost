@@ -74,7 +74,10 @@
     "nextMonthForecast": "Next Month Forecast",
     "estimatedWaste": "Estimated Waste",
     "realizedSavings": "Realized Savings",
-    "ofTotal": "of total"
+    "ofTotal": "of total",
+    "noDistributionData": "No distribution data",
+    "noAccountDataForProvider": "No accounts found for this provider",
+    "noProviderData": "No provider data for the period"
   },
   "spendingForecast": {
     "title": "Spending Forecast",
@@ -159,7 +162,11 @@
     "title": "Category Distribution",
     "titleShort": "Categories",
     "percentOfTotal": "% of total",
-    "noData": "No category data available",
+    "noData": "No data available",
+    "noDataForProvider": "No category data for {{provider}}",
+    "noDataForPeriod": "No data for {{period}}",
+    "noDataGeneral": "No category data for selected period",
+    "tryDifferentPeriod": "Try selecting a different time period",
     "categories": {
       "Storage": "Storage",
       "Computation": "Computation",

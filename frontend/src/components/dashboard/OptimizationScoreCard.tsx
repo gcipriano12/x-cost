@@ -13,6 +13,7 @@ import { useOptimizationSummary, useOptimizationRecommendations, useAnomalies, u
 import { ProviderBadge } from '@/components/ui/provider-badge';
 import { formatHealthStatus, getScoreColor, getScoreDots } from '@/utils/optimizationUtils';
 import { HealthRoundedGauge } from '@/components/ui/rounded-gauge';
+import { HealthStatus } from '@/types/optimization';
 
 interface OptimizationScoreCardProps {
   provider?: string;
@@ -231,7 +232,7 @@ export function OptimizationScoreCard({
       return providerSpecificData?.efficiencyScore ?? 0;
     } else {
       // When not filtering, calculate weighted average of all providers
-      if (sortedProviders.length === 0) return summary.optimization_score || 0;
+      if (sortedProviders.length === 0) return summary?.data.optimization_metrics.optimization_score || 0;
       const totalWeight = sortedProviders.reduce((sum, p) => sum + (p.anomalyCount + p.opportunityCount), 0);
       if (totalWeight === 0) {
         // If no weight, use simple average
@@ -247,16 +248,16 @@ export function OptimizationScoreCard({
   };
 
   const score = calculateOverallScore();
-  const healthStatus = summary.health_status || 'needs_attention';
+  const healthStatus = (summary?.data.optimization_metrics.health_status || 'needs_attention') as HealthStatus;
   const healthStyle = formatHealthStatus(healthStatus);
   const scoreColor = getScoreColor(score);
   const scoreDots = getScoreDots(score, 10);
 
   // Determine trend and status
-  const hasIssues = summary.total_anomalies > 0;
-  const hasOpportunities = summary.total_opportunities > 0;
-  const totalAnomalies = summary.total_anomalies || 0;
-  const totalOpportunities = summary.total_opportunities || 0;
+  const hasIssues = summary?.data.anomalies.total_count > 0;
+  const hasOpportunities = summary?.data.savings_opportunities.total_count > 0;
+  const totalAnomalies = summary?.data.anomalies.total_count || 0;
+  const totalOpportunities = summary?.data.savings_opportunities.total_count || 0;
 
   // Get dynamic status icon based on score
   const getStatusIcon = (optimizationScore: number) => {

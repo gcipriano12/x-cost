@@ -71,7 +71,33 @@ class DashboardAnalyzer:
             }
             
             # Resumo de custos por provedor
-            if providers:
+            if providers and len(providers) == 1:
+                # Se apenas um provedor, usar como cost_summary principal
+                provider = providers[0]
+                summary['cost_summary'] = self.cost_analyzer.get_cost_summary(
+                    start_date=start_date,
+                    end_date=end_date,
+                    provider_name=provider
+                )
+                
+                # Análise por serviços para o provedor específico
+                summary['top_services'] = self.cost_analyzer.analyze_costs_by_service(
+                    start_date=start_date,
+                    end_date=end_date,
+                    provider_name=provider,
+                    limit=10
+                )
+                
+                # Análise por regiões para o provedor específico
+                summary['top_regions'] = self.cost_analyzer.analyze_costs_by_region(
+                    start_date=start_date,
+                    end_date=end_date,
+                    provider_name=provider,
+                    limit=10
+                )
+                
+            elif providers and len(providers) > 1:
+                # Se múltiplos provedores, retornar breakdown por provedor
                 cost_summaries = []
                 for provider in providers:
                     provider_summary = self.cost_analyzer.get_cost_summary(
@@ -83,6 +109,19 @@ class DashboardAnalyzer:
                         cost_summaries.append(provider_summary)
                 
                 summary['cost_by_provider'] = cost_summaries
+                
+                # Análise geral para múltiplos provedores
+                summary['top_services'] = self.cost_analyzer.analyze_costs_by_service(
+                    start_date=start_date,
+                    end_date=end_date,
+                    limit=10
+                )
+                
+                summary['top_regions'] = self.cost_analyzer.analyze_costs_by_region(
+                    start_date=start_date,
+                    end_date=end_date,
+                    limit=10
+                )
             else:
                 # Resumo geral
                 summary['cost_summary'] = self.cost_analyzer.get_cost_summary(

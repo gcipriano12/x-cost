@@ -8,8 +8,10 @@ import logging
 from datetime import date, datetime, timedelta
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import func
+from app.models import FocusCostData
 
 from app.database import get_database
 from app.models import DashboardSummary
@@ -459,6 +461,7 @@ async def get_dashboard_summary(
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     providers: Optional[str] = None,  # Comma-separated list
+    provider_name: Optional[str] = None,  # Single provider filter
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_database)
 ):
@@ -480,7 +483,11 @@ async def get_dashboard_summary(
         
         # Processar lista de provedores
         provider_list = None
-        if providers:
+        if provider_name:
+            # Se provider_name é fornecido, usar apenas esse provedor
+            provider_list = [provider_name]
+        elif providers:
+            # Senão, usar lista de provedores separada por vírgula
             provider_list = [p.strip() for p in providers.split(',') if p.strip()]
         
         dashboard_analyzer = DashboardAnalyzer(db)
@@ -561,6 +568,249 @@ async def get_cost_by_tag(
         raise
     except Exception as e:
         logger.error(f"Error analyzing costs by tag: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/analytics/by-provider")
+@calculate_processing_time
+async def get_provider_distribution(
+    days: Optional[int] = Query(30, description="Number of days to analyze (default: 30)"),
+    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    top_n: Optional[int] = Query(10, description="Number of top providers to return"),
+    credential_id: Optional[str] = Query(None, description="Filter by credential ID"),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_database)
+):
+    """
+    Get cost distribution by cloud provider
+    
+    **Returns:**
+    Breakdown of costs by cloud provider with percentages and totals.
+    
+    **Query Parameters:**
+    - `days`: Number of days to analyze (default: 30, max: 365)
+    - `start_date`, `end_date`: Date range filters (YYYY-MM-DD format)
+    - `top_n`: Number of top providers to return (default: 10)
+    - `credential_id`: Filter by specific credential
+    
+    **Rate Limiting:** 100 requests per minute per user
+    """
+    try:
+        # Validar parâmetros
+        if days and days > 365:
+            raise HTTPException(status_code=400, detail="Maximum 365 days allowed")
+        
+        # Determinar período
+        if start_date and end_date:
+            try:
+                start_dt = datetime.strptime(start_date, '%Y-%m-%d').date()
+                end_dt = datetime.strptime(end_date, '%Y-%m-%d').date()
+                validate_date_range(start_dt, end_dt, max_days=365)
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+        else:
+            end_dt = date.today()
+            start_dt = end_dt - timedelta(days=days-1)
+        
+        # Inicializar analisador
+        cost_analyzer = CostAnalyzer(db)
+        
+        # Obter distribuição por provedor
+        provider_distribution = cost_analyzer.analyze_costs_by_provider(
+            start_date=start_dt,
+            end_date=end_dt,
+            limit=top_n
+        )
+        
+        if 'error' in provider_distribution:
+            logger.error(f"Error in provider distribution: {provider_distribution['error']}")
+            raise HTTPException(status_code=500, detail=provider_distribution['error'])
+        
+        # Calcular estatísticas adicionais
+        total_cost = sum(p.get('total_cost', 0) for p in provider_distribution.get('providers', []))
+        providers_count = len(provider_distribution.get('providers', []))
+        
+        # Calcular contagem de regiões por provedor
+        for provider in provider_distribution.get('providers', []):
+            try:
+                # Buscar regiões para este provedor
+                regions = cost_analyzer.analyze_costs_by_region(
+                    start_date=start_dt,
+                    end_date=end_dt,
+                    provider_name=provider.get('provider_name'),
+                    limit=100  # Todas as regiões
+                )
+                provider['region_count'] = len(regions.get('regions', []))
+            except Exception as e:
+                logger.warning(f"Could not get region count for {provider.get('provider_name')}: {e}")
+                provider['region_count'] = 0
+        
+        return StandardResponse.success({
+            "provider_breakdown": provider_distribution.get('providers', []),
+            "period": {
+                "start_date": start_dt.isoformat(),
+                "end_date": end_dt.isoformat(),
+                "days": (end_dt - start_dt).days + 1
+            },
+            "totals": {
+                "total_cost": total_cost,
+                "providers_count": providers_count
+            },
+            "filters": {
+                "credential_id": credential_id,
+                "top_n": top_n
+            },
+            "requested_by": current_user.username
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting provider distribution: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/dashboard/account-distribution")
+@calculate_processing_time
+async def get_account_distribution(
+    provider: str = Query(..., description="Nome do provedor (AWS, Azure, GCP, Oracle)"),
+    time_filter: str = Query("30d", description="Filtro de tempo (30d, 90d, 365d, etc.)"),
+    credential_id: Optional[str] = Query(None, description="ID da credencial específica"),
+    top_n: int = Query(10, description="Número máximo de contas a retornar"),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_database)
+):
+    """
+    Obtém distribuição de custos por conta para um provedor específico
+    
+    Retorna as contas (billing_account_name) de um provedor com seus respectivos
+    custos e percentuais em relação ao total do provedor no período especificado.
+    
+    Args:
+        provider: Nome do provedor (AWS, Azure, GCP, Oracle)
+        time_filter: Período de tempo (formato: 30d, 90d, 365d)
+        credential_id: ID da credencial específica (opcional)
+        top_n: Número máximo de contas a retornar (padrão: 10)
+    
+    Returns:
+        Lista de AccountDistributionItem com account_id, billing_account_name,
+        percentage e total_cost de cada conta do provedor
+    """
+    try:
+        # Validar provedor
+        valid_providers = ["AWS", "Azure", "GCP", "Oracle", "Oracle Cloud"]
+        if provider not in valid_providers:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Provider inválido. Valores aceitos: {', '.join(valid_providers)}"
+            )
+        
+        # Normalizar nome do provedor (Oracle Cloud -> Oracle)
+        normalized_provider = "Oracle" if provider == "Oracle Cloud" else provider
+        
+        # Validar e converter time_filter para dias
+        try:
+            if time_filter.endswith('d'):
+                days = int(time_filter[:-1])
+            elif time_filter.endswith('m'):
+                days = int(time_filter[:-1]) * 30
+            elif time_filter.endswith('y'):
+                days = int(time_filter[:-1]) * 365
+            else:
+                days = int(time_filter)
+        except (ValueError, TypeError):
+            raise HTTPException(
+                status_code=400,
+                detail="time_filter inválido. Use formato como '30d', '90d', '12m', '1y'"
+            )
+        
+        # Validar top_n
+        if not 1 <= top_n <= 50:
+            raise HTTPException(
+                status_code=400,
+                detail="top_n deve estar entre 1 e 50"
+            )
+        
+        # Calcular período
+        end_date = datetime.now().date()
+        start_date = end_date - timedelta(days=days)
+        
+        logger.info(f"Getting account distribution for provider {normalized_provider}, period {start_date} to {end_date}")
+        
+        # Query base para o provedor específico
+        base_query = db.query(
+            FocusCostData.billing_account_id,
+            FocusCostData.billing_account_name,
+            func.sum(FocusCostData.effective_cost).label('total_cost')
+        ).filter(
+            FocusCostData.provider_name == normalized_provider,
+            FocusCostData.billing_period_start >= start_date,
+            FocusCostData.billing_period_end <= end_date,
+            FocusCostData.effective_cost > 0
+        )
+        
+        # Aplicar filtro de credential_id se fornecido
+        if credential_id:
+            # TODO: Implementar filtro por credential_id quando disponível na tabela
+            logger.info(f"credential_id filter '{credential_id}' requested but not implemented yet")
+        
+        # Agrupar por conta e calcular totais
+        account_costs_query = base_query.group_by(
+            FocusCostData.billing_account_id,
+            FocusCostData.billing_account_name
+        ).subquery()
+        
+        # Calcular total geral do provedor para calcular percentuais
+        total_provider_cost = db.query(
+            func.sum(FocusCostData.effective_cost)
+        ).filter(
+            FocusCostData.provider_name == normalized_provider,
+            FocusCostData.billing_period_start >= start_date,
+            FocusCostData.billing_period_end <= end_date,
+            FocusCostData.effective_cost > 0
+        ).scalar() or 0
+        
+        if total_provider_cost == 0:
+            logger.info(f"No cost data found for provider {normalized_provider} in period {start_date} to {end_date}")
+            return StandardResponse.success([])
+        
+        # Buscar dados das contas ordenados por custo
+        account_costs = db.query(
+            account_costs_query.c.billing_account_id,
+            account_costs_query.c.billing_account_name,
+            account_costs_query.c.total_cost
+        ).order_by(
+            account_costs_query.c.total_cost.desc()
+        ).limit(top_n).all()
+        
+        # Processar resultados e calcular percentuais
+        account_distribution = []
+        for account in account_costs:
+            account_id = account.billing_account_id or "unknown"
+            account_name = account.billing_account_name or f"Account {account_id}"
+            total_cost = float(account.total_cost) if account.total_cost else 0
+            percentage = (total_cost / float(total_provider_cost)) * 100 if total_provider_cost > 0 else 0
+            
+            account_distribution.append({
+                "account_id": account_id,
+                "billing_account_name": account_name,
+                "percentage": round(percentage, 2),
+                "total_cost": round(total_cost, 2)
+            })
+        
+        logger.info(f"Found {len(account_distribution)} accounts for provider {normalized_provider}")
+        
+        # Verificar se a soma dos percentuais está correta (debug)
+        total_percentage = sum(item["percentage"] for item in account_distribution)
+        logger.info(f"Total percentage for top {len(account_distribution)} accounts: {total_percentage:.2f}%")
+        
+        return StandardResponse.success(account_distribution)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting account distribution: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

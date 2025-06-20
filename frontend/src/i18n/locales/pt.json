@@ -74,7 +74,10 @@
     "nextMonthForecast": "Previsão Próximo Mês",
     "estimatedWaste": "Desperdício Estimado",
     "realizedSavings": "Economias Realizadas",
-    "ofTotal": "do total"
+    "ofTotal": "do total",
+    "noDistributionData": "Nenhum dado de distribuição",
+    "noAccountDataForProvider": "Nenhuma conta encontrada para este provedor",
+    "noProviderData": "Nenhum dado de provedor para o período"
   },
   "spendingForecast": {
     "title": "Previsão de Gastos",
@@ -159,7 +162,11 @@
     "title": "Distribuição por Categoria",
     "titleShort": "Categorias",
     "percentOfTotal": "% do total",
-    "noData": "Nenhum dado de categoria disponível",
+    "noData": "Nenhum dado disponível",
+    "noDataForProvider": "Nenhum dado de categoria para {{provider}}",
+    "noDataForPeriod": "Nenhum dado para {{period}}",
+    "noDataGeneral": "Nenhum dado de categoria no período selecionado",
+    "tryDifferentPeriod": "Tente selecionar um período diferente",
     "categories": {
       "Storage": "Armazenamento",
       "Computation": "Computação",

@@ -123,8 +123,8 @@ async def get_anomalies(
             except ValueError:
                 raise HTTPException(status_code=400, detail="Invalid date_to format. Use YYYY-MM-DD")
         
-        # Mapear provider para formato interno
-        provider_name = provider.lower() if provider else None
+        # Mapear provider para formato interno (título para matching com dados simulados)
+        provider_name = provider.upper() if provider else None
         
         # Buscar anomalias
         anomalies = await service.get_anomalies_by_provider(provider_name=provider_name)
@@ -305,8 +305,8 @@ async def get_savings_opportunities(
     **Rate Limiting:** 100 requests per minute per user
     """
     try:
-        # Mapear provider para formato interno
-        provider_name = provider.lower() if provider else None
+        # Mapear provider para formato interno (uppercase para matching com dados simulados)
+        provider_name = provider.upper() if provider else None
         
         # Buscar oportunidades
         opportunities = await service.get_savings_opportunities_by_provider(provider_name=provider_name)

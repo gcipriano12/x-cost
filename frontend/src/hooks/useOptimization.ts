@@ -156,12 +156,12 @@ export const useAnomalies = ({
         per_page
       });
 
-      setData(response.data.anomalies);
-      setTotal(response.data.total_count);
+      setData(response.data.data.anomalies);
+      setTotal(response.data.data.total_count);
       setPagination({
-        page: response.data.page,
-        per_page: response.data.per_page,
-        total_pages: response.data.total_pages
+        page: response.data.data.page,
+        per_page: response.data.data.per_page,
+        total_pages: response.data.data.total_pages
       });
       setLastUpdated(new Date());
 
@@ -315,12 +315,12 @@ export const useSavingsOpportunities = ({
         per_page
       });
 
-      setData(response.data.opportunities);
-      setTotal(response.data.total_count);
+      setData(response.data.data.savings_opportunities);
+      setTotal(response.data.data.total_count);
       setPagination({
-        page: response.data.page,
-        per_page: response.data.per_page,
-        total_pages: response.data.total_pages
+        page: response.data.data.page,
+        per_page: response.data.data.per_page,
+        total_pages: response.data.data.total_pages
       });
       setLastUpdated(new Date());
 

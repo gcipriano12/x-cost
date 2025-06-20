@@ -404,6 +404,63 @@ class CostAnalyzer:
             logger.error(f"Error analyzing costs by region: {str(e)}")
             return []
     
+    @cached(ttl=1800, key_prefix="cost_by_provider")
+    def analyze_costs_by_provider(
+        self,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+        limit: int = 20
+    ) -> Dict[str, Any]:
+        """
+        Analisa custos por provedor de cloud
+        
+        Args:
+            start_date: Data inicial
+            end_date: Data final
+            limit: Limite de resultados
+            
+        Returns:
+            Dicionário com análise por provedor
+        """
+        try:
+            # Usar QueryBuilder para top spenders por provedor
+            query = self.query_builder.get_top_spenders(
+                dimension='provider_name',
+                limit=limit,
+                start_date=start_date,
+                end_date=end_date
+            )
+            
+            results = query.all()
+            
+            # Processar resultados
+            provider_analysis = []
+            total_cost = sum(float(r.total_cost or 0) for r in results)
+            
+            for result in results:
+                cost = float(result.total_cost or 0)
+                percentage = (cost / total_cost * 100) if total_cost > 0 else 0
+                
+                provider_analysis.append({
+                    'provider_name': result.dimension_value or 'Unknown',
+                    'total_cost': cost,
+                    'avg_cost': float(result.avg_cost or 0),
+                    'record_count': result.record_count,
+                    'percentage_of_total': round(percentage, 2),
+                    'region_count': 0  # Will be filled later in the endpoint
+                })
+            
+            logger.info(f"Analyzed costs by provider for {len(provider_analysis)} providers")
+            return {
+                'providers': provider_analysis,
+                'total_cost': total_cost,
+                'analysis_date': datetime.utcnow().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Error analyzing costs by provider: {str(e)}")
+            return {'error': str(e)}
+    
     @cached(ttl=3600, key_prefix="cost_forecast")
     def forecast_costs(
         self,

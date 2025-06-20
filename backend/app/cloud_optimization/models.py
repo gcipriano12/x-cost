@@ -28,6 +28,7 @@ class RecommendationType(str, Enum):
     """Tipos de recomendações"""
     RIGHTSIZING = "rightsizing"
     RESERVED_INSTANCES = "reserved_instances"
+    COMMITTED_USE = "committed_use"
     SPOT_INSTANCES = "spot_instances"
     STORAGE_OPTIMIZATION = "storage_optimization"
     NETWORK_OPTIMIZATION = "network_optimization"

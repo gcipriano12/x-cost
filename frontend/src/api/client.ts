@@ -64,5 +64,20 @@ export const analyticsService = {
         top_n: params.topN,
         provider_name: params.providerName
       }
+    }),
+
+  getProviderDistribution: (params: {
+    credentialId?: string;
+    days?: number;
+    topN?: number;
+    providerName?: string;
+  }) => 
+    apiClient.get('/api/v1/analytics/by-provider', { 
+      params: {
+        credential_id: params.credentialId,
+        days: params.days,
+        top_n: params.topN,
+        provider_name: params.providerName
+      }
     })
 };

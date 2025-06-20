@@ -66,16 +66,15 @@ class BudgetAnalyzer:
             
             return {
                 'budget_id': budget_id,
-                'budget_amount': float(budget.amount),
+                'budget_amount': float(budget.budget_amount),
                 'period': {
-                    'start': budget.start_date,
-                    'end': budget.end_date,
+                    'period': budget.budget_period,
                     'current': current_date
                 },
                 'utilization': {
                     'spent_amount': 0.0,  # TODO: Calcular valor gasto
                     'percentage': 0.0,    # TODO: Calcular percentual
-                    'remaining': float(budget.amount),  # TODO: Calcular restante
+                    'remaining': float(budget.budget_amount),  # TODO: Calcular restante
                     'status': 'placeholder'  # TODO: Determinar status
                 }
             }
@@ -110,12 +109,12 @@ class BudgetAnalyzer:
             return {
                 'total_budgets': len(budgets),
                 'active_budgets': len([b for b in budgets if b.is_active]),
-                'total_budget_amount': sum(float(b.amount) for b in budgets),
+                'total_budget_amount': sum(float(b.budget_amount) for b in budgets),
                 'budgets': [
                     {
                         'id': b.id,
-                        'name': b.name,
-                        'amount': float(b.amount),
+                        'name': b.budget_name,
+                        'amount': float(b.budget_amount),
                         'is_active': b.is_active
                     }
                     for b in budgets

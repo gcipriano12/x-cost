@@ -39,7 +39,6 @@ import {
   Trash2, 
   Copy, 
   Eye,
-  Plus,
   Filter,
   Download,
   RefreshCw
@@ -334,12 +333,6 @@ const VirtualTagsListNew: React.FC<VirtualTagsListNewProps> = () => {
                     <TableCell colSpan={7} className="text-center py-8">
                       <div className="text-muted-foreground">
                         <p>Nenhuma Virtual Tag encontrada</p>
-                        {onCreateNew && (
-                          <Button onClick={onCreateNew} className="mt-2">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Criar primeira Virtual Tag
-                          </Button>
-                        )}
                       </div>
                     </TableCell>
                   </TableRow>

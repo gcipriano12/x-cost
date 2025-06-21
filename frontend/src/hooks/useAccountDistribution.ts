@@ -33,15 +33,8 @@ export function useAccountDistribution({
   const [hasData, setHasData] = useState(false);
 
   useEffect(() => {
-    console.log('🔄 useAccountDistribution useEffect triggered with:', {
-      providerName,
-      timeFilter,
-      credentialId
-    });
-    
     // Só buscar se tiver providerName
     if (!providerName) {
-      console.log('❌ No providerName provided, skipping API call');
       setAccountData([]);
       setHasData(false);
       return;
@@ -68,8 +61,6 @@ export function useAccountDistribution({
         const params = new URLSearchParams();
         params.append('provider', providerName);
         params.append('time_filter', apiTimeFilter);
-        // Adicionar timestamp para evitar cache
-        params.append('_t', Date.now().toString());
         
         if (credentialId) {
           params.append('credential_id', credentialId);
@@ -77,15 +68,10 @@ export function useAccountDistribution({
 
         const url = `/api/v1/dashboard/account-distribution?${params.toString()}`;
         console.log('🔍 Making request to:', url);
-        console.log('🔍 Request headers:', {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')?.substring(0, 20)}...`,
-          'Content-Type': 'application/json'
-        });
 
         const response = await apiClient.get(url);
         
-        console.log('✅ Account distribution API response status:', response.status);
-        console.log('✅ Account distribution API response data:', response.data);
+        console.log('✅ Account distribution API response:', response.data);
 
         // Backend returns data in response.data.data format
         if (response.data && response.data.success && Array.isArray(response.data.data)) {

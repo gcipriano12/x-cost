@@ -294,7 +294,7 @@ export const sortByPriority = {
     return [...opportunities].sort((a, b) => {
       const savingsDiff = b.estimated_savings - a.estimated_savings;
       if (savingsDiff !== 0) return savingsDiff;
-      return b.confidence_level - a.confidence_level;
+      return b.confidence - a.confidence;
     });
   },
 

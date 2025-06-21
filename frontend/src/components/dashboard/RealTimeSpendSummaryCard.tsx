@@ -198,25 +198,9 @@ function mapApiDataToSpendSummary(
   // Calcular total cost baseado no filtro de provedor
   let totalCost = data.cost_summary?.totals?.total_cost || 0;
   
-  console.log('🔍 Debug Oracle totalCost calculation:', {
-    provider: providerName,
-    originalTotalCost: totalCost,
-    hasTopRegions: !!(data.top_regions && Array.isArray(data.top_regions)),
-    topRegionsCount: data.top_regions?.length || 0,
-    costSummary: data.cost_summary
-  });
-  
-  // Se há filtro de provedor, usar o total cost filtrado que já vem da API
-  // A API já retorna o valor correto quando provider_name é especificado
-  if (providerName) {
-    // Para Oracle Cloud, vamos usar o total da API que já está filtrado
-    console.log('✅ Using filtered total cost from API for provider:', providerName, 'value:', totalCost);
-  }
-  
-  // Fallback: calcular baseado nas regiões se necessário (apenas quando não há provider ou dados inconsistentes)
-  if (!providerName && data.top_regions && Array.isArray(data.top_regions)) {
-    // Fallback: calcular baseado nas regiões se necessário
-    let calculatedCost = 0;
+  // Se há filtro de provedor, calcular total baseado nas regiões filtradas do provedor
+  if (providerName && data.top_regions && Array.isArray(data.top_regions)) {
+    totalCost = 0;
     data.top_regions.forEach(region => {
       const regionName = region.region?.toLowerCase() || '';
       let regionProvider = 'Unknown';
@@ -233,16 +217,9 @@ function mapApiDataToSpendSummary(
       }
       
       if (regionProvider === providerName) {
-        calculatedCost += region.total_cost || 0;
+        totalCost += region.total_cost || 0;
       }
     });
-    
-    console.log('🔍 Calculated cost from regions:', calculatedCost, 'vs API total:', totalCost);
-    // Só usar o calculado se for significativamente diferente
-    if (calculatedCost > 0 && Math.abs(calculatedCost - totalCost) > totalCost * 0.1) {
-      totalCost = calculatedCost;
-      console.log('⚠️ Using calculated cost instead of API total:', calculatedCost);
-    }
   }
   
   const averageCost = data.cost_summary?.totals?.average_cost || 0;

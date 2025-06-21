@@ -3,6 +3,7 @@ import { SpendSummaryCard } from './SpendSummaryCard';
 import { useDashboard, useDashboardFormatters } from '@/hooks/useDashboard';
 import { useProviderDistribution } from '@/hooks/useProviderDistribution';
 import { useAccountDistribution } from '@/hooks/useAccountDistribution';
+import { useBudgets, BudgetResponse } from '@/hooks/useBudgets';
 import { DashboardSummary } from '@/types/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle, RefreshCw, Clock } from 'lucide-react';
@@ -49,6 +50,9 @@ export function RealTimeSpendSummaryCard({
     timeFilter: timeFilter || '30d',
     credentialId
   });
+  
+  // Hook para buscar budgets reais
+  const { budgets, loading: budgetsLoading } = useBudgets();
   
   const { formatRelativeTime, formatUpdatedTime } = useDashboardFormatters();
   const { t } = useTranslation();
@@ -99,7 +103,7 @@ export function RealTimeSpendSummaryCard({
   }
 
   // Mapear dados da API para o formato esperado pelo SpendSummaryCard
-  const mappedData = mapApiDataToSpendSummary(data, providerName, providerData, accountData);
+  const mappedData = mapApiDataToSpendSummary(data, providerName, providerData, accountData, budgets);
 
   return (
     <div className="space-y-2">
@@ -148,7 +152,8 @@ function mapApiDataToSpendSummary(
   data: DashboardSummary, 
   providerName?: string, 
   providerBreakdownData?: Array<{name: string, value: number, color: string}>,
-  accountDistributionData?: Array<{account_id: string, billing_account_name: string, percentage: number, total_cost: number}>
+  accountDistributionData?: Array<{account_id: string, billing_account_name: string, percentage: number, total_cost: number}>,
+  budgets?: BudgetResponse[]
 ) {
   // Verificar se data e metrics existem
   if (!data) {
@@ -247,34 +252,84 @@ function mapApiDataToSpendSummary(
   // Calculate top provider/account based on filter context
   let topProvider = { name: 'N/A', cost: 0 };
   
-  if (!providerName) {
-    // No provider filter - show top provider from breakdown
-    if (providerBreakdownData && providerBreakdownData.length > 0) {
-      const topProviderItem = providerBreakdownData.reduce((max, current) => 
-        current.value > max.value ? current : max
-      );
-      topProvider = {
-        name: topProviderItem.name,
-        cost: (topProviderItem.value / 100) * totalCost // value is percentage
-      };
+  // If total cost is zero, don't assign any provider
+  if (totalCost > 0) {
+    if (!providerName) {
+      // No provider filter - show top provider from breakdown
+      if (providerBreakdownData && providerBreakdownData.length > 0) {
+        const topProviderItem = providerBreakdownData.reduce((max, current) => 
+          current.value > max.value ? current : max
+        );
+        topProvider = {
+          name: topProviderItem.name,
+          cost: (topProviderItem.value / 100) * totalCost // value is percentage
+        };
+      }
+    } else {
+      // Provider filter active - show top account from that provider
+      if (accountBreakdown && accountBreakdown.length > 0) {
+        const topAccount = accountBreakdown.reduce((max, current) => 
+          current.value > max.value ? current : max
+        );
+        topProvider = {
+          name: topAccount.billing_account_name || topAccount.accountName || topAccount.accountId,
+          cost: (topAccount.value / 100) * totalCost // value is percentage
+        };
+      } else {
+        // Fallback: use top service from that provider
+        topProvider = {
+          name: data.top_services?.[0]?.service_name || providerName,
+          cost: data.top_services?.[0]?.total_cost || (totalCost * 0.4)
+        };
+      }
+    }
+  }
+
+  // Calculate real budget data based on active budgets
+  let budgetLimit = 0;
+  let budgetConsumed = 0;
+  
+  if (budgets && budgets.length > 0) {
+    // Filter budgets based on provider (if specified) and active status
+    const activeBudgets = budgets.filter(budget => {
+      const isActive = budget.is_active;
+      const matchesProvider = !providerName || 
+        !budget.provider_name || 
+        budget.provider_name === providerName ||
+        budget.provider_name === 'All';
+      
+      return isActive && matchesProvider;
+    });
+    
+    if (activeBudgets.length > 0) {
+      // Sum all matching budget amounts
+      budgetLimit = activeBudgets.reduce((sum, budget) => {
+        return sum + parseFloat(budget.budget_amount || '0');
+      }, 0);
+      
+      // Calculate consumption percentage based on total cost vs budget limit
+      if (budgetLimit > 0) {
+        budgetConsumed = Math.round((totalCost / budgetLimit) * 100 * 10) / 10;
+      }
+      
+      console.log('✅ Using real budget data:', {
+        activeBudgets: activeBudgets.length,
+        budgetLimit,
+        totalCost,
+        budgetConsumed: `${budgetConsumed}%`,
+        provider: providerName || 'All'
+      });
+    } else {
+      console.log('⚠️ No active budgets found for provider:', providerName || 'All');
     }
   } else {
-    // Provider filter active - show top account from that provider
-    if (accountBreakdown && accountBreakdown.length > 0) {
-      const topAccount = accountBreakdown.reduce((max, current) => 
-        current.value > max.value ? current : max
-      );
-      topProvider = {
-        name: topAccount.billing_account_name || topAccount.accountName || topAccount.accountId,
-        cost: (topAccount.value / 100) * totalCost // value is percentage
-      };
-    } else {
-      // Fallback: use top service from that provider
-      topProvider = {
-        name: data.top_services?.[0]?.service_name || providerName,
-        cost: data.top_services?.[0]?.total_cost || (totalCost * 0.4)
-      };
-    }
+    console.log('⚠️ No budget data available');
+  }
+  
+  // Fallback to estimated budget if no real budgets are available
+  if (budgetLimit === 0) {
+    budgetLimit = totalCost * 1.2; // 20% above current spend as fallback
+    budgetConsumed = Math.round((totalCost / budgetLimit) * 100 * 10) / 10;
   }
 
   return {
@@ -286,9 +341,8 @@ function mapApiDataToSpendSummary(
     accountBreakdown: accountBreakdown,
     selectedProvider: providerName,
     wastedSpend: data.highlights?.estimated_waste?.amount || 0,
-    budgetLimit: data.budget_summary?.total_budget_amount || totalCost * 1.2,
-    budgetConsumed: data.budget_summary?.active_budgets ? 
-      Math.round((data.budget_summary.active_budgets / data.budget_summary.total_budgets) * 100 * 10) / 10 : 75,
+    budgetLimit: budgetLimit,
+    budgetConsumed: budgetConsumed,
     savingsRealized: data.highlights?.savings_achieved?.amount || 0,
     // Dados adicionais para enriquecer o SpendSummaryCard
     topService: {

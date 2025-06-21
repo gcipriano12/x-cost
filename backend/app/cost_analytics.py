@@ -1070,11 +1070,15 @@ class DashboardAnalyzer:
             if provider_name:
                 account_distribution = self._calculate_account_distribution(start_date, end_date, provider_name)
             
+            # 5. Resumo de budgets
+            budget_summary = self._calculate_budget_summary(provider_name, include_all=True)
+            
             return {
                 'metrics': metrics,
                 'provider_distribution': provider_distribution,
                 'highlights': highlights,
                 'account_distribution': account_distribution,
+                'budget_summary': budget_summary,
                 'generated_at': datetime.utcnow(),
                 'period': {
                     'start_date': start_date,
@@ -1363,3 +1367,55 @@ class DashboardAnalyzer:
             'amount': savings_amount,
             'percentage': savings_percentage
         }
+
+    def _calculate_budget_summary(self, provider_name: Optional[str] = None, include_all: bool = False) -> Dict[str, Any]:
+        """Calcula resumo de budgets para o dashboard"""
+        try:
+            from app.models import Budget
+            
+            # Obter todos os budgets para estatísticas gerais
+            all_budgets = self.db.query(Budget).all()
+            
+            # Filtrar budgets se provider_name for especificado
+            filtered_budgets = all_budgets
+            if provider_name:
+                filtered_budgets = [
+                    b for b in all_budgets 
+                    if b.provider_name == provider_name or b.provider_name is None or b.provider_name == "All"
+                ]
+            
+            # Estatísticas básicas
+            total_budgets = len(all_budgets)
+            active_budgets = len([b for b in all_budgets if b.is_active])
+            total_budget_amount = sum(float(b.budget_amount) for b in all_budgets)
+            
+            # Lista de budgets para resposta (usar filtered_budgets se há filtro)
+            budgets_to_show = filtered_budgets if provider_name else all_budgets
+            budget_list = []
+            for budget in budgets_to_show:
+                budget_list.append({
+                    'id': budget.id,
+                    'name': budget.budget_name,
+                    'provider': budget.provider_name,
+                    'amount': float(budget.budget_amount),
+                    'is_active': budget.is_active
+                })
+            
+            return {
+                'total_budgets': total_budgets,
+                'active_budgets': active_budgets, 
+                'total_budget_amount': total_budget_amount,
+                'budgets': budget_list,
+                'filtered_by_provider': provider_name,
+                'filtered_count': len(budgets_to_show)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error calculating budget summary: {str(e)}")
+            return {
+                'total_budgets': 0,
+                'active_budgets': 0,
+                'total_budget_amount': 0.0,
+                'budgets': [],
+                'error': str(e)
+            }

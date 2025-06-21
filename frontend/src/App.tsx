@@ -14,6 +14,10 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
 import VirtualTags from "./pages/VirtualTags";
+import VirtualTagNew from "./pages/VirtualTagNew";
+import VirtualTagEdit from "./pages/VirtualTagEdit";
+import VirtualTagPreview from "./pages/VirtualTagPreview";
+import VirtualTagsDashboardPage from "./pages/VirtualTagsDashboard";
 import Dashboards from "./pages/Dashboards";
 import Budgets from "./pages/Budgets";
 import FinancialPlans from "./pages/FinancialPlans";
@@ -55,6 +59,10 @@ const App = () => {
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/megabill" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                 <Route path="/virtual-tags" element={<ProtectedRoute><VirtualTags /></ProtectedRoute>} />
+                <Route path="/virtual-tags/new" element={<ProtectedRoute><VirtualTagNew /></ProtectedRoute>} />
+                <Route path="/virtual-tags/:id/edit" element={<ProtectedRoute><VirtualTagEdit /></ProtectedRoute>} />
+                <Route path="/virtual-tags/:id/preview" element={<ProtectedRoute><VirtualTagPreview /></ProtectedRoute>} />
+                <Route path="/virtual-tags/dashboard" element={<ProtectedRoute><VirtualTagsDashboardPage /></ProtectedRoute>} />
                 <Route path="/dashboards" element={<ProtectedRoute><Dashboards /></ProtectedRoute>} />
                 <Route path="/budgets" element={<ProtectedRoute><Budgets /></ProtectedRoute>} />
                 <Route path="/financial-plans" element={<ProtectedRoute><FinancialPlans /></ProtectedRoute>} />

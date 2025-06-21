@@ -164,7 +164,7 @@ export function CategoryDistributionCard({
         <CardHeader className="pb-1 flex-shrink-0">
           <CardTitle className="flex items-center text-lg font-medium whitespace-nowrap">
             <Disc className="mr-2 h-5 w-5 text-XCost-blue" />
-            {t('dashboard.categoryDistribution')}
+            {t('categoryDistribution.title')}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-grow p-3">
@@ -183,7 +183,7 @@ export function CategoryDistributionCard({
         <CardHeader className="pb-1 flex-shrink-0">
           <CardTitle className="flex items-center text-lg font-medium whitespace-nowrap">
             <Disc className="mr-2 h-5 w-5 text-XCost-blue" />
-            {t('dashboard.categoryDistribution')}
+            {t('categoryDistribution.title')}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-grow p-3">
@@ -205,7 +205,7 @@ export function CategoryDistributionCard({
         <CardHeader className="pb-1 flex-shrink-0">
           <CardTitle className="flex items-center text-lg font-medium whitespace-nowrap">
             <Disc className="mr-2 h-5 w-5 text-XCost-blue" />
-            {t('dashboard.categoryDistribution')}
+            {t('categoryDistribution.title')}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-grow p-3">
@@ -277,7 +277,7 @@ export function CategoryDistributionCard({
                !isNaN(category.value) &&
                isFinite(category.value) &&
                category.value > 0 && // Garantir que o valor seja positivo
-               category.value >= 0.1 && // Filtrar valores menores que 0.1% (agora value é percentual)
+               category.value > (total * 0.001) && // Filtrar valores menores que 0.1% do total
                category.name && !category.name.includes('100') &&
                category.name && !category.name.includes('99.9');
         console.log(`✅ Category ${category?.name} is valid:`, isValid);
@@ -355,8 +355,8 @@ export function CategoryDistributionCard({
     // Verificar se o name é válido
     const safeName = name && typeof name === 'string' ? name : 'Unknown';
     
-    // Verificar se este item tem nome problemático (já filtrado anteriormente, mas dupla verificação)
-    if (safeName.includes('100') || safeName.includes('99.9') || value >= 99.9) {
+    // Verificar se este item tem um valor próximo ao total e não deve ser exibido
+    if (Math.abs(value - total) < 0.1 || (safeName.includes('100') || safeName.includes('99.9'))) {
       return null; // Não renderizar este item para evitar o problema de 100%/99.9%
     }
     

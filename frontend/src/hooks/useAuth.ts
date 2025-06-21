@@ -63,26 +63,20 @@ export const useAuthProvider = () => {
 
   const logout = async () => {
     try {
-      // Tentar chamar o endpoint de logout da API se estiver disponível
-      const token = localStorage.getItem('access_token');
-      if (token) {
-        try {
-          await apiClient.post('/api/v1/auth/logout');
-        } catch (error) {
-          // Se o endpoint não existir ou falhar, apenas continue com o logout local
-          console.log('API logout endpoint not available or failed, proceeding with local logout');
-        }
-      }
-    } catch (error) {
-      console.log('Error during logout:', error);
-    } finally {
-      // Sempre fazer logout local
+      // Para JWT stateless, não precisamos chamar a API
+      // Apenas removemos o token do localStorage
       localStorage.removeItem('access_token');
       setUser(null);
+      
       toast({
-        title: "Logged out",
-        description: "You have been logged out successfully.",
+        title: "Logout realizado",
+        description: "Você foi desconectado com sucesso.",
       });
+    } catch (error) {
+      console.log('Error during logout:', error);
+      // Mesmo se houver erro, garantimos o logout local
+      localStorage.removeItem('access_token');
+      setUser(null);
     }
   };
 

@@ -5,6 +5,7 @@ import { TrendingUp, TrendingDown, DollarSign, Calendar, AlertCircle, BarChart3,
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
+import { ProviderBadge } from '@/components/ui/provider-badge';
 import { Progress } from '@/components/ui/progress';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip as RechartsTooltip, Sector } from 'recharts';
 import { useTheme } from '@/hooks/useTheme';
@@ -513,12 +514,19 @@ export function SpendSummaryCard({
                   {formatCurrency(calculatedTopProvider.cost)}
                 </div>
                 <div className="mt-0.5 flex justify-center">
-                  <Badge 
-                    className="text-xs py-0 text-white border-0"
-                    style={{ backgroundColor: getProviderColor(calculatedTopProvider.name) }}
-                  >
-                    {calculatedTopProvider.name}
-                  </Badge>
+                  {calculatedTopProvider.name !== 'N/A' ? (
+                    <ProviderBadge 
+                      provider={calculatedTopProvider.name}
+                      size="xs"
+                    />
+                  ) : (
+                    <span className={cn(
+                      "text-xs px-2 py-1 rounded-full",
+                      isDark ? "text-slate-500 bg-slate-800" : "text-gray-500 bg-gray-100"
+                    )}>
+                      N/A
+                    </span>
+                  )}
                 </div>
               </div>
               
@@ -562,7 +570,7 @@ export function SpendSummaryCard({
 
             <div className="h-64 w-full relative">
               <div className="absolute inset-0 backdrop-blur-sm bg-white/5 dark:bg-black/5 rounded-lg"></div>
-              {pieData.length === 0 ? (
+              {pieData.length === 0 || totalSpend === 0 ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
                   <div className={cn(
                     "w-12 h-12 rounded-full flex items-center justify-center mb-3",

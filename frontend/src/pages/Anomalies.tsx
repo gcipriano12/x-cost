@@ -169,103 +169,99 @@ const Anomalies = () => {
 
   return (
     <Dashboard>
-      <div className="flex-1 w-full">
+      <div className="flex-1 w-full p-6 space-y-6">
         <PageHeader 
           icon={AlertTriangle} 
           title="Anomalies Detection" 
           color="text-amber-500"
         />
         
-        <div className="p-6 space-y-6">
-          {/* Summary Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-amber-500" />
-                  <span className="text-sm font-medium">Total</span>
-                </div>
-                <div className="text-2xl font-bold">{total || 0}</div>
-              </CardContent>
-            </Card>
-            
-            {['critical', 'high', 'medium', 'low'].map((severity) => (
-              <Card key={severity}>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2">
-                    <div className={cn(
-                      "h-2 w-2 rounded-full",
-                      severity === 'critical' ? 'bg-red-500' :
-                      severity === 'high' ? 'bg-orange-500' :
-                      severity === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
-                    )} />
-                    <span className="text-sm font-medium capitalize">{severity}</span>
-                  </div>
-                  <div className="text-2xl font-bold">{severityCounts[severity] || 0}</div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          
-          {/* Total Impact */}
+        {/* Summary Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <Card>
             <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-red-500" />
-                  <span className="font-medium">Total Cost Impact</span>
-                </div>
-                <div className="text-2xl font-bold text-red-600">
-                  {formatCurrency(totalImpact, 'USD', 'en-US', true)}
-                </div>
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                <span className="text-sm font-medium">Total</span>
               </div>
+              <div className="text-2xl font-bold">{total || 0}</div>
             </CardContent>
           </Card>
-
-          {/* Filters */}
-          <AnomaliesFilters
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onReset={handleResetFilters}
-            totalCount={total}
-            isLoading={loading}
-          />
-
-          {/* Header Actions */}
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold">Anomalies List</h2>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={refetch} disabled={loading}>
-                <RefreshCw className={cn("h-4 w-4 mr-2", loading && "animate-spin")} />
-                Refresh
-              </Button>
-              <Button variant="outline" onClick={handleExport} disabled={loading || !anomalies.length}>
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-            </div>
-          </div>
-
-          {/* Table */}
-          <AnomaliesTable
-            data={anomalies}
-            loading={loading}
-            error={error}
-            totalCount={total || 0}
-            currentPage={pagination?.page || 1}
-            pageSize={pagination?.per_page || 25}
-            onPageChange={handlePageChange}
-            onPageSizeChange={handlePageSizeChange}
-            onSort={handleSort}
-            sortColumn={sortColumn}
-            sortDirection={sortDirection}
-            selectedItems={selectedItems}
-            onSelectionChange={setSelectedItems}
-            onViewDetails={handleViewDetails}
-            onExport={handleExport}
-            onBulkAction={handleBulkAction}
-          />
+          
+          {['critical', 'high', 'medium', 'low'].map((severity) => (
+            <Card key={severity}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={cn(
+                    "h-2 w-2 rounded-full",
+                    severity === 'critical' ? 'bg-red-500' :
+                    severity === 'high' ? 'bg-orange-500' :
+                    severity === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
+                  )} />
+                  <span className="text-sm font-medium capitalize">{severity}</span>
+                </div>
+                <div className="text-2xl font-bold">{severityCounts[severity] || 0}</div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
+        
+        {/* Total Impact */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart3 className="h-5 w-5 text-red-500" />
+              <span className="text-lg font-medium">Total Cost Impact</span>
+            </div>
+            <div className="text-3xl font-bold text-red-600">
+              {formatCurrency(totalImpact, 'USD', 'en-US', true)}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Filters */}
+        <AnomaliesFilters
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          onReset={handleResetFilters}
+          totalCount={total}
+          isLoading={loading}
+        />
+
+        {/* Header Actions */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Anomalies List</h2>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={refetch} disabled={loading}>
+              <RefreshCw className={cn("h-4 w-4 mr-2", loading && "animate-spin")} />
+              Refresh
+            </Button>
+            <Button variant="outline" onClick={handleExport} disabled={loading || !anomalies.length}>
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+          </div>
+        </div>
+
+        {/* Table */}
+        <AnomaliesTable
+          data={anomalies}
+          loading={loading}
+          error={error}
+          totalCount={total || 0}
+          currentPage={pagination?.page || 1}
+          pageSize={pagination?.per_page || 25}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          onSort={handleSort}
+          sortColumn={sortColumn}
+          sortDirection={sortDirection}
+          selectedItems={selectedItems}
+          onSelectionChange={setSelectedItems}
+          onViewDetails={handleViewDetails}
+          onExport={handleExport}
+          onBulkAction={handleBulkAction}
+        />
         
         {/* Details Modal */}
         <AnomalyDetailsModal

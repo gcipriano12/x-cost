@@ -91,7 +91,7 @@ export const useCategoryDistribution = ({
               percentage_of_total: number;
             }) => ({
               name: item.category || 'Unknown',
-              value: Math.round(item.percentage_of_total * 10) / 10, // Use percentage instead of absolute cost
+              value: item.total_cost || 0, // Use absolute cost values
               color: getCategoryColor(item.category || 'Unknown')
             }));
 

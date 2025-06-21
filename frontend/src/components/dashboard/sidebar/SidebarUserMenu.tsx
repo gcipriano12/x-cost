@@ -27,12 +27,14 @@ export const SidebarUserMenu = () => {
 
   const handleLogout = async () => {
     try {
+      setUserMenuOpen(false); // Fechar o dropdown primeiro
       await logout();
-      navigate('/');
+      navigate('/', { replace: true }); // Usar replace para não manter no histórico
     } catch (error) {
       console.error('Error during logout:', error);
-      // Ainda assim navegar para a página inicial
-      navigate('/');
+      // Mesmo com erro, garantir logout local e redirecionamento
+      localStorage.removeItem('access_token');
+      navigate('/', { replace: true });
     }
   };
 

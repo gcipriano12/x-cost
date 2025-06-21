@@ -304,10 +304,10 @@ export function AnomaliesTable({
                 {COLUMNS.map((column) => (
                   <TableHead 
                     key={column.key} 
-                    className={cn(column.width, column.sortable && "cursor-pointer select-none")}
+                    className={cn(column.width, column.sortable && "cursor-pointer select-none", "text-center")}
                     onClick={column.sortable ? () => handleSort(column.key) : undefined}
                   >
-                    <div className="flex items-center">
+                    <div className="flex items-center justify-center">
                       {column.label}
                       {column.sortable && getSortIcon(column.key)}
                     </div>
@@ -342,39 +342,41 @@ export function AnomaliesTable({
                     </TableCell>
                     
                     {/* Status */}
-                    <TableCell>
-                      <Badge className={cn("text-xs", severityStyle.color)}>
-                        {severityStyle.icon} {severityStyle.label}
-                      </Badge>
+                    <TableCell className="text-center">
+                      <div className="flex justify-center">
+                        <Badge className={cn("text-xs", severityStyle.color)}>
+                          {severityStyle.label}
+                        </Badge>
+                      </div>
                     </TableCell>
 
                     {/* Provider */}
-                    <TableCell>
-                      <div className="flex items-center gap-2">
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-2">
                         <div className={cn("h-2 w-2 rounded-full", providerStyle.color)} />
                         <span className="font-medium">{anomaly.provider}</span>
                       </div>
                     </TableCell>
 
                     {/* Service */}
-                    <TableCell>
-                      <span className="font-medium">{anomaly.service}</span>
-                      {anomaly.region && (
-                        <div className="text-xs text-muted-foreground">{anomaly.region}</div>
-                      )}
+                    <TableCell className="text-center">
+                      <div className="flex flex-col items-center">
+                        <span className="font-medium">{anomaly.service}</span>
+                        {anomaly.region && (
+                          <div className="text-xs text-muted-foreground">{anomaly.region}</div>
+                        )}
+                      </div>
                     </TableCell>
 
                     {/* Cost Impact */}
-                    <TableCell>
-                      <div className="text-right">
-                        <div className="font-medium">
-                          {formatCurrency(anomaly.cost_impact, anomaly.currency, 'en-US', true)}
-                        </div>
+                    <TableCell className="text-center">
+                      <div className="font-medium">
+                        {formatCurrency(anomaly.cost_impact, anomaly.currency, 'en-US', true)}
                       </div>
                     </TableCell>
 
                     {/* Detected Date */}
-                    <TableCell>
+                    <TableCell className="text-center">
                       <div className="text-sm">
                         {formatRelativeTime(anomaly.detected_at)}
                       </div>

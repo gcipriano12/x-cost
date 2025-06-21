@@ -45,7 +45,6 @@ export const formatSeverity = (severity: SeverityLevel) => {
       textColor: 'text-red-700 dark:text-red-400',
       bgColor: 'bg-red-50 dark:bg-red-900/50 border border-red-100 dark:border-red-800',
       borderColor: 'border-red-200/20',
-      icon: '🔴',
       label: 'Critical'
     },
     high: {
@@ -53,7 +52,6 @@ export const formatSeverity = (severity: SeverityLevel) => {
       textColor: 'text-orange-700 dark:text-orange-400',
       bgColor: 'bg-orange-50 dark:bg-orange-900/50 border border-orange-100 dark:border-orange-800',
       borderColor: 'border-orange-200/20',
-      icon: '🟠',
       label: 'High'
     },
     medium: {
@@ -61,7 +59,6 @@ export const formatSeverity = (severity: SeverityLevel) => {
       textColor: 'text-yellow-700 dark:text-yellow-400',
       bgColor: 'bg-yellow-50 dark:bg-yellow-900/50 border border-yellow-100 dark:border-yellow-800',
       borderColor: 'border-yellow-200/20',
-      icon: '🟡',
       label: 'Medium'
     },
     low: {
@@ -69,7 +66,6 @@ export const formatSeverity = (severity: SeverityLevel) => {
       textColor: 'text-green-700 dark:text-green-400',
       bgColor: 'bg-green-50 dark:bg-green-900/50 border border-green-100 dark:border-green-800',
       borderColor: 'border-green-200/20',
-      icon: '🟢',
       label: 'Low'
     }
   };
@@ -141,7 +137,6 @@ export const formatRiskLevel = (risk: RiskLevel) => {
       textColor: 'text-green-700',
       bgColor: 'bg-green-50',
       borderColor: 'border-green-200',
-      icon: '🟢',
       label: 'Low Risk'
     },
     medium: {
@@ -149,7 +144,6 @@ export const formatRiskLevel = (risk: RiskLevel) => {
       textColor: 'text-yellow-700',
       bgColor: 'bg-yellow-50',
       borderColor: 'border-yellow-200',
-      icon: '🟡',
       label: 'Medium Risk'
     },
     high: {
@@ -157,7 +151,6 @@ export const formatRiskLevel = (risk: RiskLevel) => {
       textColor: 'text-red-700',
       bgColor: 'bg-red-50',
       borderColor: 'border-red-200',
-      icon: '🔴',
       label: 'High Risk'
     }
   };
@@ -173,7 +166,6 @@ export const formatHealthStatus = (status: HealthStatus) => {
       textColor: 'text-green-700',
       bgColor: 'bg-green-50',
       borderColor: 'border-green-200',
-      icon: '🟢',
       label: 'Excellent',
       score: 90
     },
@@ -182,7 +174,6 @@ export const formatHealthStatus = (status: HealthStatus) => {
       textColor: 'text-blue-700',
       bgColor: 'bg-blue-50',
       borderColor: 'border-blue-200',
-      icon: '🔵',
       label: 'Good',
       score: 70
     },
@@ -191,7 +182,6 @@ export const formatHealthStatus = (status: HealthStatus) => {
       textColor: 'text-yellow-700',
       bgColor: 'bg-yellow-50',
       borderColor: 'border-yellow-200',
-      icon: '🟡',
       label: 'Needs Attention',
       score: 50
     },
@@ -200,7 +190,6 @@ export const formatHealthStatus = (status: HealthStatus) => {
       textColor: 'text-red-700',
       bgColor: 'bg-red-50',
       borderColor: 'border-red-200',
-      icon: '🔴',
       label: 'Critical',
       score: 30
     }
@@ -216,7 +205,6 @@ export const formatCloudProvider = (provider: string) => {
     textColor: string;
     bgColor: string;
     borderColor: string;
-    icon: string;
     label: string;
   }> = {
     AWS: {
@@ -224,7 +212,6 @@ export const formatCloudProvider = (provider: string) => {
       textColor: 'text-orange-700',
       bgColor: 'bg-orange-50',
       borderColor: 'border-orange-200',
-      icon: '🟠',
       label: 'AWS'
     },
     Azure: {
@@ -232,7 +219,6 @@ export const formatCloudProvider = (provider: string) => {
       textColor: 'text-blue-700',
       bgColor: 'bg-blue-50',
       borderColor: 'border-blue-200',
-      icon: '🔵',
       label: 'Azure'
     },
     GCP: {
@@ -240,7 +226,6 @@ export const formatCloudProvider = (provider: string) => {
       textColor: 'text-green-700',
       bgColor: 'bg-green-50',
       borderColor: 'border-green-200',
-      icon: '🟢',
       label: 'GCP'
     },
     Oracle: {
@@ -248,7 +233,6 @@ export const formatCloudProvider = (provider: string) => {
       textColor: 'text-red-700',
       bgColor: 'bg-red-50',
       borderColor: 'border-red-200',
-      icon: '🔴',
       label: 'Oracle'
     }
   };

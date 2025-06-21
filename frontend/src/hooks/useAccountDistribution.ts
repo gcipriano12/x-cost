@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/api/client';
+import { getDateRangeFromTimeFilter } from '@/utils/timeFrame';
 
 interface AccountDistributionItem {
   account_id: string;
@@ -39,6 +40,16 @@ export function useAccountDistribution({
       return;
     }
 
+    // Corrigir timeFilter para formatos aceitos pelo backend
+    let apiTimeFilter = timeFilter;
+    if (timeFilter === 'previous-year') {
+      apiTimeFilter = '365d';
+    } else if (timeFilter === 'this-year') {
+      // Calcular dias desde 1º de janeiro até hoje
+      const { days } = getDateRangeFromTimeFilter('this-year');
+      apiTimeFilter = `${days}d`;
+    }
+
     const fetchAccountDistribution = async () => {
       setLoading(true);
       setError(null);
@@ -49,7 +60,7 @@ export function useAccountDistribution({
         // Construir URL com parâmetros
         const params = new URLSearchParams();
         params.append('provider', providerName);
-        params.append('time_filter', timeFilter);
+        params.append('time_filter', apiTimeFilter);
         
         if (credentialId) {
           params.append('credential_id', credentialId);

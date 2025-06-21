@@ -32,6 +32,7 @@ from app.credentials_api import credentials_router, auth_router, audit_router
 from app.budget_api import budget_router
 from app.routers.analytics_api import analytics_router
 from app.routers.optimization_api import optimization_router
+from app.virtual_tags_api import router as virtual_tags_router
 
 # Utilities
 from app.utils.response_helpers import StandardResponse
@@ -126,6 +127,10 @@ tags_metadata = [
         "description": "Análises e relatórios de custos"
     },
     {
+        "name": "Virtual Tags",
+        "description": "Gerenciamento de Virtual Tags para alocação dinâmica de custos"
+    },
+    {
         "name": "Dashboard", 
         "description": "Resumo executivo e métricas principais"
     },
@@ -210,6 +215,9 @@ app.include_router(budget_router)
 # Routers de analytics e otimização (novos)
 app.include_router(analytics_router)
 app.include_router(optimization_router)
+
+# Router de Virtual Tags
+app.include_router(virtual_tags_router)
 
 
 # ===== ENDPOINTS BÁSICOS E ESSENCIAIS =====

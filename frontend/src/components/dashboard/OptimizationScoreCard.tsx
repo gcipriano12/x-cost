@@ -338,10 +338,10 @@ export function OptimizationScoreCard({
                 return (
                   <div className="grid grid-cols-3 gap-2">
                     <div className={cn(
-                      "p-2 rounded-lg border",
+                      "p-2 rounded-lg border text-center",
                       isDark ? "bg-amber-900/20 border-amber-800/30" : "bg-amber-50 border-amber-200"
                     )}>
-                      <div className="flex items-center gap-1 mb-1">
+                      <div className="flex items-center justify-center gap-1 mb-1">
                         <AlertTriangle className="h-3 w-3 text-amber-500" />
                         <span className="text-xs text-muted-foreground">{t('optimizationScore.criticalIssues')}</span>
                       </div>
@@ -354,10 +354,10 @@ export function OptimizationScoreCard({
                     </div>
 
                     <div className={cn(
-                      "p-2 rounded-lg border",
+                      "p-2 rounded-lg border text-center",
                       isDark ? "bg-green-900/20 border-green-800/30" : "bg-green-50 border-green-200"
                     )}>
-                      <div className="flex items-center gap-1 mb-1">
+                      <div className="flex items-center justify-center gap-1 mb-1">
                         <TrendingUp className="h-3 w-3 text-green-500" />
                         <span className="text-xs text-muted-foreground">{t('optimizationScore.savingsPotential')}</span>
                       </div>
@@ -370,10 +370,10 @@ export function OptimizationScoreCard({
                     </div>
 
                     <div className={cn(
-                      "p-2 rounded-lg border",
+                      "p-2 rounded-lg border text-center",
                       isDark ? "bg-blue-900/20 border-blue-800/30" : "bg-blue-50 border-blue-200"
                     )}>
-                      <div className="flex items-center gap-1 mb-1">
+                      <div className="flex items-center justify-center gap-1 mb-1">
                         <CheckCircle className="h-3 w-3 text-blue-500" />
                         <span className="text-xs text-muted-foreground">{t('optimizationScore.compliance')}</span>
                       </div>

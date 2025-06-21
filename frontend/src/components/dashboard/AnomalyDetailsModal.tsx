@@ -133,7 +133,7 @@ export function AnomalyDetailsModal({
                 </DialogTitle>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge className={cn("text-xs", severityStyle.color)}>
-                    {severityStyle.icon} {severityStyle.label}
+                    {severityStyle.label}
                   </Badge>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <div className={cn("h-2 w-2 rounded-full", providerStyle.color)} />

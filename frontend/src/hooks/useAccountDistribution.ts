@@ -54,12 +54,23 @@ export function useAccountDistribution({
       setLoading(true);
       setError(null);
 
-      try {
-        console.log('🔍 Fetching account distribution for provider:', providerName, 'timeFilter:', timeFilter, 'apiTimeFilter:', apiTimeFilter);
-        
+      try {        
         // Construir URL com parâmetros
         const params = new URLSearchParams();
-        params.append('provider', providerName);
+        // Mapear nomes de provedores do frontend para o backend
+        let backendProviderName = providerName;
+        if (providerName === 'Oracle Cloud') {
+          backendProviderName = 'Oracle';
+        } else if (providerName === 'Google Cloud') {
+          backendProviderName = 'GCP';
+        } else if (providerName === 'Microsoft Azure') {
+          backendProviderName = 'Azure';
+        } else if (providerName === 'Amazon Web Services') {
+          backendProviderName = 'AWS';
+        }
+        // Se o providerName já for Oracle, AWS, Azure, GCP, manter como está
+        
+        params.append('provider', backendProviderName);
         params.append('time_filter', apiTimeFilter);
         
         if (credentialId) {
@@ -67,17 +78,13 @@ export function useAccountDistribution({
         }
 
         const url = `/api/v1/dashboard/account-distribution?${params.toString()}`;
-        console.log('🔍 Making request to:', url);
 
         const response = await apiClient.get(url);
-        
-        console.log('✅ Account distribution API response:', response.data);
 
         // Backend returns data in response.data.data format
         if (response.data && response.data.success && Array.isArray(response.data.data)) {
           setAccountData(response.data.data);
           setHasData(response.data.data.length > 0);
-          console.log('✅ Account data set:', response.data.data);
         } else {
           console.warn('⚠️ Account distribution API returned invalid data format:', response.data);
           setAccountData([]);

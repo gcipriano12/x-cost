@@ -63,6 +63,14 @@ export function RealTimeSpendSummaryCard({
     credentialId
   });
   
+  console.log('🔍 useAccountDistribution result:', {
+    providerName,
+    accountData: accountData ? `${accountData.length} items` : 'empty/null',
+    actualAccountData: accountData,
+    loading: accountLoading,
+    error: accountError
+  });
+  
   // Hook para buscar budgets reais
   const { budgets, loading: budgetsLoading } = useBudgets();
   
@@ -115,7 +123,7 @@ export function RealTimeSpendSummaryCard({
   }
 
   // Mapear dados da API para o formato esperado pelo SpendSummaryCard
-  const mappedData = mapApiDataToSpendSummary(data, providerName, providerData, accountData, budgets);
+  const mappedData = mapApiDataToSpendSummary(data, providerName, providerData, accountData, budgets, accountError);
 
   return (
     <div className="space-y-2">
@@ -165,7 +173,8 @@ function mapApiDataToSpendSummary(
   providerName?: string, 
   providerBreakdownData?: Array<{name: string, value: number, color: string}>,
   accountDistributionData?: Array<{account_id: string, billing_account_name: string, percentage: number, total_cost: number}>,
-  budgets?: BudgetResponse[]
+  budgets?: BudgetResponse[],
+  accountError?: string | null
 ) {
   // Verificar se data e metrics existem
   if (!data) {
@@ -197,10 +206,14 @@ function mapApiDataToSpendSummary(
 
   // Calcular total cost baseado no filtro de provedor
   let totalCost = data.cost_summary?.totals?.total_cost || 0;
+  console.log('🔍 Initial total cost from API:', totalCost, 'Provider filter:', providerName);
   
   // Se há filtro de provedor, calcular total baseado nas regiões filtradas do provedor
   if (providerName && data.top_regions && Array.isArray(data.top_regions)) {
+    const originalTotalCost = totalCost;
     totalCost = 0;
+    console.log('🔍 Processing regions for provider filter:', providerName);
+    console.log('🔍 Available regions:', data.top_regions.map(r => ({ region: r.region, cost: r.total_cost })));
     data.top_regions.forEach(region => {
       const regionName = region.region?.toLowerCase() || '';
       let regionProvider = 'Unknown';
@@ -212,14 +225,26 @@ function mapApiDataToSpendSummary(
         regionProvider = 'Azure';
       } else if (regionName.includes('central1') || regionName.includes('west1') || regionName.includes('east1') || regionName.includes('europe-west') || regionName.includes('asia-') || regionName.includes('australia-')) {
         regionProvider = 'GCP';
-      } else if (regionName.includes('ap-southeast-1') || regionName.includes('oci') || regionName.includes('oracle') || regionName.includes('ashburn') || regionName.includes('phoenix')) {
+      } else if (regionName.includes('oci') || regionName.includes('oracle') || regionName.includes('ashburn') || regionName.includes('phoenix') || regionName.includes('ap-southeast-1') || regionName.includes('ap-southeast-2') || regionName.includes('eu-frankfurt-1') || regionName.includes('us-ashburn-1') || regionName.includes('us-phoenix-1') || regionName.includes('uk-london-1') || regionName.includes('ca-toronto-1') || regionName.includes('ap-tokyo-1') || regionName.includes('ap-sydney-1') || regionName.includes('eu-zurich-1') || regionName.includes('me-jeddah-1') || regionName.includes('sa-saopaulo-1')) {
         regionProvider = 'Oracle Cloud';
       }
       
+      console.log('🔍 Region:', regionName, 'Provider mapped to:', regionProvider, 'Cost:', region.total_cost);
+      
       if (regionProvider === providerName) {
         totalCost += region.total_cost || 0;
+        console.log('✅ Region matched provider filter - added cost:', region.total_cost);
       }
     });
+    console.log('🔍 Total cost after provider filtering:', totalCost);
+    
+    // Se não encontrou nenhuma região para o provedor, usar o total original
+    if (totalCost === 0 && originalTotalCost > 0) {
+      console.log('⚠️ No regions found for provider', providerName, 'using original total cost:', originalTotalCost);
+      totalCost = originalTotalCost;
+    }
+  } else if (providerName) {
+    console.log('⚠️ No top_regions data available for provider filtering:', providerName);
   }
   
   const averageCost = data.cost_summary?.totals?.average_cost || 0;
@@ -247,6 +272,8 @@ function mapApiDataToSpendSummary(
 
   // Use real account distribution data from dedicated hook
   let accountBreakdown = undefined;
+  console.log('🔍 Account breakdown logic - Provider:', providerName, 'AccountData:', accountDistributionData);
+  
   if (providerName && accountDistributionData && accountDistributionData.length > 0) {
     // Use real API data from useAccountDistribution hook
     accountBreakdown = accountDistributionData.map(account => ({
@@ -256,9 +283,19 @@ function mapApiDataToSpendSummary(
       value: Math.round(account.percentage * 10) / 10, // percentage is already a number
       color: '' // Color will be generated in SpendSummaryCard
     }));
-    console.log('✅ Using real account distribution data:', accountBreakdown);
+    console.log('✅ Created account breakdown with', accountBreakdown.length, 'accounts:', accountBreakdown);
   } else if (providerName) {
-    console.log('⚠️ No account distribution data available for provider:', providerName);
+    console.log('⚠️ No account distribution data available for provider:', providerName, 'Conditions:', {
+      hasProvider: !!providerName,
+      hasAccountData: !!accountDistributionData,
+      accountDataLength: accountDistributionData?.length || 0,
+      error: accountError
+    });
+    
+    // NÃO criar fallback - sempre undefined quando não há dados reais
+    // Isso força o SpendSummaryCard a mostrar distribuição por provedor
+    console.log('❌ No account data - will show provider distribution instead');
+    accountBreakdown = undefined;
   }
 
   // Calculate top provider/account based on filter context
@@ -278,21 +315,33 @@ function mapApiDataToSpendSummary(
         };
       }
     } else {
-      // Provider filter active - show top account from that provider
-      if (accountBreakdown && accountBreakdown.length > 0) {
-        const topAccount = accountBreakdown.reduce((max, current) => 
-          current.value > max.value ? current : max
+      // Provider filter active - show account with highest ABSOLUTE cost from that provider
+      if (accountDistributionData && accountDistributionData.length > 0) {
+        // Buscar a conta com o maior total_cost (valor absoluto)
+        const topAccount = accountDistributionData.reduce((max, current) => 
+          current.total_cost > max.total_cost ? current : max
         );
         topProvider = {
-          name: topAccount.billing_account_name || topAccount.accountName || topAccount.accountId,
-          cost: (topAccount.value / 100) * totalCost // value is percentage
+          name: topAccount.billing_account_name || `Account ${topAccount.account_id}`,
+          cost: topAccount.total_cost
         };
+        console.log('✅ Highest spend account:', topProvider);
       } else {
-        // Fallback: use top service from that provider
-        topProvider = {
-          name: data.top_services?.[0]?.service_name || providerName,
-          cost: data.top_services?.[0]?.total_cost || (totalCost * 0.4)
-        };
+        // Fallback: use top service or provider name
+        // Since services don't have provider_name field, we'll use the first service as fallback
+        if (data.top_services && data.top_services.length > 0) {
+          const topService = data.top_services[0];
+          topProvider = {
+            name: topService.service_name || providerName,
+            cost: topService.total_cost || (totalCost * 0.4)
+          };
+        } else {
+          // Ultimate fallback: just use provider name
+          topProvider = {
+            name: providerName,
+            cost: totalCost
+          };
+        }
       }
     }
   }
@@ -343,6 +392,12 @@ function mapApiDataToSpendSummary(
     budgetLimit = totalCost * 1.2; // 20% above current spend as fallback
     budgetConsumed = Math.round((totalCost / budgetLimit) * 100 * 10) / 10;
   }
+
+  console.log('🔍 Final data being returned:', {
+    providerName,
+    accountBreakdown: accountBreakdown ? `${accountBreakdown.length} accounts` : 'undefined',
+    providerBreakdown: `${providerBreakdown.length} providers`
+  });
 
   return {
     totalSpend: totalCost,

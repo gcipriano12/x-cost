@@ -18,8 +18,8 @@ async function getNewToken() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                username: 'admin',
-                password: 'ChangeMe123!'
+                username: 'login',
+                password: 'senha'
             })
         });
 

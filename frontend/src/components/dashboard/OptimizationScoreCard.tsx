@@ -336,52 +336,67 @@ export function OptimizationScoreCard({
                 }
 
                 return (
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-1.5 text-xs">
                     <div className={cn(
-                      "p-2 rounded-lg border text-center",
+                      "p-1.5 rounded-lg border text-center min-h-[70px] flex flex-col justify-between overflow-hidden",
                       isDark ? "bg-amber-900/20 border-amber-800/30" : "bg-amber-50 border-amber-200"
                     )}>
-                      <div className="flex items-center justify-center gap-1 mb-1">
-                        <AlertTriangle className="h-3 w-3 text-amber-500" />
-                        <span className="text-xs text-muted-foreground">{t('optimizationScore.criticalIssues')}</span>
+                      <div className="flex items-center justify-center gap-0.5 mb-1">
+                        <AlertTriangle className="h-2.5 w-2.5 text-amber-500 flex-shrink-0" />
+                        <span className="text-[10px] text-muted-foreground truncate max-w-full" title={t('optimizationScore.criticalIssues')}>
+                          Problemas
+                        </span>
                       </div>
-                      <div className="text-sm font-medium text-amber-700 dark:text-amber-300">
-                        {providerSpecificData.anomalyCount} {t('optimizationScore.anomalies')}
+                      <div className="text-xs font-medium text-amber-700 dark:text-amber-300 truncate">
+                        {providerSpecificData.anomalyCount}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        ${Math.round(providerSpecificData.anomalyCount * 1250).toLocaleString()} {t('optimizationScore.impact')}
+                      <div className="text-xs font-medium text-amber-700 dark:text-amber-300 truncate">
+                        anomalias
+                      </div>
+                      <div className="text-[10px] text-muted-foreground truncate" title={`$${Math.round(providerSpecificData.anomalyCount * 1250).toLocaleString()} ${t('optimizationScore.impact')}`}>
+                        ${Math.round(providerSpecificData.anomalyCount * 1250).toLocaleString()} imp.
                       </div>
                     </div>
 
                     <div className={cn(
-                      "p-2 rounded-lg border text-center",
+                      "p-1.5 rounded-lg border text-center min-h-[70px] flex flex-col justify-between overflow-hidden",
                       isDark ? "bg-green-900/20 border-green-800/30" : "bg-green-50 border-green-200"
                     )}>
-                      <div className="flex items-center justify-center gap-1 mb-1">
-                        <TrendingUp className="h-3 w-3 text-green-500" />
-                        <span className="text-xs text-muted-foreground">{t('optimizationScore.savingsPotential')}</span>
+                      <div className="flex items-center justify-center gap-0.5 mb-1">
+                        <TrendingUp className="h-2.5 w-2.5 text-green-500 flex-shrink-0" />
+                        <span className="text-[10px] text-muted-foreground truncate max-w-full" title={t('optimizationScore.savingsPotential')}>
+                          Potencial
+                        </span>
                       </div>
-                      <div className="text-sm font-medium text-green-700 dark:text-green-300">
-                        {providerSpecificData.opportunityCount} {t('optimizationScore.opportunities')}
+                      <div className="text-xs font-medium text-green-700 dark:text-green-300 truncate">
+                        {providerSpecificData.opportunityCount}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        ${Math.round(providerSpecificData.opportunityCount * 890).toLocaleString()} {t('optimizationScore.potential')}
+                      <div className="text-xs font-medium text-green-700 dark:text-green-300 truncate">
+                        oportunidades
+                      </div>
+                      <div className="text-[10px] text-muted-foreground truncate" title={`$${Math.round(providerSpecificData.opportunityCount * 890).toLocaleString()} ${t('optimizationScore.potential')}`}>
+                        ${Math.round(providerSpecificData.opportunityCount * 890).toLocaleString()} pot.
                       </div>
                     </div>
 
                     <div className={cn(
-                      "p-2 rounded-lg border text-center",
+                      "p-1.5 rounded-lg border text-center min-h-[70px] flex flex-col justify-between overflow-hidden",
                       isDark ? "bg-blue-900/20 border-blue-800/30" : "bg-blue-50 border-blue-200"
                     )}>
-                      <div className="flex items-center justify-center gap-1 mb-1">
-                        <CheckCircle className="h-3 w-3 text-blue-500" />
-                        <span className="text-xs text-muted-foreground">{t('optimizationScore.compliance')}</span>
+                      <div className="flex items-center justify-center gap-0.5 mb-1">
+                        <CheckCircle className="h-2.5 w-2.5 text-blue-500 flex-shrink-0" />
+                        <span className="text-[10px] text-muted-foreground truncate max-w-full" title={t('optimizationScore.compliance')}>
+                          Conformidade
+                        </span>
                       </div>
-                      <div className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                        {Math.round(providerSpecificData.efficiencyScore * 0.8)}% {t('optimizationScore.compliant')}
+                      <div className="text-xs font-medium text-blue-700 dark:text-blue-300 truncate">
+                        {Math.round(providerSpecificData.efficiencyScore * 0.8)}% em
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {t('optimizationScore.bestPractices')}
+                      <div className="text-xs font-medium text-blue-700 dark:text-blue-300 truncate">
+                        conformidade
+                      </div>
+                      <div className="text-[10px] text-muted-foreground truncate" title={t('optimizationScore.bestPractices')}>
+                        melhores prát.
                       </div>
                     </div>
                   </div>
@@ -412,34 +427,43 @@ export function OptimizationScoreCard({
                     </div>
 
                     {/* Metrics */}
-                    <div className="grid grid-cols-3 gap-3 text-xs">
+                    <div className="grid grid-cols-3 gap-2 text-xs">
                       <div className="text-center space-y-1">
                         <div className="flex items-center justify-center gap-1 text-muted-foreground">
-                          <AlertTriangle className="h-3 w-3 text-amber-500" />
-                          <span>{t('optimizationScore.issues')}</span>
+                          <AlertTriangle className="h-3 w-3 text-amber-500 flex-shrink-0" />
+                          <span>Problemas</span>
                         </div>
                         <div className="font-medium text-amber-600 dark:text-amber-400">
-                          {currentProvider.anomalyCount} {t('optimizationScore.anomalies')}
+                          {currentProvider.anomalyCount}
+                        </div>
+                        <div className="font-medium text-amber-600 dark:text-amber-400 text-xs">
+                          anomalias
                         </div>
                       </div>
                       
                       <div className="text-center space-y-1">
                         <div className="flex items-center justify-center gap-1 text-muted-foreground">
-                          <TrendingUp className="h-3 w-3 text-green-500" />
-                          <span>{t('optimizationScore.savings')}</span>
+                          <TrendingUp className="h-3 w-3 text-green-500 flex-shrink-0" />
+                          <span>Economia</span>
                         </div>
                         <div className="font-medium text-green-600 dark:text-green-400">
-                          {currentProvider.opportunityCount} {t('optimizationScore.opportunities')}
+                          {currentProvider.opportunityCount}
+                        </div>
+                        <div className="font-medium text-green-600 dark:text-green-400 text-xs">
+                          oportunidades
                         </div>
                       </div>
                       
                       <div className="text-center space-y-1">
                         <div className="flex items-center justify-center gap-1 text-muted-foreground">
-                          <CheckCircle className="h-3 w-3 text-blue-500" />
-                          <span>{t('optimizationScore.compliance')}</span>
+                          <CheckCircle className="h-3 w-3 text-blue-500 flex-shrink-0" />
+                          <span>Conformidade</span>
                         </div>
                         <div className="font-medium text-blue-600 dark:text-blue-400">
-                          {Math.round(currentProvider.efficiencyScore * 0.8)}% {t('optimizationScore.compliant')}
+                          {Math.round(currentProvider.efficiencyScore * 0.8)}%
+                        </div>
+                        <div className="font-medium text-blue-600 dark:text-blue-400 text-xs">
+                          conforme
                         </div>
                       </div>
                     </div>

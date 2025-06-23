@@ -141,10 +141,10 @@ class QueryBuilder:
             if hasattr(FocusCostData, field):
                 select_fields.append(getattr(FocusCostData, field))
         
-        # Adicionar agregações
+        # Adicionar agregações usando effective_cost (mesmo campo do DashboardAnalyzer)
         select_fields.extend([
-            func.sum(FocusCostData.billed_cost).label('total_cost'),
-            func.avg(FocusCostData.billed_cost).label('avg_cost'),
+            func.sum(FocusCostData.effective_cost).label('total_cost'),
+            func.avg(FocusCostData.effective_cost).label('avg_cost'),
             func.count(FocusCostData.id).label('record_count'),
             func.min(FocusCostData.billing_period_start).label('earliest_date'),
             func.max(FocusCostData.billing_period_end).label('latest_date')

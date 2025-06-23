@@ -50,6 +50,7 @@ interface SpendSummaryProps {
     cost: number;
   };
   monthlyAverage?: number;
+  monthlyAverageDescription?: string; // Adicionar descrição do período
   annualProjection?: number;
   nextMonthForecast?: {
     amount: number;
@@ -70,13 +71,14 @@ export function SpendSummaryCard({
   ],
   accountBreakdown,
   selectedProvider,
-  wastedSpend = totalSpend * 0.15,
+  wastedSpend = 0, // SEM FALLBACK - apenas dados reais da API
   budgetLimit = totalSpend * 1.2,
   budgetConsumed = 75,
-  savingsRealized = totalSpend * 0.08,
+  savingsRealized = 0, // SEM FALLBACK - apenas dados reais da API
   topService,
   topProvider,
   monthlyAverage,
+  monthlyAverageDescription,
   annualProjection,
   nextMonthForecast
 }: SpendSummaryProps) {
@@ -87,14 +89,14 @@ export function SpendSummaryCard({
   const changeAbs = Math.abs(previousPeriodChange);
   const [activeIndex, setActiveIndex] = React.useState<number | null>(null);
   
-  // Use API data when available, fallback to calculated values
-  const calculatedMonthlyAverage = monthlyAverage || totalSpend / 6;
-  const calculatedProjectedNextMonth = nextMonthForecast?.amount || totalSpend * (1 + (previousPeriodChange / 100));
+  // Usar APENAS dados reais da API - sem fallbacks mockados
+  const calculatedMonthlyAverage = monthlyAverage || 0;
+  const calculatedProjectedNextMonth = nextMonthForecast?.amount || 0;
   const calculatedTopProvider = topProvider || {
-    name: "AWS",
-    cost: totalSpend * 0.25
+    name: "Unknown",
+    cost: 0
   };
-  const calculatedAnnualProjection = annualProjection || totalSpend * 12;
+  const calculatedAnnualProjection = annualProjection || 0;
   
   const formatCurrency = (value: number) => {
     if (value >= 1000000) {
@@ -502,7 +504,7 @@ export function SpendSummaryCard({
                   {formatCurrency(calculatedMonthlyAverage)}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {t('spendSummary.lastSixMonths')}
+                  {monthlyAverageDescription || "Baseado em dados atuais"}
                 </div>
               </div>
               
@@ -672,19 +674,22 @@ export function SpendSummaryCard({
                     <span className={cn(
                       "text-lg font-bold",
                       isDark ? "text-blue-400" : "text-XCost-blue"
-                    )}>{formatCurrency(calculatedProjectedNextMonth)}</span>
-                    <ArrowRight className="h-3 w-3 mx-1 text-muted-foreground" />
-                    <span className={cn(
-                      "text-xs",
-                      (nextMonthForecast?.change_percentage || previousPeriodChange) > 0 
-                        ? isDark ? "text-red-400" : "text-XCost-red" 
-                        : isDark ? "text-green-400" : "text-XCost-green"
                     )}>
-                      {(() => {
-                        const changeValue = nextMonthForecast?.change_percentage ?? previousPeriodChange;
-                        return `${changeValue > 0 ? '+' : ''}${changeValue.toFixed(1)}%`;
-                      })()}
+                      {formatCurrency(calculatedProjectedNextMonth)}
                     </span>
+                    {nextMonthForecast?.change_percentage !== undefined && (
+                      <>
+                        <ArrowRight className="h-3 w-3 mx-1 text-muted-foreground" />
+                        <span className={cn(
+                          "text-xs",
+                          nextMonthForecast.change_percentage > 0 
+                            ? isDark ? "text-red-400" : "text-XCost-red" 
+                            : isDark ? "text-green-400" : "text-XCost-green"
+                        )}>
+                          {nextMonthForecast.change_percentage > 0 ? '+' : ''}{nextMonthForecast.change_percentage.toFixed(1)}%
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -705,13 +710,17 @@ export function SpendSummaryCard({
                     <span className={cn(
                       "text-lg font-bold",
                       isDark ? "text-red-400" : "text-XCost-red"
-                    )}>{formatCurrency(wastedSpend)}</span>
-                    <span className={cn(
-                      "text-xs ml-2",
-                      isDark ? "text-red-400" : "text-XCost-red"
                     )}>
-                      ({Math.round((wastedSpend/totalSpend)*100)}% {t('spendSummary.ofTotal')})
+                      {formatCurrency(wastedSpend)}
                     </span>
+                    {wastedSpend > 0 && totalSpend > 0 && (
+                      <span className={cn(
+                        "text-xs ml-2",
+                        isDark ? "text-red-400" : "text-XCost-red"
+                      )}>
+                        ({Math.round((wastedSpend/totalSpend)*100)}% {t('spendSummary.ofTotal')})
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -732,13 +741,17 @@ export function SpendSummaryCard({
                     <span className={cn(
                       "text-lg font-bold",
                       isDark ? "text-green-400" : "text-XCost-green"
-                    )}>{formatCurrency(savingsRealized)}</span>
-                    <span className={cn(
-                      "text-xs ml-2",
-                      isDark ? "text-green-400" : "text-XCost-green"
                     )}>
-                      ({Math.round((savingsRealized/totalSpend)*100)}% {t('spendSummary.ofTotal')})
+                      {formatCurrency(savingsRealized)}
                     </span>
+                    {savingsRealized > 0 && totalSpend > 0 && (
+                      <span className={cn(
+                        "text-xs ml-2",
+                        isDark ? "text-green-400" : "text-XCost-green"
+                      )}>
+                        ({Math.round((savingsRealized/totalSpend)*100)}% {t('spendSummary.ofTotal')})
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

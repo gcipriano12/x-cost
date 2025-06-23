@@ -162,6 +162,18 @@ export interface DashboardSummary {
       amount: number;
       percentage: number;
     };
+    annual_projection?: {
+      amount: number;
+      growth_rate_annual: number;
+      base_annual_cost: number;
+      period_coverage: number;
+    };
+    monthly_average?: {
+      amount: number;
+      period_months: number;
+      period_description: string;
+      total_cost: number;
+    };
   };
   metrics?: {
     total_cost: string;

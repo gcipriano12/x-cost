@@ -368,7 +368,7 @@ class DashboardAnalyzer:
     
     def _calculate_next_month_forecast(self, total_cost: float, period_days: int, providers: Optional[List[str]] = None) -> Dict[str, Any]:
         """
-        Calcula previsão realista para próximo mês baseado no gasto atual
+        Calcula previsão realista para próximo mês baseado em dados históricos REAIS
         
         Args:
             total_cost: Custo total do período atual
@@ -376,32 +376,75 @@ class DashboardAnalyzer:
             providers: Lista de provedores para ajustar tendências
             
         Returns:
-            Dict com amount e change_percentage
+            Dict com amount e change_percentage baseado em tendência real
         """
         try:
-            # Taxa de crescimento MENSAL por provedor (valores realistas)
-            monthly_growth_rates = {
-                'ORACLE': 0.5,   # 0.5% ao mês = ~6% ao ano
-                'AWS': 1.2,      # 1.2% ao mês = ~15% ao ano  
-                'AZURE': 1.8,    # 1.8% ao mês = ~24% ao ano
-                'GCP': 0.8,      # 0.8% ao mês = ~10% ao ano
-                'DEFAULT': 1.0   # 1.0% ao mês = ~12% ao ano
-            }
+            # Buscar dados históricos dos últimos 6 meses para calcular tendência real
+            from datetime import date, timedelta
             
-            # Determinar taxa de crescimento baseado no provedor
-            if providers and len(providers) == 1:
-                provider = providers[0].upper()
-                monthly_growth_rate = monthly_growth_rates.get(provider, monthly_growth_rates['DEFAULT'])
-                logger.info(f"💡 Using monthly growth rate for {provider}: {monthly_growth_rate}%")
+            end_date = date.today()
+            start_date = end_date - timedelta(days=180)  # 6 meses de histórico
+            
+            logger.info(f"🔍 Analyzing historical trend from {start_date} to {end_date}")
+            
+            # Usar CostAnalyzer para obter dados de tendência histórica
+            provider_name = providers[0] if providers and len(providers) == 1 else None
+            historical_trend = self.cost_analyzer.calculate_cost_trend(
+                provider_name=provider_name,
+                start_date=start_date,
+                end_date=end_date,
+                period="monthly"
+            )
+            
+            # Calcular taxa de crescimento baseada em dados reais
+            monthly_growth_rate = 1.0  # Fallback padrão
+            
+            if historical_trend and len(historical_trend) >= 2:
+                # Extrair custos mensais dos dados históricos
+                monthly_costs = [item['total_cost'] for item in historical_trend if item['total_cost'] > 0]
+                
+                if len(monthly_costs) >= 2:
+                    # Usar o método estatístico para calcular taxa de crescimento real
+                    from ..core.calculations import StatisticalCalculations
+                    calculated_growth_rate = StatisticalCalculations.calculate_growth_rate(monthly_costs)
+                    
+                    if calculated_growth_rate is not None:
+                        # Limitar crescimento a valores realistas (-10% a +20% ao mês)
+                        monthly_growth_rate = max(-10.0, min(20.0, calculated_growth_rate))
+                        logger.info(f"📈 Calculated growth rate from {len(monthly_costs)} months: {monthly_growth_rate:.2f}%")
+                    else:
+                        logger.warning(f"⚠️ Could not calculate growth rate from historical data")
+                
+                # Se temos dados de tendência, usar o último growth_rate calculado
+                if historical_trend[-1].get('growth_rate') is not None:
+                    trend_growth_rate = historical_trend[-1]['growth_rate']
+                    # Limitar a valores realistas
+                    trend_growth_rate = max(-10.0, min(20.0, trend_growth_rate))
+                    monthly_growth_rate = trend_growth_rate
+                    logger.info(f"📊 Using trend growth rate: {monthly_growth_rate:.2f}%")
             else:
-                monthly_growth_rate = monthly_growth_rates['DEFAULT']
-                logger.info(f"💡 Using default monthly growth rate: {monthly_growth_rate}%")
+                logger.warning(f"⚠️ Insufficient historical data, using provider-based fallback")
+                
+                # Fallback para taxas por provedor se não há dados históricos suficientes
+                monthly_growth_rates = {
+                    'ORACLE': 0.5,   # 0.5% ao mês = ~6% ao ano
+                    'AWS': 1.2,      # 1.2% ao mês = ~15% ao ano  
+                    'AZURE': 1.8,    # 1.8% ao mês = ~24% ao ano
+                    'GCP': 0.8,      # 0.8% ao mês = ~10% ao ano
+                    'DEFAULT': 1.0   # 1.0% ao mês = ~12% ao ano
+                }
+                
+                if provider_name:
+                    monthly_growth_rate = monthly_growth_rates.get(provider_name.upper(), monthly_growth_rates['DEFAULT'])
+                    logger.info(f"💡 Using fallback rate for {provider_name}: {monthly_growth_rate}%")
+                else:
+                    monthly_growth_rate = monthly_growth_rates['DEFAULT']
+                    logger.info(f"💡 Using default fallback rate: {monthly_growth_rate}%")
             
-            # O total_cost já representa aproximadamente 1 mês (30 dias)
-            # Aplicar crescimento mensal realista
+            # Calcular projeção baseada na taxa de crescimento real ou fallback
             next_month_projected = total_cost * (1 + monthly_growth_rate / 100)
             
-            logger.info(f"📊 Forecast calculation: ${total_cost:,.2f} → ${next_month_projected:,.2f} (+{monthly_growth_rate}%)")
+            logger.info(f"📊 Forecast (based on real data): ${total_cost:,.2f} → ${next_month_projected:,.2f} ({monthly_growth_rate:+.2f}%)")
             
             return {
                 'amount': round(next_month_projected, 2),
@@ -410,9 +453,14 @@ class DashboardAnalyzer:
             
         except Exception as e:
             logger.error(f"❌ Error calculating next month forecast: {str(e)}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            
+            # Fallback seguro em caso de erro
+            fallback_growth = 1.0
             return {
-                'amount': round(total_cost * 1.01, 2),  # Fallback: apenas 1% de crescimento
-                'change_percentage': 1.0
+                'amount': round(total_cost * (1 + fallback_growth / 100), 2),
+                'change_percentage': fallback_growth
             }
     
     def _calculate_annual_projection(

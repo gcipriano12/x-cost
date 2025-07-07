@@ -279,8 +279,8 @@ function mapApiDataToSpendSummary(
   const providerBreakdown = (providerBreakdownData && providerBreakdownData.length > 0) ? providerBreakdownData : [];
   
   console.log('🔍 Provider breakdown final data:', {
+    providerFilter: providerName || 'All',
     providerBreakdownData: providerBreakdownData ? `${providerBreakdownData.length} items` : 'null/undefined',
-    actualData: providerBreakdownData,
     finalProviderBreakdown: `${providerBreakdown.length} items`
   });
 

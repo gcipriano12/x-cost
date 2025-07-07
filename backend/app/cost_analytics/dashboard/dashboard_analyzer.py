@@ -120,6 +120,25 @@ class DashboardAnalyzer:
                 period="daily"
             )
             
+            # ADICIONAR: Distribuição por provedor
+            try:
+                logger.info("🔍 Calculating provider distribution...")
+                provider_analysis = self.cost_analyzer.analyze_costs_by_provider(
+                    start_date=start_date,
+                    end_date=end_date,
+                    limit=10
+                )
+                # Extrair apenas a lista de providers do resultado
+                if isinstance(provider_analysis, dict) and 'providers' in provider_analysis:
+                    summary['provider_distribution'] = provider_analysis['providers']
+                    logger.info(f"✅ Provider distribution calculated: {len(provider_analysis['providers'])} providers")
+                else:
+                    summary['provider_distribution'] = []
+                    logger.warning("⚠️ Provider analysis returned unexpected format")
+            except Exception as e:
+                logger.error(f"❌ Error calculating provider distribution: {str(e)}")
+                summary['provider_distribution'] = []
+            
             logger.info(f"✅ Dashboard summary generated successfully with highlights: {summary.get('highlights')}")
             print(f"🔥 [DASHBOARD] FINAL summary keys before return: {list(summary.keys())}")
             print(f"🔥 [DASHBOARD] FINAL highlights value: {summary.get('highlights')}")

@@ -1046,21 +1046,41 @@ class DashboardAnalyzer:
             return []
 
     @cached(ttl=900, key_prefix="dashboard_summary")  # Cache por 15 minutos
-    def get_dashboard_summary(self, period_days: int = 30, provider_name: Optional[str] = None) -> Dict[str, Any]:
+    def get_dashboard_summary(self, start_date: Optional[date] = None, end_date: Optional[date] = None, 
+                             period_days: int = 30, providers: Optional[List[str]] = None) -> Dict[str, Any]:
         """Gera resumo completo para o dashboard"""
         try:
-            end_date = date.today()
-            start_date = end_date - timedelta(days=period_days)
+            # Determinar datas
+            if start_date is None or end_date is None:
+                end_date = date.today()
+                start_date = end_date - timedelta(days=period_days)
+            else:
+                period_days = (end_date - start_date).days + 1
             
             # Período anterior para comparação
             previous_start = start_date - timedelta(days=period_days)
             previous_end = start_date
+            
+            # Determinar provider_name para métodos legados
+            provider_name = None
+            if providers and len(providers) == 1:
+                provider_name = providers[0]
+            
+            print(f"🔍 [DashboardAnalyzer] get_dashboard_summary called:")
+            print(f"  - start_date: {start_date}")
+            print(f"  - end_date: {end_date}")
+            print(f"  - period_days: {period_days}")
+            print(f"  - providers: {providers}")
+            print(f"  - provider_name: {provider_name}")
             
             # 1. Métricas principais
             metrics = self._calculate_main_metrics(start_date, end_date, previous_start, previous_end, period_days, provider_name)
             
             # 2. Distribuição por provedor
             provider_distribution = self._calculate_provider_distribution(start_date, end_date, provider_name)
+            print(f"🔍 [DashboardAnalyzer] provider_distribution calculated: {len(provider_distribution)} providers")
+            for p in provider_distribution:
+                print(f"  - {p['provider_name']}: ${p['total_cost']:,.2f} ({p['percentage']:.1f}%)")
             
             # 3. Highlights especiais
             highlights = self._calculate_highlights(start_date, end_date, provider_name)
@@ -1074,7 +1094,14 @@ class DashboardAnalyzer:
             budget_summary = self._calculate_budget_summary(provider_name, include_all=True)
             
             return {
-                'metrics': metrics,
+                'cost_summary': {
+                    'totals': {
+                        'total_cost': metrics.get('total_cost', 0),
+                        'cost_change_percentage': metrics.get('cost_change_percentage', 0),
+                        'monthly_average': metrics.get('monthly_average', 0),
+                        'annual_projection': metrics.get('annual_projection', 0)
+                    }
+                },
                 'provider_distribution': provider_distribution,
                 'highlights': highlights,
                 'account_distribution': account_distribution,
@@ -1099,8 +1126,8 @@ class DashboardAnalyzer:
         # Custo total do período atual
         current_cost_query = self.db.query(func.sum(FocusCostData.effective_cost)).filter(
             and_(
-                FocusCostData.billing_period_start >= start_date,
-                FocusCostData.billing_period_start <= end_date
+                FocusCostData.charge_period_start >= start_date,
+                FocusCostData.charge_period_start <= end_date
             )
         )
         
@@ -1113,8 +1140,8 @@ class DashboardAnalyzer:
         # Custo do período anterior
         previous_cost_query = self.db.query(func.sum(FocusCostData.effective_cost)).filter(
             and_(
-                FocusCostData.billing_period_start >= previous_start,
-                FocusCostData.billing_period_start <= previous_end
+                FocusCostData.charge_period_start >= previous_start,
+                FocusCostData.charge_period_start <= previous_end
             )
         )
         
@@ -1159,8 +1186,8 @@ class DashboardAnalyzer:
             func.sum(FocusCostData.effective_cost).label('total_cost')
         ).filter(
             and_(
-                FocusCostData.billing_period_start >= start_date,
-                FocusCostData.billing_period_start <= end_date
+                FocusCostData.charge_period_start >= start_date,
+                FocusCostData.charge_period_start <= end_date
             )
         )
         
@@ -1248,6 +1275,11 @@ class DashboardAnalyzer:
     
     def _calculate_provider_distribution(self, start_date: date, end_date: date, provider_name: Optional[str] = None) -> List[Dict[str, Any]]:
         """Calcula distribuição de custos por provedor"""
+        print(f"🔍 [_calculate_provider_distribution] Called with:")
+        print(f"  - start_date: {start_date}")
+        print(f"  - end_date: {end_date}")
+        print(f"  - provider_name: {provider_name}")
+        
         query = self.db.query(
             FocusCostData.provider_name,
             func.sum(FocusCostData.effective_cost).label('total_cost')
@@ -1260,18 +1292,26 @@ class DashboardAnalyzer:
         
         # Aplicar filtro de provedor se especificado
         if provider_name:
+            print(f"🔍 [_calculate_provider_distribution] Applying provider filter: {provider_name}")
             query = query.filter(FocusCostData.provider_name == provider_name)
         
         query = query.group_by(
             FocusCostData.provider_name
         ).order_by(
             func.sum(FocusCostData.effective_cost).desc()
-        ).all()
+        )
         
-        total_cost = sum(float(r.total_cost or 0) for r in query)
+        results = query.all()
+        print(f"🔍 [_calculate_provider_distribution] Query returned {len(results)} results")
+        
+        for result in results:
+            print(f"  - {result.provider_name}: ${float(result.total_cost or 0):,.2f}")
+        
+        total_cost = sum(float(r.total_cost or 0) for r in results)
+        print(f"🔍 [_calculate_provider_distribution] Total cost: ${total_cost:,.2f}")
         
         distribution = []
-        for result in query:
+        for result in results:
             cost = float(result.total_cost or 0)
             percentage = (cost / total_cost * 100) if total_cost > 0 else 0
             
@@ -1281,6 +1321,7 @@ class DashboardAnalyzer:
                 'percentage': percentage
             })
         
+        print(f"🔍 [_calculate_provider_distribution] Final distribution: {len(distribution)} providers")
         return distribution
     
     def _calculate_highlights(self, start_date: date, end_date: date, provider_name: Optional[str] = None) -> Dict[str, Any]:
@@ -1323,8 +1364,8 @@ class DashboardAnalyzer:
         # Calcular custo total para percentual
         total_cost_query = self.db.query(func.sum(FocusCostData.effective_cost)).filter(
             and_(
-                FocusCostData.charge_period_start >= start_date,
-                FocusCostData.charge_period_start <= end_date
+                FocusCostData.billing_period_start >= start_date,
+                FocusCostData.billing_period_start <= end_date
             )
         )
         total_cost = float(total_cost_query.scalar() or 0)
@@ -1419,3 +1460,111 @@ class DashboardAnalyzer:
                 'budgets': [],
                 'error': str(e)
             }
+    
+    def analyze_costs_by_provider(
+        self,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+        limit: int = 10,
+        provider_name: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Analisa custos por provedor de nuvem
+        
+        Args:
+            start_date: Data de início para análise
+            end_date: Data de fim para análise  
+            limit: Limite de provedores retornados
+            provider_name: Filtro específico por nome do provedor
+        
+        Returns:
+            Dict com lista de provedores e custos
+        """
+        try:
+            query = self.db.query(
+                FocusCostData.provider_name,
+                func.sum(FocusCostData.effective_cost).label('total_cost'),
+                func.avg(FocusCostData.effective_cost).label('avg_cost'),
+                func.count(FocusCostData.id).label('record_count')
+            )
+            
+            # Aplicar filtros de data
+            if start_date:
+                query = query.filter(FocusCostData.billing_period_start >= start_date)
+            if end_date:
+                query = query.filter(FocusCostData.billing_period_start <= end_date)
+            
+            # Aplicar filtro de provedor específico se fornecido
+            if provider_name:
+                query = query.filter(FocusCostData.provider_name == provider_name)
+            
+            # Filtrar provedores não nulos
+            query = query.filter(FocusCostData.provider_name.isnot(None))
+            
+            results = query.group_by(
+                FocusCostData.provider_name
+            ).order_by(
+                func.sum(FocusCostData.effective_cost).desc()
+            ).limit(limit).all()
+            
+            print(f"🔍 [CostAnalyzer] analyze_costs_by_provider query returned {len(results)} results")
+            
+            providers = []
+            total_cost = sum(float(r.total_cost or 0) for r in results)
+            
+            for result in results:
+                cost = float(result.total_cost or 0)
+                provider_data = {
+                    'provider_name': result.provider_name,
+                    'total_cost': cost,
+                    'avg_cost': float(result.avg_cost or 0),
+                    'record_count': result.record_count,
+                    'percentage_of_total': (cost / total_cost * 100) if total_cost > 0 else 0
+                }
+                providers.append(provider_data)
+                print(f"  - {result.provider_name}: ${cost:,.2f} ({provider_data['percentage_of_total']:.1f}%)")
+            
+            logger.info(f"Analyzed {len(providers)} providers with total cost ${total_cost:,.2f}")
+            
+            return {
+                'providers': providers,
+                'total_cost': total_cost,
+                'providers_count': len(providers),
+                'period': {
+                    'start_date': start_date.isoformat() if start_date else None,
+                    'end_date': end_date.isoformat() if end_date else None
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Error analyzing costs by provider: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return {'error': str(e)}
+
+    def analyze_costs_by_region(
+        self,
+        provider_name: Optional[str] = None,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+        limit: int = 10
+    ) -> Dict[str, Any]:
+        """
+        Analisa custos por região (método atualizado para manter compatibilidade)
+        """
+        try:
+            region_data = self.analyze_by_region(
+                provider_name=provider_name,
+                start_date=start_date,
+                end_date=end_date,
+                top_n=limit
+            )
+            
+            return {
+                'regions': region_data,
+                'regions_count': len(region_data)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error analyzing costs by region: {str(e)}")
+            return {'error': str(e)}

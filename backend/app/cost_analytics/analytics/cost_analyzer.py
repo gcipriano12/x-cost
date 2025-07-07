@@ -404,7 +404,7 @@ class CostAnalyzer:
             logger.error(f"Error analyzing costs by region: {str(e)}")
             return []
     
-    @cached(ttl=1800, key_prefix="cost_by_provider")
+    # @cached(ttl=1800, key_prefix="cost_by_provider")  # TEMPORARIAMENTE REMOVIDO PARA DEBUG
     def analyze_costs_by_provider(
         self,
         start_date: Optional[date] = None,
@@ -425,6 +425,8 @@ class CostAnalyzer:
             Dicionário com análise por provedor
         """
         try:
+            logger.info(f"🔍 [PROVIDER] Starting analyze_costs_by_provider - start: {start_date}, end: {end_date}, provider_filter: {provider_name}")
+            
             # Usar QueryBuilder para top spenders por provedor
             query = self.query_builder.get_top_spenders(
                 dimension='provider_name',
@@ -435,17 +437,22 @@ class CostAnalyzer:
             )
             
             results = query.all()
+            logger.info(f"🔍 [PROVIDER] Query returned {len(results)} results")
             
             # Processar resultados
             provider_analysis = []
             total_cost = sum(float(r.total_cost or 0) for r in results)
+            logger.info(f"🔍 [PROVIDER] Total cost calculated: ${total_cost}")
             
             for result in results:
                 cost = float(result.total_cost or 0)
                 percentage = (cost / total_cost * 100) if total_cost > 0 else 0
+                provider_name_clean = result.dimension_value or 'Unknown'
+                
+                logger.info(f"🔍 [PROVIDER] Processing {provider_name_clean}: ${cost} ({percentage:.1f}%)")
                 
                 provider_analysis.append({
-                    'provider_name': result.dimension_value or 'Unknown',
+                    'provider_name': provider_name_clean,
                     'total_cost': cost,
                     'avg_cost': float(result.avg_cost or 0),
                     'record_count': result.record_count,
@@ -453,7 +460,7 @@ class CostAnalyzer:
                     'region_count': 0  # Will be filled later in the endpoint
                 })
             
-            logger.info(f"Analyzed costs by provider for {len(provider_analysis)} providers")
+            logger.info(f"✅ [PROVIDER] Analyzed costs by provider for {len(provider_analysis)} providers - Total: ${total_cost}")
             return {
                 'providers': provider_analysis,
                 'total_cost': total_cost,

@@ -40,9 +40,13 @@ export const useProviderDistribution = ({
           providerName?: string;
         } = {
           credentialId,
-          topN: 10,
-          providerName
+          topN: 10
         };
+        
+        // Só adicionar providerName se realmente existe
+        if (providerName) {
+          params.providerName = providerName;
+        }
 
         // Determinar período baseado no timeFilter
         if (timeFilter === 'previous-year') {

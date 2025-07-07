@@ -243,7 +243,7 @@ export function SpendSummaryCard({
 
   // Dados para o gráfico de pizza com cores originais e glassmorphism
   const pieData = distributionValues.map(item => ({
-    name: truncateAccountName(item.displayName, 25), // Nome truncado para display
+    name: truncateAccountName(item.displayName, 15), // Nome truncado para display na legenda
     fullName: item.fullDisplayName, // Nome completo para tooltip
     value: item.value,
     absoluteValue: item.absoluteValue,
@@ -339,7 +339,9 @@ export function SpendSummaryCard({
             const backgroundColor = pieEntry ? pieEntry.color : entry.color; // Cor transparente como na pizza
             const borderColor = pieEntry ? getBorderColor(pieEntry.originalColor) : entry.color; // Borda vibrante como na pizza
             const fullName = pieEntry?.fullName || entry.value;
-            const isNameTruncated = fullName.length > 25;
+            // Verificar se nome será truncado baseado na largura máxima
+            const maxLength = isMobile ? 12 : 18; // Caracteres aproximados para as larguras max-w
+            const isNameTruncated = fullName.length > maxLength;
             
             const legendItem = (
               <div key={`legend-${index}`} className="flex items-center space-x-2 cursor-default">
@@ -355,13 +357,14 @@ export function SpendSummaryCard({
                 />
                 <span 
                   className={cn(
-                    "font-semibold text-left leading-tight",
-                    isMobile ? "text-xs" : "text-sm"
+                    "font-semibold text-left leading-tight truncate",
+                    isMobile ? "text-xs max-w-[100px]" : "text-sm max-w-[140px]"
                   )}
                   style={{ 
                     color: isDark ? "#F8FAFC" : "#0F172A",
                     textShadow: isDark ? "0 1px 2px rgba(0,0,0,0.8)" : "0 1px 2px rgba(0,0,0,0.1)"
                   }}
+                  title={fullName} // Mostrar nome completo no hover
                 >
                   {entry.value}
                 </span>

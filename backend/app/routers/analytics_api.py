@@ -1075,8 +1075,8 @@ async def get_account_distribution(
                 detail=f"Provider inválido. Valores aceitos: {', '.join(valid_providers)}"
             )
         
-        # Normalizar nome do provedor (Oracle Cloud -> Oracle)
-        normalized_provider = "Oracle" if provider == "Oracle Cloud" else provider
+        # Normalizar nome do provedor (manter Oracle Cloud como está)
+        normalized_provider = provider  # Não alterar Oracle Cloud -> Oracle
         
         # Validar e converter time_filter para dias
         try:
@@ -1114,8 +1114,8 @@ async def get_account_distribution(
             func.sum(FocusCostData.effective_cost).label('total_cost')
         ).filter(
             FocusCostData.provider_name == normalized_provider,
-            FocusCostData.billing_period_start >= start_date,
-            FocusCostData.billing_period_end <= end_date,
+            FocusCostData.charge_period_start >= start_date,
+            FocusCostData.charge_period_start <= end_date,
             FocusCostData.effective_cost > 0
         )
         
@@ -1135,8 +1135,8 @@ async def get_account_distribution(
             func.sum(FocusCostData.effective_cost)
         ).filter(
             FocusCostData.provider_name == normalized_provider,
-            FocusCostData.billing_period_start >= start_date,
-            FocusCostData.billing_period_end <= end_date,
+            FocusCostData.charge_period_start >= start_date,
+            FocusCostData.charge_period_start <= end_date,
             FocusCostData.effective_cost > 0
         ).scalar() or 0
         

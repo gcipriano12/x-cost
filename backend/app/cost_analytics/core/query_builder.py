@@ -237,9 +237,9 @@ class QueryBuilder:
         
         query = self.session.query(
             dimension_field.label('dimension_value'),
-            func.sum(FocusCostData.billed_cost).label('total_cost'),
+            func.sum(FocusCostData.effective_cost).label('total_cost'),
             func.count(FocusCostData.id).label('record_count'),
-            func.avg(FocusCostData.billed_cost).label('avg_cost')
+            func.avg(FocusCostData.effective_cost).label('avg_cost')
         )
         
         # Aplicar filtros

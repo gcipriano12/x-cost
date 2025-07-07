@@ -5,9 +5,18 @@ Teste de integração frontend-backend para Top Services
 
 import requests
 import json
+import os
 
-# Token fornecido
-TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmaW5vcHNfYWRtaW4iLCJyb2xlIjoiZmlub3BzX2FkbWluIiwiZXhwIjoxNzUxODU2ODg3LCJpYXQiOjE3NTE4NTMyODcsInR5cGUiOiJhY2Nlc3NfdG9rZW4ifQ.bok6-YKFZqVmN-SzfxNn0p6W0d7gSUEWEyhVkk6itoA"
+# Obter token do ambiente para evitar exposição em código-fonte
+# Defina a variável de ambiente antes de executar: export X_COST_API_TOKEN="seu-token-aqui"
+TOKEN = os.environ.get("X_COST_API_TOKEN", "")
+
+if not TOKEN:
+    print("⚠️  AVISO: Token não encontrado no ambiente.")
+    print("Configure a variável de ambiente X_COST_API_TOKEN antes de executar este script.")
+    print("Exemplo: export X_COST_API_TOKEN='seu-token-aqui'")
+    print("Usando token vazio para fins de demonstração.")
+    TOKEN = ""  # Token vazio como fallback
 
 def test_frontend_integration():
     """Simular como o frontend vai consumir a API"""

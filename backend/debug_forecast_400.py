@@ -3,12 +3,18 @@
 Teste da API de forecast com diferentes parâmetros para debugar o erro 400
 """
 
+import os
 import requests
 import json
 from datetime import datetime, timedelta
 
 # Token atual
-TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmaW5vcHNfYWRtaW4iLCJyb2xlIjoiZmlub3BzX2FkbWluIiwiZXhwIjoxNzUxOTg3NjgzLCJpYXQiOjE3NTE5MDEyODMsInR5cGUiOiJhY2Nlc3NfdG9rZW4ifQ.zjDvC1WRwXbEcuunQLIsB8F8pfI1WyLfu00bg7UmDdc"
+TOKEN = os.environ.get("X_COST_API_TOKEN", "")
+
+if not TOKEN:
+    print("⚠️ Configure a variável de ambiente X_COST_API_TOKEN antes de executar este script.")
+    print("Exemplo: export X_COST_API_TOKEN='seu-token-aqui'")
+    exit(1)
 
 BASE_URL = "http://localhost:8000"
 HEADERS = {"Authorization": f"Bearer {TOKEN}"}

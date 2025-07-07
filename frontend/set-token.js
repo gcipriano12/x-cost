@@ -1,62 +1,40 @@
 const fs = require('fs');
 const path = require('path');
 
-// Ler token do arquivo
-const tokenPath = path.join(__dirname, 'current-token.txt');
-const token = fs.readFileSync(tokenPath, 'utf8').trim();
+// Mensagem de segurança
+console.log('⚠️ Este script foi desativado por motivos de segurança');
+console.log('Para configurar um token de acesso, siga estas etapas:');
+console.log('1. Gere um novo token usando a ferramenta de autenticação apropriada');
+console.log('2. Configure manualmente o token no localStorage do navegador');
+console.log('3. Use as ferramentas de desenvolvimento para verificar a resposta da API');
 
-console.log('🔑 Setting token in localStorage...');
-console.log(`Token: ${token.substring(0, 50)}...`);
-
-// Script que deve ser executado no console do browser (localhost:8080)
+// Versão segura do script
 const browserScript = `
-// Definir token no localStorage
-localStorage.setItem('access_token', '${token}');
-console.log('✅ Token set in localStorage');
-console.log('Token:', localStorage.getItem('access_token')?.substring(0, 50) + '...');
+// Instruções para configurar token manualmente
+console.log('⚠️ Por motivos de segurança, configure o token manualmente:');
+console.log('1. Obtenha um token válido do sistema de autenticação');
+console.log('2. Execute: localStorage.setItem("access_token", "seu-token-aqui")');
+console.log('3. Recarregue a página para ativar o novo token');
 
-// Testar a API via proxy do Vite com datas corretas (12 meses de histórico)
+// Exemplo de como testar a API (sem expor tokens)
 const testParams = new URLSearchParams({
   months: '7',
-  start_date: '2024-07-07',  // 12 meses atrás
-  end_date: '2025-07-07'     // hoje
+  start_date: '2024-07-07',
+  end_date: '2025-07-07'
 });
 
-fetch('/api/v1/analytics/forecast?' + testParams.toString(), {
+console.log('📋 Para testar a API, execute:');
+console.log(\`fetch('/api/v1/analytics/forecast?\${testParams.toString()}', {
   headers: {
     'Authorization': 'Bearer ' + localStorage.getItem('access_token'),
     'Content-Type': 'application/json'
   }
 })
-.then(response => {
-  console.log('API Response Status:', response.status);
-  if (response.ok) {
-    return response.json();
-  } else {
-    return response.text().then(text => Promise.reject(\`\${response.status}: \${text}\`));
-  }
-})
-.then(data => {
-  console.log('✅ API Success:', data);
-  console.log('Forecast points:', data.data?.forecast_data?.length);
-  console.log('Is mock data:', !data.success || data.data?.metadata?.forecast_method === 'mock');
-  console.log('Model accuracy:', data.data?.metadata?.model_accuracy + '%');
-  console.log('Data completeness:', data.data?.metadata?.data_completeness + '%');
-})
-.catch(error => {
-  console.log('❌ API Error:', error);
-});
-
-// Forçar recarregamento do hook useForecast
-console.log('🔄 Reloading page in 3 seconds to update forecast data...');
-setTimeout(() => window.location.reload(), 3000);
+.then(r => r.ok ? r.json() : r.text().then(t => Promise.reject(\`\${r.status}: \${t}\`)))
+.then(d => console.log('✅ Success:', d))
+.catch(e => console.log('❌ Error:', e));\`);
 `;
 
-console.log('\n📋 Execute this in browser console:');
-console.log('=====================================');
-console.log(browserScript);
-console.log('=====================================');
-
-// Também salvar o script em um arquivo
-fs.writeFileSync(path.join(__dirname, 'browser-script.js'), browserScript);
-console.log('\n💾 Script saved to browser-script.js');
+// Salvar script seguro
+fs.writeFileSync(path.join(__dirname, 'browser-script-secure.js'), browserScript);
+console.log('\n💾 Script seguro salvo em browser-script-secure.js');

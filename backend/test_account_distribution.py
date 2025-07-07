@@ -5,9 +5,15 @@ Script para testar o endpoint account-distribution existente
 
 import requests
 import json
+import os
 
-# Token válido
-TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmaW5vcHNfYWRtaW4iLCJyb2xlIjoiZmlub3BzX2FkbWluIiwiZXhwIjoxNzUxOTQyMTQ4LCJpYXQiOjE3NTE4NTU3NDgsInR5cGUiOiJhY2Nlc3NfdG9rZW4ifQ.xM9WaQz1EbKedpVUzgicCqaiodPuBvxkiLYMOJjN9uc"
+# Obter token de variável de ambiente
+TOKEN = os.environ.get("X_COST_API_TOKEN", "")
+
+if not TOKEN:
+    print("⚠️ Configure a variável de ambiente X_COST_API_TOKEN antes de executar este script.")
+    print("Exemplo: export X_COST_API_TOKEN='seu-token-aqui'")
+    exit(1)
 
 BASE_URL = "http://localhost:8000"
 HEADERS = {

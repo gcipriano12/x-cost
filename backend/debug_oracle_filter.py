@@ -185,8 +185,11 @@ def test_dashboard_summary_api():
     print("\n" + "=" * 60)
     print("🌐 TESTE API DASHBOARD SUMMARY")
     
-    # Token fornecido pelo usuário
-    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmaW5vcHNfYWRtaW4iLCJyb2xlIjoiZmlub3BzX2FkbWluIiwiZXhwIjoxNzUxODU2ODg3LCJpYXQiOjE3NTE4NTMyODcsInR5cGUiOiJhY2Nlc3NfdG9rZW4ifQ.bok6-YKFZqVmN-SzfxNn0p6W0d7gSUEWEyhVkk6itoA"
+    # Token obtido de variável de ambiente
+    token = os.environ.get("X_COST_API_TOKEN", "")
+    if not token:
+        print("⚠️ Configure a variável de ambiente X_COST_API_TOKEN")
+        return
     
     base_url = "http://localhost:8000"
     headers = {
@@ -281,8 +284,11 @@ def test_analytics_by_provider_api():
     print("\n" + "=" * 60)
     print("🔍 TESTE API ANALYTICS BY PROVIDER")
     
-    # Token fornecido pelo usuário
-    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmaW5vcHNfYWRtaW4iLCJyb2xlIjoiZmlub3BzX2FkbWluIiwiZXhwIjoxNzUxODU2ODg3LCJpYXQiOjE3NTE4NTMyODcsInR5cGUiOiJhY2Nlc3NfdG9rZW4ifQ.bok6-YKFZqVmN-SzfxNn0p6W0d7gSUEWEyhVkk6itoA"
+    # Token obtido de variável de ambiente
+    token = os.environ.get("X_COST_API_TOKEN", "")
+    if not token:
+        print("⚠️ Configure a variável de ambiente X_COST_API_TOKEN")
+        return
     
     base_url = "http://localhost:8000"
     headers = {

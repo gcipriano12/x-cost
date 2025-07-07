@@ -37,7 +37,7 @@ RESULTADOS FINAIS:
 - ✅ APIs estão compatíveis com frontend (estrutura JSON correta)
 
 TOKEN DE TESTE USADO:
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmaW5vcHNfYWRtaW4iLCJyb2xlIjoiZmlub3BzX2FkbWluIiwiZXhwIjoxNzUxOTQyMTQ4LCJpYXQiOjE3NTE4NTU3NDgsInR5cGUiOiJhY2Nlc3NfdG9rZW4ifQ.xM9WaQz1EbKedpVUzgicCqaiodPuBvxkiLYMOJjN9uc
+[Token removido por questões de segurança]
 
 PERÍODO DE TESTE COM DADOS:
 - start_date: 2025-06-06

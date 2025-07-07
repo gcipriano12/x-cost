@@ -1,7 +1,13 @@
-// Script para definir o novo token no localStorage
-const newToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0Iiwicm9sZSI6ImFkbWluIiwiZXhwIjoxNzUwNTI1MjM1LCJpYXQiOjE3NTA1MTgwMzUsInR5cGUiOiJhY2Nlc3NfdG9rZW4ifQ.tUqLbVRFDAhpGZhh-HptRAd8yqwV1XQSsn6g6V2V13M';
+// Script para definir um novo token no localStorage
+// NOTA: Este arquivo foi alterado por motivos de segurança
 
-localStorage.setItem('access_token', newToken);
-console.log('✅ Token atualizado no localStorage');
-console.log('🔄 Recarregando a página...');
-window.location.reload();
+console.log('⚠️ Este script foi desativado por motivos de segurança');
+console.log('Para atualizar um token, use o console do navegador:');
+console.log('1. localStorage.setItem("access_token", "seu-novo-token-aqui")');
+console.log('2. window.location.reload()');
+
+// Exemplo seguro sem expor tokens:
+// localStorage.setItem('access_token', 'SEU_TOKEN_AQUI');
+// console.log('✅ Token atualizado no localStorage');
+// console.log('🔄 Recarregando a página...');
+// window.location.reload();

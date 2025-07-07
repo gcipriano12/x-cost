@@ -3,6 +3,7 @@
 Script para testar a API de provider distribution
 """
 
+import os
 import requests
 import json
 
@@ -10,7 +11,10 @@ def test_provider_api():
     """Testar API de provider distribution"""
     
     # Token válido
-    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmaW5vcHNfYWRtaW4iLCJyb2xlIjoiZmlub3BzX2FkbWluIiwiZXhwIjoxNzUxOTQyMTQ4LCJpYXQiOjE3NTE4NTU3NDgsInR5cGUiOiJhY2Nlc3NfdG9rZW4ifQ.xM9WaQz1EbKedpVUzgicCqaiodPuBvxkiLYMOJjN9uc"
+    token = os.environ.get("X_COST_API_TOKEN", "")
+        if not token:
+            print("⚠️ Configure a variável de ambiente X_COST_API_TOKEN")
+            return
     
     headers = {"Authorization": f"Bearer {token}"}
     

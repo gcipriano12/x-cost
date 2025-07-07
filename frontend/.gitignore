@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Arquivos de token e credenciais
+*token*.txt
+*token*.js
+.env
+.env.*
+!.env.example
+current-token.txt
+*-token-*.js

@@ -3,12 +3,18 @@
 Script para testar exatamente como o frontend chama a API
 """
 
+import os
 import requests
 import json
 from datetime import date, timedelta
 
 # Token fornecido
-TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmaW5vcHNfYWRtaW4iLCJyb2xlIjoiZmlub3BzX2FkbWluIiwiZXhwIjoxNzUxODU2ODg3LCJpYXQiOjE3NTE4NTMyODcsInR5cGUiOiJhY2Nlc3NfdG9rZW4ifQ.bok6-YKFZqVmN-SzfxNn0p6W0d7gSUEWEyhVkk6itoA"
+TOKEN = os.environ.get("X_COST_API_TOKEN", "")
+
+if not TOKEN:
+    print("⚠️ Configure a variável de ambiente X_COST_API_TOKEN antes de executar este script.")
+    print("Exemplo: export X_COST_API_TOKEN='seu-token-aqui'")
+    exit(1)
 
 def test_frontend_calls():
     """Simular exatamente as chamadas do frontend"""

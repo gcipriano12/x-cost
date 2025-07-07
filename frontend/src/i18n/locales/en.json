@@ -95,7 +95,9 @@
     "lowAccuracy": "Low Accuracy"
   },
   "spendingTeams": {
-    "title": "Spending by Team"
+    "title": "Spending by Team",
+    "noData": "No team data available",
+    "noDataDescription": "No spending data found for the selected period"
   },
   "regionHeatmap": {
     "title": "Cost Heatmap by Region",

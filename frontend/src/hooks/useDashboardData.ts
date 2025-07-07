@@ -6,6 +6,7 @@ import { useXCostData } from './useXCostData';
 import { useCategoryDistribution } from './useCategoryDistribution';
 import { useTopServices } from './useTopServices';
 import { useProviderDistribution } from './useProviderDistribution';
+import { useTeamCosts } from './useTeamCosts';
 
 // Types for dashboard data
 export type SpendSummary = {
@@ -239,7 +240,6 @@ export const useDashboardData = () => {
     startDate: getDateString(customDateRange?.from),
     endDate: getDateString(customDateRange?.to),
     providerName: selectedProvider,
-    limit: 5,
     enabled: !!activeCredential?.id
   });
   
@@ -257,6 +257,33 @@ export const useDashboardData = () => {
     providerName: selectedProvider
   });
   
+  // Hook para team costs - dados reais da API
+  const {
+    data: apiTeamCostsData,
+    isLoading: teamCostsLoading,
+    error: teamCostsError
+  } = useTeamCosts({
+    timePeriod: customDateRange?.from && customDateRange?.to ? 'custom' : timeFilter,
+    customStartDate: customDateRange?.from?.toISOString().split('T')[0],
+    customEndDate: customDateRange?.to?.toISOString().split('T')[0],
+    provider: selectedProvider,
+    limit: 50, // Pegar mais dados do backend para processamento local
+    enabled: !!activeCredential?.id
+  });
+  
+  // Debug logs para team costs
+  console.log('🔍 [DEBUG] useTeamCosts hook state:', {
+    activeCredentialId: activeCredential?.id,
+    enabled: !!activeCredential?.id,
+    timeFilter,
+    selectedProvider,
+    isLoading: teamCostsLoading,
+    hasData: !!apiTeamCostsData,
+    dataCount: apiTeamCostsData?.data?.length || 0,
+    error: teamCostsError?.message,
+    fullApiResponse: apiTeamCostsData
+  });
+  
   // Função para transformar dados da nova API de Top Services para o formato esperado
   const transformTopServicesData = (apiData: typeof apiTopServicesData): TopService[] => {
     return apiData.map(service => ({
@@ -266,6 +293,26 @@ export const useDashboardData = () => {
       currentSpend: service.cost,
       previousSpend: service.cost - (service.cost * service.change_from_previous / 100),
       trend: service.change_from_previous
+    }));
+  };
+  
+  // Função para transformar dados da API de Team Costs para o formato esperado
+  const transformTeamCostsData = (apiData: typeof apiTeamCostsData): SpendingTeam[] => {
+    if (!apiData?.data || !Array.isArray(apiData.data)) {
+      console.log('🔍 [DEBUG] transformTeamCostsData: No data or invalid format', { apiData });
+      return [];
+    }
+    
+    console.log('🔍 [DEBUG] transformTeamCostsData: Processing data', { 
+      teamCount: apiData.data.length,
+      totalCost: apiData.total_cost,
+      teams: apiData.data.map(t => ({ name: t.team_name, cost: t.total_cost }))
+    });
+    
+    return apiData.data.map(team => ({
+      name: team.team_name,
+      value: team.total_cost,
+      color: team.color
     }));
   };
   
@@ -796,6 +843,22 @@ export const useDashboardData = () => {
 
   // Usar dados reais quando disponíveis, senão usar mock data filtrados
   const filteredMockData = getFilteredMockData();
+  
+  // Debug log para decisão de team costs
+  // Usar dados reais se:
+  // 1. Temos credenciais configuradas E
+  // 2. A API respondeu com sucesso (mesmo que seja lista vazia) E
+  // 3. Não há erro na requisição
+  const shouldUseRealTeamCosts = hasCredentials && !teamCostsError && apiTeamCostsData?.data !== undefined;
+  console.log('🔍 [DEBUG] Team costs decision:', {
+    shouldUseRealTeamCosts,
+    hasCredentials,
+    teamCostsError: !!teamCostsError,
+    apiDataExists: !!apiTeamCostsData,
+    dataLength: apiTeamCostsData?.data?.length || 0,
+    mockTeamsCount: filteredMockData.spendingTeamsData.length
+  });
+  
   const finalDashboardData: DashboardData = {
     ...filteredMockData,
     // Substituir com dados reais da API quando disponíveis E quando não for zero
@@ -803,6 +866,7 @@ export const useDashboardData = () => {
     providerDistributionData: hasProviderData ? apiProviderDistributionData : filteredMockData.providerDistributionData,
     categoryDistributionData: hasCategoryData ? apiCategoryData : filteredMockData.categoryDistributionData,
     topServicesData: !topServicesIsUsingMockData && apiTopServicesData.length > 0 ? transformTopServicesData(apiTopServicesData) : filteredMockData.topServicesData,
+    spendingTeamsData: shouldUseRealTeamCosts ? transformTeamCostsData(apiTeamCostsData) : filteredMockData.spendingTeamsData,
   };
 
   return {
@@ -813,10 +877,11 @@ export const useDashboardData = () => {
     selectedProvider,
     setSelectedProvider,
     ...finalDashboardData,
-    isLoadingRealData: apiLoading || categoryLoading || topServicesLoading || providerDistributionLoading,
+    isLoadingRealData: apiLoading || categoryLoading || topServicesLoading || providerDistributionLoading || teamCostsLoading,
     hasRealData: hasCredentials,
     categoryError,
     activeCredential,
-    isTopServicesUsingMockData: topServicesIsUsingMockData
+    isTopServicesUsingMockData: topServicesIsUsingMockData,
+    teamCostsError
   };
 };

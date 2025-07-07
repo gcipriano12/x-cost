@@ -166,6 +166,9 @@ def get_database() -> Generator[Session, None, None]:
     finally:
         db.close()
 
+# Alias para compatibilidade
+get_db = get_database
+
 # Função auxiliar para obter sessão direta (workaround)
 def get_db_session() -> Session:
     """Retorna sessão direta para casos onde dependency não funciona"""

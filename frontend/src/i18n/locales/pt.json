@@ -91,7 +91,9 @@
     "forecastChart": "Previsão"
   },
   "spendingTeams": {
-    "title": "Gastos por Equipe"
+    "title": "Gastos por Equipe",
+    "noData": "Nenhum dado de equipe disponível",
+    "noDataDescription": "Não foram encontrados dados de gastos para o período selecionado"
   },
   "regionHeatmap": {
     "title": "Heatmap de Custos por Região",

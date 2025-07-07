@@ -37,6 +37,7 @@ from app.budget_api import budget_router
 from app.routers.analytics_api import router as analytics_router
 from app.routers.optimization_api import optimization_router
 from app.routers.services_api import router as services_router
+from app.routers.team_costs import router as team_costs_router
 from app.virtual_tags_api import router as virtual_tags_router
 
 # Utilities
@@ -132,6 +133,10 @@ tags_metadata = [
         "description": "Análises e relatórios de custos"
     },
     {
+        "name": "Team Costs",
+        "description": "Análise de custos por equipe baseada em tags"
+    },
+    {
         "name": "Virtual Tags",
         "description": "Gerenciamento de Virtual Tags para alocação dinâmica de custos"
     },
@@ -223,6 +228,9 @@ app.include_router(optimization_router)
 
 # Router de services
 app.include_router(services_router)
+
+# Router de team costs
+app.include_router(team_costs_router)
 
 # Router de Virtual Tags
 app.include_router(virtual_tags_router)

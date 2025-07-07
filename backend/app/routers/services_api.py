@@ -32,18 +32,31 @@ async def get_top_services(
     start_date: Optional[date] = Query(None, description="Data início do período (YYYY-MM-DD)"),
     end_date: Optional[date] = Query(None, description="Data fim do período (YYYY-MM-DD)"),
     provider_name: Optional[str] = Query(None, description="Filtro por provider específico"),
-    limit: int = Query(5, ge=1, le=20, description="Número de serviços a retornar"),
+    page: int = Query(1, ge=1, description="Número da página (inicia em 1)"),
+    page_size: int = Query(10, ge=1, le=100, description="Itens por página (1-100)"),
+    sort_by: str = Query("cost", description="Campo para ordenação: cost, service_name, provider, change_from_previous"),
+    sort_order: str = Query("desc", description="Ordem: asc (crescente) ou desc (decrescente)"),
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_database)
 ) -> TopServicesResponse:
     """
-    Obtém os principais serviços por custo com variação temporal
+    Obtém os principais serviços por custo com paginação e ordenação
     
     **Funcionalidade:**
-    - Retorna os top N serviços com maior custo no período especificado
+    - Retorna todos os serviços com paginação (em vez de limite fixo)
     - Calcula variação percentual em relação ao período anterior
     - Suporta filtros por provider e período customizável
     - Agrega custos por serviço+provider (soma diferentes regiões)
+    - Suporta ordenação por qualquer campo
+    
+    **Paginação:**
+    - page: número da página (começa em 1)
+    - page_size: itens por página (padrão: 10, máximo: 100)
+    
+    **Ordenação:**
+    - sort_by: campo para ordenação (cost, service_name, provider, change_from_previous)
+    - sort_order: ordem crescente (asc) ou decrescente (desc)
+    - Padrão: ordenação por cost desc (maior custo primeiro)
     
     **Lógica de Variação:**
     - Compara período atual com período anterior de mesma duração
@@ -58,7 +71,10 @@ async def get_top_services(
     - credential_id deve existir e estar ativo
     - Datas devem estar em formato válido (YYYY-MM-DD)
     - provider_name deve ser válido se especificado
-    - limit deve estar entre 1 e 20
+    - page deve ser >= 1
+    - page_size deve estar entre 1 e 100
+    - sort_by deve ser um campo válido
+    - sort_order deve ser 'asc' ou 'desc'
     """
     
     try:
@@ -72,6 +88,21 @@ async def get_top_services(
             raise HTTPException(
                 status_code=400,
                 detail=f"Provider '{provider_name}' não suportado. Suportados: {supported_providers}"
+            )
+        
+        # Validar parâmetros de ordenação
+        valid_sort_fields = ["cost", "service_name", "provider", "change_from_previous"]
+        if sort_by not in valid_sort_fields:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Campo de ordenação '{sort_by}' inválido. Válidos: {valid_sort_fields}"
+            )
+        
+        valid_sort_orders = ["asc", "desc"]
+        if sort_order not in valid_sort_orders:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Ordem de ordenação '{sort_order}' inválida. Válidas: {valid_sort_orders}"
             )
         
         # Definir período padrão se não fornecido
@@ -88,7 +119,9 @@ async def get_top_services(
                 detail="Período deve ter pelo menos 1 dia"
             )
         
-        logger.info(f"Getting top {limit} services for user {current_user.username}")
+        logger.info(f"Getting services with pagination for user {current_user.username}")
+        logger.info(f"Page: {page}, Page size: {page_size}")
+        logger.info(f"Sorting: {sort_by} {sort_order}")
         logger.info(f"Period: {start_date} to {end_date} ({period_days} days)")
         logger.info(f"Provider filter: {provider_name or 'All'}")
         logger.info(f"Credential ID: {credential_id}")
@@ -103,13 +136,16 @@ async def get_top_services(
                 detail=f"Credencial '{credential_id}' não encontrada ou inativa"
             )
         
-        # Obter dados dos top services
+        # Obter dados dos top services com paginação e ordenação
         top_services_data = analyzer.get_top_services(
             credential_id=credential_id,
             start_date=start_date,
             end_date=end_date,
             provider_name=provider_name,
-            limit=limit
+            page=page,
+            page_size=page_size,
+            sort_by=sort_by,
+            sort_order=sort_order
         )
         
         logger.info(f"Found {len(top_services_data.services)} services, total unique services: {top_services_data.total_services}")

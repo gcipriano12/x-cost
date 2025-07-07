@@ -11,6 +11,10 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from collections import defaultdict
 
+# Carregar variáveis de ambiente do arquivo .env
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse

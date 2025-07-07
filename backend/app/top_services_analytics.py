@@ -30,20 +30,26 @@ class TopServicesAnalyzer:
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
         provider_name: Optional[str] = None,
-        limit: int = 5
+        page: int = 1,
+        page_size: int = 10,
+        sort_by: str = "cost",
+        sort_order: str = "desc"
     ) -> TopServicesData:
         """
-        Obtém os principais serviços por custo com variação temporal
+        Obtém os principais serviços por custo com paginação e ordenação
         
         Args:
             credential_id: ID da credencial (para filtro futuro)
             start_date: Data início do período
             end_date: Data fim do período
             provider_name: Filtro por provider específico
-            limit: Número máximo de serviços a retornar
+            page: Número da página (inicia em 1)
+            page_size: Itens por página
+            sort_by: Campo para ordenação (cost, service_name, provider, change_from_previous)
+            sort_order: Ordem (asc ou desc)
             
         Returns:
-            TopServicesData: Dados dos principais serviços
+            TopServicesData: Dados dos principais serviços com informações de paginação
         """
         
         # Definir período padrão se não fornecido
@@ -62,26 +68,49 @@ class TopServicesAnalyzer:
         previous_end = start_date - timedelta(days=1)
         
         logger.info(f"Analisando top services: {start_date} a {end_date} (vs {previous_start} a {previous_end})")
+        logger.info(f"Paginação: página {page}, {page_size} itens por página")
         
-        # Obter custos do período atual
-        current_costs = self._get_service_costs(start_date, end_date, provider_name, limit)
+        # Obter todos os custos do período atual (sem limite)
+        all_current_costs = self._get_service_costs(start_date, end_date, provider_name, None)
         
         # Obter custos do período anterior
         previous_costs = self._get_service_costs(previous_start, previous_end, provider_name, None)
         
-        # Calcular variações
-        services = self._calculate_variations(current_costs, previous_costs)
+        # Calcular variações para todos os serviços
+        all_services = self._calculate_variations(all_current_costs, previous_costs)
         
-        # Contar total de serviços únicos
-        total_services = self._count_total_services(start_date, end_date, provider_name)
+        # Aplicar ordenação baseada nos parâmetros
+        all_services = self._apply_sorting(all_services, sort_by, sort_order)
+        
+        # Aplicar paginação
+        total_services = len(all_services)
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+        paginated_services = all_services[start_idx:end_idx]
+        
+        # Calcular informações de paginação
+        total_pages = (total_services + page_size - 1) // page_size  # Ceiling division
+        has_next = page < total_pages
+        has_previous = page > 1
+        
+        from app.top_services_models import PaginationInfo
+        pagination_info = PaginationInfo(
+            page=page,
+            page_size=page_size,
+            total_items=total_services,
+            total_pages=total_pages,
+            has_next=has_next,
+            has_previous=has_previous
+        )
         
         return TopServicesData(
-            services=services,
+            services=paginated_services,
             total_services=total_services,
             period=TopServicesPeriod(
                 start_date=start_date.isoformat(),
                 end_date=end_date.isoformat()
-            )
+            ),
+            pagination=pagination_info
         )
     
     def _get_service_costs(
@@ -261,3 +290,46 @@ class TopServicesAnalyzer:
         """
         # TODO: Implementar validação real quando modelo de credenciais estiver definido
         return True
+    
+    def _apply_sorting(
+        self, 
+        services: List[TopServiceItem], 
+        sort_by: str, 
+        sort_order: str
+    ) -> List[TopServiceItem]:
+        """
+        Aplica ordenação aos serviços baseada nos parâmetros
+        
+        Args:
+            services: Lista de serviços para ordenar
+            sort_by: Campo para ordenação (cost, service_name, provider, change_from_previous)
+            sort_order: Ordem (asc ou desc)
+            
+        Returns:
+            Lista ordenada de serviços
+        """
+        logger.info(f"Applying sorting: {sort_by} {sort_order}")
+        
+        # Definir função de ordenação baseada no campo
+        if sort_by == "cost":
+            key_func = lambda x: x.cost
+        elif sort_by == "service_name":
+            key_func = lambda x: x.service_name.lower()  # Case insensitive
+        elif sort_by == "provider":
+            key_func = lambda x: x.provider.lower()  # Case insensitive
+        elif sort_by == "change_from_previous":
+            key_func = lambda x: x.change_from_previous
+        else:
+            # Fallback para cost se campo inválido
+            logger.warning(f"Invalid sort field '{sort_by}', falling back to 'cost'")
+            key_func = lambda x: x.cost
+        
+        # Determinar ordem (desc = reverse=True, asc = reverse=False)
+        reverse = sort_order.lower() == "desc"
+        
+        # Aplicar ordenação
+        sorted_services = sorted(services, key=key_func, reverse=reverse)
+        
+        logger.info(f"Sorted {len(sorted_services)} services by {sort_by} {sort_order}")
+        
+        return sorted_services

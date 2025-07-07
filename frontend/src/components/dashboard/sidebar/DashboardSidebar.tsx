@@ -36,7 +36,7 @@ export const DashboardSidebar = () => {
         </div>
       </SidebarHeader>
       
-      <SidebarContent className="py-2">
+      <SidebarContent className="py-2 sidebar-content-responsive">
         <SidebarSections />
       </SidebarContent>
       

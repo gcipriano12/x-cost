@@ -32,6 +32,7 @@ import Reports from "./pages/Reports";
 import Governance from "./pages/Governance";
 import Analytics from "./pages/Analytics";
 import Credentials from "./pages/Credentials";
+import TeamSpending from "./pages/TeamSpending";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +78,7 @@ const App = () => {
                 <Route path="/governance" element={<ProtectedRoute><Governance /></ProtectedRoute>} />
                 <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
                 <Route path="/credentials" element={<ProtectedRoute><Credentials /></ProtectedRoute>} />
+                <Route path="/team-spending" element={<ProtectedRoute><TeamSpending /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

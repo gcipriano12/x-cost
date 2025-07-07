@@ -19,7 +19,8 @@ import {
   AlertTriangle, 
   DollarSign,
   FileText, 
-  GanttChart, 
+  GanttChart,
+  Users
 } from 'lucide-react';
 import { SidebarMenuItemMobile } from './SidebarMenuItemMobile';
 import { cn } from '@/lib/utils';
@@ -40,7 +41,8 @@ export const SidebarSections = () => {
     { name: t('common.budgets'), href: '/budgets', icon: <LineChart className="h-5 w-5" /> },
     { name: t('common.financialPlans'), href: '/financial-plans', icon: <Clock className="h-5 w-5" /> },
     { name: t('common.resources'), href: '/resources', icon: <LayoutGrid className="h-5 w-5" /> },
-    { name: t('common.dataExplorer'), href: '/data-explorer', icon: <Search className="h-5 w-5" /> }
+    { name: t('common.dataExplorer'), href: '/data-explorer', icon: <Search className="h-5 w-5" /> },
+    { name: t('common.teamSpending'), href: '/team-spending', icon: <Users className="h-5 w-5" /> }
   ];
 
   // Seção Optimize
@@ -62,7 +64,7 @@ export const SidebarSections = () => {
     <>
       {/* Seção Inform */}
       <SidebarGroup className={cn(isMobile && openMobile && 'mobile-expanded-group-spacing')}>
-        <div className={`px-3 py-1.5 text-xs font-semibold text-[#0080af] ${showText ? "" : "hidden"}`}>
+        <div className={`px-3 text-xs font-semibold text-[#0080af] ${showText ? "" : "hidden"}`}>
           {t('categories.inform')}
         </div>
         <SidebarMenu>
@@ -74,7 +76,7 @@ export const SidebarSections = () => {
 
       {/* Seção Optimize */}
       <SidebarGroup className={cn(isMobile && openMobile && 'mobile-expanded-group-spacing')}>
-        <div className={`px-3 py-1.5 text-xs font-semibold text-[#bd3bfd] ${showText ? "" : "hidden"}`}>
+        <div className={`px-3 text-xs font-semibold text-[#bd3bfd] ${showText ? "" : "hidden"}`}>
           {t('categories.optimize')}
         </div>
         <SidebarMenu>
@@ -86,7 +88,7 @@ export const SidebarSections = () => {
 
       {/* Seção Operate */}
       <SidebarGroup className={cn(isMobile && openMobile && 'mobile-expanded-group-spacing')}>
-        <div className={`px-3 py-1.5 text-xs font-semibold text-[#00c693] ${showText ? "" : "hidden"}`}>
+        <div className={`px-3 text-xs font-semibold text-[#00c693] ${showText ? "" : "hidden"}`}>
           {t('categories.operate')}
         </div>
         <SidebarMenu>

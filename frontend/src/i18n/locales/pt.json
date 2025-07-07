@@ -15,6 +15,7 @@
     "financialPlans": "Planos Financeiros",
     "resources": "Recursos",
     "dataExplorer": "Explorador de Dados",
+    "teamSpending": "Gastos por Equipe",
     "myCommitments": "Meus Compromissos",
     "commitmentsLog": "Log de Compromissos",
     "reports": "Relatórios",
@@ -93,7 +94,8 @@
   "spendingTeams": {
     "title": "Gastos por Equipe",
     "noData": "Nenhum dado de equipe disponível",
-    "noDataDescription": "Não foram encontrados dados de gastos para o período selecionado"
+    "noDataDescription": "Não foram encontrados dados de gastos para o período selecionado",
+    "viewDetails": "Ver detalhes"
   },
   "regionHeatmap": {
     "title": "Heatmap de Custos por Região",
@@ -784,6 +786,78 @@
       "noData": {
         "consumption": "Nenhum dado de consumo disponível",
         "alerts": "Nenhum alerta ativo"
+      }
+    }
+  },
+  "teamSpending": {
+    "title": "Gastos por Equipe",
+    "description": "Análise detalhada dos custos por equipe e oportunidades de otimização",
+    "filters": "Filtros",
+    "provider": "Provedor",
+    "environment": "Ambiente",
+    "searchTeam": "Buscar Equipe",
+    "clearFilters": "Limpar Filtros",
+    "barChartTitle": "Distribuição de Gastos",
+    "barChartDescription": "Visão hierárquica dos custos por equipe",
+    "overview": {
+      "totalSpend": "Gasto Total",
+      "activeTeams": "Equipes Ativas",
+      "averageCost": "Custo Médio",
+      "topTeam": "Maior Gasto",
+      "teamsWithCosts": "equipes com custos",
+      "perTeam": "por equipe",
+      "noData": "Sem dados"
+    },
+    "charts": {
+      "pieTitle": "Distribuição Percentual",
+      "pieDescription": "Proporção de gastos entre as principais equipes",
+      "distributionTitle": "Distribuição por Faixas",
+      "distributionDescription": "Quantidade de equipes por faixa de gasto",
+      "noData": "Nenhum dado disponível"
+    },
+    "table": {
+      "title": "Detalhamento por Equipe",
+      "description": "Lista completa com todos os dados de custos",
+      "teamName": "Nome da Equipe",
+      "totalCost": "Custo Total",
+      "percentage": "% do Total",
+      "trend": "Tendência",
+      "searchPlaceholder": "Buscar equipe...",
+      "itemsPerPage": "Itens por página",
+      "showing": "Mostrando",
+      "of": "de",
+      "total": "Total",
+      "page": "Página",
+      "previous": "Anterior",
+      "next": "Próxima",
+      "noResults": "Nenhum resultado encontrado",
+      "noData": "Nenhuma equipe encontrada"
+    },
+    "insights": {
+      "title": "Insights e Recomendações",
+      "description": "Análises automáticas e sugestões de otimização",
+      "noInsights": "Nenhum insight disponível no momento",
+      "takeAction": "Tomar Ação",
+      "impact": {
+        "high": "Alto Impacto",
+        "medium": "Médio Impacto",
+        "low": "Baixo Impacto"
+      },
+      "highConcentration": {
+        "title": "Alta Concentração de Gastos",
+        "description": "{{percentage}}% dos custos estão concentrados em apenas 3 equipes: {{teams}}. Considere revisar os orçamentos."
+      },
+      "disproportional": {
+        "title": "Gasto Desproporcional Detectado",
+        "description": "A equipe {{team}} ({{amount}}) gasta {{ratio}}x mais que a segunda equipe. Verifique se há recursos subutilizados."
+      },
+      "optimization": {
+        "title": "Oportunidade de Otimização",
+        "description": "{{count}} equipes gastam significativamente acima da média. Economia potencial estimada: {{savings}}."
+      },
+      "balanced": {
+        "title": "Distribuição Equilibrada",
+        "description": "Os gastos estão bem distribuídos entre as equipes, indicando boa governança de custos."
       }
     }
   }

@@ -15,6 +15,7 @@
     "financialPlans": "Financial Plans",
     "resources": "Resources",
     "dataExplorer": "Data Explorer",
+    "teamSpending": "Team Spending",
     "myCommitments": "My Commitments",
     "commitmentsLog": "Commitments Log",
     "reports": "Reports",
@@ -97,7 +98,8 @@
   "spendingTeams": {
     "title": "Spending by Team",
     "noData": "No team data available",
-    "noDataDescription": "No spending data found for the selected period"
+    "noDataDescription": "No spending data found for the selected period",
+    "viewDetails": "View details"
   },
   "regionHeatmap": {
     "title": "Cost Heatmap by Region",
@@ -786,6 +788,78 @@
       "noData": {
         "consumption": "No consumption data available",
         "alerts": "No active alerts"
+      }
+    }
+  },
+  "teamSpending": {
+    "title": "Team Spending",
+    "description": "Detailed analysis of costs by team and optimization opportunities",
+    "filters": "Filters",
+    "provider": "Provider",
+    "environment": "Environment",
+    "searchTeam": "Search Team",
+    "clearFilters": "Clear Filters",
+    "barChartTitle": "Spending Distribution",
+    "barChartDescription": "Hierarchical view of costs by team",
+    "overview": {
+      "totalSpend": "Total Spend",
+      "activeTeams": "Active Teams",
+      "averageCost": "Average Cost",
+      "topTeam": "Top Spender",
+      "teamsWithCosts": "teams with costs",
+      "perTeam": "per team",
+      "noData": "No data"
+    },
+    "charts": {
+      "pieTitle": "Percentage Distribution",
+      "pieDescription": "Spending proportion among top teams",
+      "distributionTitle": "Distribution by Ranges",
+      "distributionDescription": "Number of teams per spending range",
+      "noData": "No data available"
+    },
+    "table": {
+      "title": "Team Breakdown",
+      "description": "Complete list with all cost data",
+      "teamName": "Team Name",
+      "totalCost": "Total Cost",
+      "percentage": "% of Total",
+      "trend": "Trend",
+      "searchPlaceholder": "Search team...",
+      "itemsPerPage": "Items per page",
+      "showing": "Showing",
+      "of": "of",
+      "total": "Total",
+      "page": "Page",
+      "previous": "Previous",
+      "next": "Next",
+      "noResults": "No results found",
+      "noData": "No teams found"
+    },
+    "insights": {
+      "title": "Insights & Recommendations",
+      "description": "Automated analysis and optimization suggestions",
+      "noInsights": "No insights available at the moment",
+      "takeAction": "Take Action",
+      "impact": {
+        "high": "High Impact",
+        "medium": "Medium Impact",
+        "low": "Low Impact"
+      },
+      "highConcentration": {
+        "title": "High Spending Concentration",
+        "description": "{{percentage}}% of costs are concentrated in just 3 teams: {{teams}}. Consider reviewing budgets."
+      },
+      "disproportional": {
+        "title": "Disproportional Spending Detected",
+        "description": "Team {{team}} ({{amount}}) spends {{ratio}}x more than the second team. Check for underutilized resources."
+      },
+      "optimization": {
+        "title": "Optimization Opportunity",
+        "description": "{{count}} teams spend significantly above average. Estimated potential savings: {{savings}}."
+      },
+      "balanced": {
+        "title": "Balanced Distribution",
+        "description": "Spending is well distributed among teams, indicating good cost governance."
       }
     }
   }

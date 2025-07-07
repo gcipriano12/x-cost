@@ -182,7 +182,7 @@ export function SpendingForecastCard({ data, currency, budgetInfo, metadata, isU
   
   return (
     <Card className="h-full overflow-hidden">
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-1">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CardTitle className="flex items-center text-lg font-medium">
@@ -219,12 +219,12 @@ export function SpendingForecastCard({ data, currency, budgetInfo, metadata, isU
           )}
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="h-[330px]">
+      <CardContent className="pt-2">
+        <div className="h-[350px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={processedData}
-              margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
+              margin={{ top: 10, right: 25, left: 0, bottom: 20 }}
             >
               <CartesianGrid 
                 strokeDasharray="3 3" 
@@ -284,7 +284,7 @@ export function SpendingForecastCard({ data, currency, budgetInfo, metadata, isU
           </ResponsiveContainer>
         </div>
         
-        <div className="mt-1 flex justify-center items-center gap-6 text-xs text-muted-foreground">
+        <div className="mt-1 flex justify-center items-center gap-4 text-xs text-muted-foreground">
           <div className="flex items-center">
             <div className={cn(
               "w-3 h-3 rounded-full mr-1",

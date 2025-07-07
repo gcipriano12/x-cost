@@ -1,9 +1,25 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getProviderColor } from '@/utils/providerColors';
 import { cn } from '@/lib/utils';
 
-// Function to determine if a color is light and needs dark text
+// Function to get display text for provider (with abbreviations for long names)
+function getProviderDisplayText(provider: string): string {
+  const providerMap: Record<string, string> = {
+    'Oracle Cloud': 'ORACLE',
+    'Google Cloud Platform': 'GCP',
+    'Google Cloud': 'GCP',
+    'Amazon Web Services': 'AWS',
+    'Microsoft Azure': 'AZURE',
+    'AWS': 'AWS',
+    'Azure': 'AZURE',
+    'GCP': 'GCP',
+    'Oracle': 'ORACLE'
+  };
+  
+  return providerMap[provider] || provider.toUpperCase();
+}
 function isLightColor(hexColor: string): boolean {
   // Remove # if present
   const hex = hexColor.replace('#', '');
@@ -24,34 +40,55 @@ interface ProviderBadgeProps {
   provider: string;
   className?: string;
   size?: 'xs' | 'sm' | 'md' | 'lg';
+  showTooltip?: boolean;
 }
 
 export function ProviderBadge({ 
   provider, 
   className,
-  size = 'sm' 
+  size = 'sm',
+  showTooltip = true
 }: ProviderBadgeProps) {
   const sizeClasses = {
-    xs: 'text-[10px] py-0 px-1.5',
-    sm: 'text-xs py-0.5 px-2',
-    md: 'text-sm py-1 px-2.5', 
-    lg: 'text-base py-1.5 px-3'
+    xs: 'text-[10px] py-0 px-1.5 min-w-[3rem]',
+    sm: 'text-xs py-0.5 px-2 min-w-[3.5rem]',
+    md: 'text-sm py-1 px-2.5 min-w-[4rem]', 
+    lg: 'text-base py-1.5 px-3 min-w-[4.5rem]'
   };
 
   const backgroundColor = getProviderColor(provider);
   const textColor = isLightColor(backgroundColor) ? 'text-black' : 'text-white';
-
-  return (
+  const displayText = getProviderDisplayText(provider);
+  
+  const badge = (
     <Badge
       className={cn(
         sizeClasses[size],
         textColor,
-        "border-0 font-medium rounded-full",
+        "border-0 font-medium rounded-full inline-flex items-center justify-center text-center",
         className
       )}
       style={{ backgroundColor }}
     >
-      {provider.toUpperCase()}
+      {displayText}
     </Badge>
   );
+
+  // Show tooltip only if the display text is different from original provider name
+  if (showTooltip && displayText !== provider.toUpperCase()) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {badge}
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{provider}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return badge;
 }

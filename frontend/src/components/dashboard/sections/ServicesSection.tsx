@@ -4,25 +4,28 @@ import { SpendingForecastCard } from '../SpendingForecastCard';
 import { Layers } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useForecast } from '@/hooks/useForecast';
+import { useTopServices } from '@/hooks/useTopServices';
 
 interface ServicesSectionProps {
-  topServicesData: any[];
   currency: string;
   credentialId?: string;
   providerName?: string;
   timeFilter?: string;
-  isTopServicesUsingMockData?: boolean;
 }
 
 export function ServicesSection({ 
-  topServicesData,
   currency, 
   credentialId, 
   providerName,
-  timeFilter,
-  isTopServicesUsingMockData = false
+  timeFilter
 }: ServicesSectionProps) {
   const { t } = useTranslation();
+  
+  // Pagination state for Top Services
+  const [topServicesPage, setTopServicesPage] = useState(1);
+  const [topServicesSortBy, setTopServicesSortBy] = useState('cost');
+  const [topServicesSortOrder, setTopServicesSortOrder] = useState('desc');
+  const topServicesPageSize = 5; // Fixed page size like Anomalies/Savings
   
   // Converter timeFilter para parâmetros de data
   const getDateRangeFromTimeFilter = (filter?: string) => {
@@ -72,6 +75,60 @@ export function ServicesSection({
   const { startDate: topServicesStartDate, endDate: topServicesEndDate } = getDateRangeFromTimeFilter(timeFilter);
   const { startDate: forecastStartDate, endDate: forecastEndDate } = getForecastDateRange();
   
+  // Pagination handlers
+  const handleTopServicesPageChange = useCallback((page: number) => {
+    setTopServicesPage(page);
+  }, []);
+  
+  // Sorting handlers
+  const handleTopServicesSortChange = useCallback((sortBy: string, sortOrder: string) => {
+    setTopServicesSortBy(sortBy);
+    setTopServicesSortOrder(sortOrder);
+    setTopServicesPage(1); // Reset to first page when sorting changes
+  }, []);
+  
+  // Use Top Services hook with pagination
+  const {
+    data: topServicesApiData,
+    totalServices,
+    pagination: topServicesPagination,
+    isUsingMockData: topServicesUsingMockData
+  } = useTopServices({
+    credentialId,
+    startDate: topServicesStartDate,
+    endDate: topServicesEndDate,
+    providerName,
+    page_size: topServicesPageSize,
+    page: topServicesPage,
+    sort_by: topServicesSortBy,
+    sort_order: topServicesSortOrder,
+    enabled: true
+  });
+  
+  // Convert API data to component format
+  const formattedTopServicesData = topServicesApiData.map(service => ({
+    id: service.id,
+    name: service.service_name,
+    provider: service.provider,
+    currentSpend: service.cost,
+    previousSpend: service.cost * (1 - service.change_from_previous / 100), // Calculate previous spend
+    trend: service.change_from_previous
+  }));
+  
+  console.log('🔍 Top Services Debug:', {
+    topServicesApiData,
+    formattedTopServicesData,
+    totalServices,
+    topServicesPagination,
+    topServicesUsingMockData,
+    credentialId,
+    providerName,
+    startDate: topServicesStartDate,
+    endDate: topServicesEndDate,
+    apiDataLength: topServicesApiData.length,
+    timeFilter
+  });
+  
   console.log('📊 ServicesSection dates:', {
     timeFilter,
     topServices: { start: topServicesStartDate, end: topServicesEndDate },
@@ -83,7 +140,6 @@ export function ServicesSection({
     data: forecastData, 
     metadata: forecastMetadata,
     budget_info: budgetInfo,
-    isLoading: forecastLoading, 
     isUsingMockData 
   } = useForecast({
     credentialId,
@@ -101,12 +157,22 @@ export function ServicesSection({
         <h2 className="text-lg font-semibold">{t('sections.servicesAndForecasts')}</h2>
       </div>
       
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <div className="col-span-1">
           <TopServicesCard 
-            services={topServicesData}
+            services={formattedTopServicesData}
             currency={currency}
-            isUsingMockData={isTopServicesUsingMockData}
+            isUsingMockData={topServicesUsingMockData}
+            totalServices={totalServices}
+            currentPage={topServicesPagination.page}
+            pageSize={topServicesPagination.page_size}
+            totalPages={topServicesPagination.total_pages}
+            hasNext={topServicesPagination.has_next}
+            hasPrevious={topServicesPagination.has_previous}
+            onPageChange={handleTopServicesPageChange}
+            sortBy={topServicesSortBy}
+            sortOrder={topServicesSortOrder}
+            onSortChange={handleTopServicesSortChange}
           />
         </div>
 

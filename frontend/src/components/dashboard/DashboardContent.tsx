@@ -104,12 +104,10 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
         />
         
         <ServicesSection 
-          topServicesData={topServicesData}
           currency={currency}
           credentialId={activeCredential?.id?.toString()}
           providerName={providerFilter}
           timeFilter={timeFilter}
-          isTopServicesUsingMockData={isTopServicesUsingMockData}
         />
         
         <TrendsSection 

@@ -16,14 +16,16 @@ apiClient.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   
-  // Debug: Log das requisições para dashboard, analytics e forecast
+  // Debug: Log das requisições para dashboard, analytics, forecast e services
   if (config.url?.includes('/dashboard/summary') || 
       config.url?.includes('/analytics/by-provider') ||
-      config.url?.includes('/analytics/forecast')) {
+      config.url?.includes('/analytics/forecast') ||
+      config.url?.includes('/services/top')) {
     console.log('🌐 API Request:', {
       url: config.url,
       method: config.method?.toUpperCase(),
       params: config.params,
+      headers: config.headers,
       fullUrl: `${config.baseURL}${config.url}?${new URLSearchParams(config.params).toString()}`
     });
   }
@@ -45,11 +47,13 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Log de erros de forecast para debug
-    if (error.config?.url?.includes('/analytics/forecast')) {
+    // Log de erros de forecast e services para debug
+    if (error.config?.url?.includes('/analytics/forecast') || 
+        error.config?.url?.includes('/services/top')) {
       console.log('❌ API Response Error:', {
         url: error.config.url,
         status: error.response?.status,
+        statusText: error.response?.statusText,
         data: error.response?.data,
         message: error.message
       });
@@ -136,15 +140,21 @@ export const analyticsService = {
     startDate?: string;
     endDate?: string;
     providerName?: string;
-    limit?: number;
+    page_size?: number;
+    page?: number;
+    sort_by?: string;
+    sort_order?: string;
   }) => 
     apiClient.get('/api/v1/services/top', { 
       params: {
-        credential_id: params.credentialId,
+        credential_id: params.credentialId || 'test-credential-aws', // Use string credential_id
         start_date: params.startDate,
         end_date: params.endDate,
         provider_name: params.providerName,
-        limit: params.limit || 5
+        page_size: params.page_size || 10, // Backend expects page_size
+        page: params.page || 1,
+        sort_by: params.sort_by || 'cost',
+        sort_order: params.sort_order || 'desc'
       }
     })
 };

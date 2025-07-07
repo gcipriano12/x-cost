@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { TrendingUp, TrendingDown, BarChart2, ArrowUpRight, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, BarChart2, ArrowUpRight, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -11,11 +11,11 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { MockDataBadge } from '@/components/ui/mock-data-badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProviderBadge } from '@/components/ui/provider-badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
+import { useState, useMemo } from 'react';
 
 interface ServiceData {
   id: string;
@@ -26,6 +26,9 @@ interface ServiceData {
   trend: number;
 }
 
+type SortField = 'name' | 'provider' | 'currentSpend' | 'trend';
+type SortDirection = 'asc' | 'desc' | null;
+
 interface TopServicesCardProps {
   services: ServiceData[];
   currency: string;
@@ -34,12 +37,14 @@ interface TopServicesCardProps {
   currentPage?: number;
   pageSize?: number;
   totalPages?: number;
+  hasNext?: boolean;
+  hasPrevious?: boolean;
   onPageChange?: (page: number) => void;
-  onPageSizeChange?: (size: number) => void;
+  sortBy?: string;
+  sortOrder?: string;
+  onSortChange?: (sortBy: string, sortOrder: string) => void;
 }
 
-// Page size options following the same pattern as Anomalies and Savings
-const PAGE_SIZES = [5, 10, 25, 50];
 
 export function TopServicesCard({ 
   services, 
@@ -47,16 +52,133 @@ export function TopServicesCard({
   isUsingMockData = false,
   totalServices = 0,
   currentPage = 1,
-  pageSize = 5,
+  pageSize = 10,
   totalPages = 1,
+  hasNext = false,
+  hasPrevious = false,
   onPageChange,
-  onPageSizeChange
+  sortBy = 'cost',
+  sortOrder = 'desc',
+  onSortChange
 }: TopServicesCardProps) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   
-  // Show pagination only if there are more services than page size
-  const shouldShowPagination = totalServices > pageSize;
+  // Mapeamento de campos para backend
+  const backendFieldMapping: Record<SortField, string> = {
+    'name': 'service_name',
+    'provider': 'provider',
+    'currentSpend': 'cost',
+    'trend': 'change_from_previous'
+  };
+  
+  // Função para alterar ordenação (notifica o componente pai)
+  const handleSort = (field: SortField) => {
+    const backendField = backendFieldMapping[field];
+    
+    if (sortBy === backendField) {
+      // Se já está ordenando por este campo, alternar direção
+      const newOrder = sortOrder === 'desc' ? 'asc' : 'desc';
+      onSortChange?.(backendField, newOrder);
+    } else {
+      // Novo campo, começar com desc para custo/trend, asc para nome/provider
+      const newOrder = (field === 'currentSpend' || field === 'trend') ? 'desc' : 'asc';
+      onSortChange?.(backendField, newOrder);
+    }
+  };
+  
+  // Função para obter ícone de ordenação
+  const getSortIcon = (field: SortField) => {
+    const backendField = backendFieldMapping[field];
+    
+    if (sortBy !== backendField) {
+      return <ArrowUpDown className="h-3 w-3 opacity-50" />;
+    }
+    if (sortOrder === 'desc') {
+      return <ArrowDown className="h-3 w-3" />;
+    }
+    if (sortOrder === 'asc') {
+      return <ArrowUp className="h-3 w-3" />;
+    }
+    return <ArrowUpDown className="h-3 w-3 opacity-50" />;
+  };
+  
+  // Para compatibilidade com ordenação local (quando não há callback)
+  const [localSortField, setLocalSortField] = useState<SortField>('currentSpend');
+  const [localSortDirection, setLocalSortDirection] = useState<SortDirection>('desc');
+  
+  const handleLocalSort = (field: SortField) => {
+    if (localSortField === field) {
+      setLocalSortDirection(prev => {
+        if (prev === 'desc') return 'asc';
+        if (prev === 'asc') return null;
+        return 'desc';
+      });
+    } else {
+      setLocalSortField(field);
+      setLocalSortDirection(field === 'currentSpend' || field === 'trend' ? 'desc' : 'asc');
+    }
+  };
+  
+  const getLocalSortIcon = (field: SortField) => {
+    if (localSortField !== field) {
+      return <ArrowUpDown className="h-3 w-3 opacity-50" />;
+    }
+    if (localSortDirection === 'desc') {
+      return <ArrowDown className="h-3 w-3" />;
+    }
+    if (localSortDirection === 'asc') {
+      return <ArrowUp className="h-3 w-3" />;
+    }
+    return <ArrowUpDown className="h-3 w-3 opacity-50" />;
+  };
+  
+  // Serviços ordenados localmente (quando não há backend sorting)
+  const localSortedServices = useMemo(() => {
+    if (onSortChange || !localSortDirection || !localSortField) {
+      return services; // Use backend sorting ou dados originais
+    }
+    
+    return [...services].sort((a, b) => {
+      let aValue: string | number;
+      let bValue: string | number;
+      
+      switch (localSortField) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'provider':
+          aValue = a.provider.toLowerCase();
+          bValue = b.provider.toLowerCase();
+          break;
+        case 'currentSpend':
+          aValue = a.currentSpend;
+          bValue = b.currentSpend;
+          break;
+        case 'trend':
+          aValue = a.trend;
+          bValue = b.trend;
+          break;
+        default:
+          return 0;
+      }
+      
+      if (localSortDirection === 'asc') {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      } else {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+      }
+    });
+  }, [services, localSortField, localSortDirection, onSortChange]);
+  
+  // Usar serviços do backend (se disponível) ou ordenação local
+  const displayServices = onSortChange ? services : localSortedServices;
+  const currentSortHandler = onSortChange ? handleSort : handleLocalSort;
+  const currentIconGetter = onSortChange ? getSortIcon : getLocalSortIcon;
+  
+  // Enable pagination now that backend supports it
+  const shouldShowPagination = totalPages > 1 && onPageChange;
   
   const formatCurrency = (value: number) => {
     if (value >= 1000000) {
@@ -89,29 +211,97 @@ export function TopServicesCard({
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div>
+        {services.length === 0 && !isUsingMockData && (
+          <div className="flex items-center justify-center h-48 text-center p-4">
+            <div className="text-muted-foreground">
+              <p className="text-sm">No services data available.</p>
+              <p className="text-xs mt-1">Configure AWS credentials to view real cost data.</p>
+            </div>
+          </div>
+        )}
+        
+        {services.length === 0 && isUsingMockData && (
+          <div className="flex items-center justify-center h-48 text-center p-4">
+            <div className="text-muted-foreground">
+              <p className="text-sm">Loading services data...</p>
+              <p className="text-xs mt-1">Please configure AWS credentials in Settings.</p>
+            </div>
+          </div>
+        )}
+        
+        {services.length > 0 && (
+        <>
         <Table>
             <TableHeader className={cn(
               "sticky top-0 z-10",
               isDark ? "bg-slate-800" : "bg-gray-50"
             )}>
             <TableRow>
-                <TableHead className="text-center font-medium text-xs">{t('topServices.service')}</TableHead>
-                <TableHead className="text-center font-medium text-xs">{t('topServices.provider')}</TableHead>
-                <TableHead className="text-center font-medium text-xs">{t('topServices.currentSpend')}</TableHead>
-                <TableHead className="text-center font-medium text-xs">{t('topServices.variation')}</TableHead>
-                <TableHead className="text-center font-medium text-xs w-24">Action</TableHead>
+                <TableHead className="text-center font-medium text-xs h-10 py-2 px-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto p-1 font-medium text-xs hover:bg-transparent"
+                    onClick={() => currentSortHandler('name')}
+                  >
+                    <span className="flex items-center gap-1">
+                      {t('topServices.service')}
+                      {currentIconGetter('name')}
+                    </span>
+                  </Button>
+                </TableHead>
+                <TableHead className="text-center font-medium text-xs h-10 py-2 px-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto p-1 font-medium text-xs hover:bg-transparent"
+                    onClick={() => currentSortHandler('provider')}
+                  >
+                    <span className="flex items-center gap-1">
+                      {t('topServices.provider')}
+                      {currentIconGetter('provider')}
+                    </span>
+                  </Button>
+                </TableHead>
+                <TableHead className="text-center font-medium text-xs h-10 py-2 px-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto p-1 font-medium text-xs hover:bg-transparent"
+                    onClick={() => currentSortHandler('currentSpend')}
+                  >
+                    <span className="flex items-center gap-1">
+                      {t('topServices.currentSpend')}
+                      {currentIconGetter('currentSpend')}
+                    </span>
+                  </Button>
+                </TableHead>
+                <TableHead className="text-center font-medium text-xs h-10 py-2 px-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto p-1 font-medium text-xs hover:bg-transparent"
+                    onClick={() => currentSortHandler('trend')}
+                  >
+                    <span className="flex items-center gap-1">
+                      {t('topServices.variation')}
+                      {currentIconGetter('trend')}
+                    </span>
+                  </Button>
+                </TableHead>
+                <TableHead className="text-center font-medium text-xs w-24 h-10 py-2 px-3">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {services.map((service) => {
+            {displayServices.map((service) => {
               const isIncrease = service.trend > 0;
               
               return (
                   <TableRow key={service.id} className={cn(
+                    "h-12",
                     isDark ? "hover:bg-slate-800/70" : "hover:bg-gray-50"
                   )}>
-                    <TableCell className="text-center font-medium py-3 text-sm">{service.name}</TableCell>
+                    <TableCell className="text-center font-medium text-sm">{service.name}</TableCell>
                     <TableCell className="text-center">
                       <ProviderBadge 
                         provider={service.provider}
@@ -156,12 +346,12 @@ export function TopServicesCard({
                         {Math.abs(service.trend)}%
                     </span>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-2 px-3">
                       <Button 
                         variant="ghost" 
                         size="sm" 
                         className={cn(
-                          "h-8 text-xs w-full flex items-center justify-center",
+                          "h-7 text-xs w-full flex items-center justify-center",
                           isDark ? "text-blue-400" : "text-XCost-blue"
                         )}
                       >
@@ -174,70 +364,46 @@ export function TopServicesCard({
             })}
           </TableBody>
         </Table>
-        </div>
         
-        {/* Pagination Section */}
-        {shouldShowPagination && onPageChange && onPageSizeChange && (
+        {/* Pagination Section - Complete implementation */}
+        {shouldShowPagination && (
           <div className="flex items-center justify-between p-4 border-t">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Rows per page:</span>
-              <Select 
-                value={pageSize.toString()} 
-                onValueChange={(value) => onPageSizeChange(parseInt(value))}
-              >
-                <SelectTrigger className="w-20">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAGE_SIZES.map((size) => (
-                    <SelectItem key={size} value={size.toString()}>
-                      {size}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Page info */}
+            <div className="text-sm text-muted-foreground">
+              Showing {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, totalServices)} of {totalServices} services
             </div>
-
+            
+            {/* Pagination controls */}
             <div className="flex items-center gap-2">
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => onPageChange(1)} 
-                disabled={currentPage === 1}
-              >
-                <ChevronsLeft className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => onPageChange(currentPage - 1)} 
-                disabled={currentPage === 1}
+                onClick={() => onPageChange?.(currentPage - 1)} 
+                disabled={!hasPrevious}
+                className="h-8"
               >
                 <ChevronLeft className="h-4 w-4" />
+                Previous
               </Button>
               
-              <span className="text-sm text-muted-foreground px-2">
+              <span className="text-sm text-muted-foreground px-3">
                 Page {currentPage} of {totalPages}
               </span>
               
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => onPageChange(currentPage + 1)} 
-                disabled={currentPage === totalPages}
+                onClick={() => onPageChange?.(currentPage + 1)} 
+                disabled={!hasNext}
+                className="h-8"
               >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => onPageChange(totalPages)} 
-                disabled={currentPage === totalPages}
-              >
-                <ChevronsRight className="h-4 w-4" />
+                Next
+                <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
             </div>
           </div>
+        )}
+        </>
         )}
       </CardContent>
     </Card>

@@ -44,7 +44,7 @@ const CLOUD_PROVIDERS: CloudProvider[] = [
     textColor: 'text-blue-700'
   },
   {
-    id: 'Oracle',
+    id: 'Oracle Cloud',
     name: 'Oracle Cloud',
     logo: '/logos/oracle.png',
     color: 'bg-red-100 border-red-200',

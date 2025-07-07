@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, BarChart2, ChevronLeft, ChevronRight, HelpCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { MockDataBadge } from '@/components/ui/mock-data-badge';
 import { 
   Dialog,
   DialogContent,
@@ -30,6 +31,7 @@ interface KPI {
 
 interface EfficiencyKPIsCardProps {
   kpis: KPI[];
+  isUsingMockData?: boolean;
 }
 
 // Função para criar as definições de cores para cada categoria com suporte a dark mode
@@ -66,7 +68,7 @@ const createCategoryColors = (isDark: boolean) => {
   } as const;
 };
 
-export function EfficiencyKPIsCard({ kpis }: EfficiencyKPIsCardProps) {
+export function EfficiencyKPIsCard({ kpis, isUsingMockData = false }: EfficiencyKPIsCardProps) {
   const { isDark } = useTheme();
   const [activeCategory, setActiveCategory] = useState<KPICategory>('eficiencia');
   const [currentPage, setCurrentPage] = useState(0);
@@ -148,10 +150,13 @@ export function EfficiencyKPIsCard({ kpis }: EfficiencyKPIsCardProps) {
     <Card className="h-full flex flex-col overflow-hidden">
       <CardHeader className="pb-2 flex-shrink-0">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
-          <CardTitle className="flex items-center text-lg font-medium mb-2 sm:mb-0">
-            <BarChart2 className={`h-5 w-5 mr-2 ${activeColor.text}`} />
-            {t('sections.kpis')}
-          </CardTitle>
+          <div className="flex items-center gap-2 mb-2 sm:mb-0">
+            <CardTitle className="flex items-center text-lg font-medium">
+              <BarChart2 className={`h-5 w-5 mr-2 ${activeColor.text}`} />
+              {t('sections.kpis')}
+            </CardTitle>
+            {isUsingMockData && <MockDataBadge />}
+          </div>
           
           {/* Container com scroll horizontal para telas pequenas */}
           <div className="w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 -mx-1 px-1">

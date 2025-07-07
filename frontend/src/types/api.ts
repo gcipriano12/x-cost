@@ -84,6 +84,40 @@ export interface AccountDistribution {
 }
 
 // Tipos para Dashboard Summary - Atualizado para corresponder à API real
+// Tipos para Forecast Data
+export interface ForecastDataPoint {
+  month: string;
+  actual?: number;
+  forecast?: number;
+  budget?: number;
+  variance?: number;
+  confidence_interval?: {
+    lower: number;
+    upper: number;
+  };
+}
+
+export interface ForecastResponse {
+  period: {
+    start_date: string;
+    end_date: string;
+    forecast_months: number;
+  };
+  generated_at: string;
+  forecast_data: ForecastDataPoint[];
+  metadata: {
+    model_accuracy: number;
+    confidence_level: number;
+    data_completeness: number;
+    forecast_method: string;
+  };
+  budget_info?: {
+    total_budget: number;
+    monthly_budget: number;
+    budget_exceeded_months: string[];
+  };
+}
+
 export interface DashboardSummary {
   period: {
     start_date: string;

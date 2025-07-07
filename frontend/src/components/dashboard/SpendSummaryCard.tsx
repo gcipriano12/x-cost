@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { ProviderBadge } from '@/components/ui/provider-badge';
+import { MockDataBadge } from '@/components/ui/mock-data-badge';
 import { Progress } from '@/components/ui/progress';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip as RechartsTooltip, Sector } from 'recharts';
 import { useTheme } from '@/hooks/useTheme';
@@ -56,6 +57,7 @@ interface SpendSummaryProps {
     amount: number;
     change_percentage: number;
   };
+  isUsingMockData?: boolean;
 }
 
 export function SpendSummaryCard({ 
@@ -63,12 +65,7 @@ export function SpendSummaryCard({
   currency, 
   previousPeriodChange, 
   sparklineData,
-  providerBreakdown = [
-    { name: 'AWS', value: 58, color: getProviderColor('AWS') },
-    { name: 'Azure', value: 22, color: getProviderColor('Azure') },
-    { name: 'GCP', value: 12, color: getProviderColor('GCP') },
-    { name: 'Oracle Cloud', value: 8, color: getProviderColor('Oracle Cloud') }
-  ],
+  providerBreakdown = [], // SEM FALLBACK - apenas dados reais da API
   accountBreakdown,
   selectedProvider,
   wastedSpend = 0, // SEM FALLBACK - apenas dados reais da API
@@ -80,7 +77,8 @@ export function SpendSummaryCard({
   monthlyAverage,
   monthlyAverageDescription,
   annualProjection,
-  nextMonthForecast
+  nextMonthForecast,
+  isUsingMockData = false
 }: SpendSummaryProps) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
@@ -131,7 +129,7 @@ export function SpendSummaryCard({
   };
 
   // Determine which distribution to show based on selected provider
-  const showAccountDistribution = selectedProvider && accountBreakdown && accountBreakdown.length > 0;
+  const showAccountDistribution = !!selectedProvider; // SEMPRE mostrar Account Distribution quando há filtro de provedor
   const distributionTitle = showAccountDistribution 
     ? t('spendSummary.accountDistribution') 
     : t('spendSummary.providerDistribution');
@@ -166,7 +164,19 @@ export function SpendSummaryCard({
   })) || [];
 
   // Calcular valores absolutos para cada item (provider ou account)
-  const currentBreakdown = showAccountDistribution ? processedAccountBreakdown : providerBreakdown;
+  let currentBreakdown = showAccountDistribution ? processedAccountBreakdown : providerBreakdown;
+  
+  // Se está mostrando Account Distribution mas não há dados de conta, criar fallback
+  if (showAccountDistribution && processedAccountBreakdown.length === 0 && selectedProvider) {
+    console.log('🔧 Creating fallback account data for provider:', selectedProvider);
+    currentBreakdown = [{
+      accountId: 'fallback-account',
+      billing_account_name: `${selectedProvider} Account`,
+      accountName: `${selectedProvider} Account`,
+      value: 100, // 100% do provedor selecionado
+      color: getProviderColor(selectedProvider)
+    }];
+  }
   const distributionValues = currentBreakdown.map(item => ({
     ...item,
     absoluteValue: (item.value / 100) * totalSpend,
@@ -454,10 +464,13 @@ export function SpendSummaryCard({
   return (
     <Card className="h-full overflow-hidden">
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center text-lg font-medium">
-          <DollarSign className="mr-2 h-5 w-5 text-XCost-blue" />
-          {t('spendSummary.title')}
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center text-lg font-medium">
+            <DollarSign className="mr-2 h-5 w-5 text-XCost-blue" />
+            {t('spendSummary.title')}
+          </CardTitle>
+          {isUsingMockData && <MockDataBadge />}
+        </div>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-12 gap-6">

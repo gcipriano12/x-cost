@@ -50,9 +50,18 @@ export const useDashboard = ({
     // Criar chave única para os parâmetros atuais
     const currentParams = `${calculatedPeriodDays}-${credentialId || 'default'}-${providerName || 'all'}`;
     
-    // Evitar chamadas duplicadas
-    if (isLoadingRef.current || (currentParams === lastParamsRef.current && data)) {
+    // Evitar chamadas duplicadas apenas se parâmetros são idênticos
+    if (isLoadingRef.current) {
+      console.log('🔄 Skipping API call - already loading');
       return;
+    }
+    
+    // Força nova chamada se parâmetros mudaram
+    if (currentParams !== lastParamsRef.current) {
+      console.log('🔄 Parameters changed, forcing new API call:', {
+        old: lastParamsRef.current,
+        new: currentParams
+      });
     }
     
     try {
@@ -60,6 +69,11 @@ export const useDashboard = ({
       lastParamsRef.current = currentParams;
       
       console.log(`🔄 Dashboard API call: ${currentParams}`);
+      console.log('🔍 Dashboard API params:', {
+        periodDays: calculatedPeriodDays,
+        credentialId,
+        providerName: providerName || 'undefined'
+      });
       
       if (showLoadingState) {
         setLoading(true);
@@ -67,6 +81,13 @@ export const useDashboard = ({
       setError(null);
 
       const response = await dashboardService.getSummary(calculatedPeriodDays, credentialId, providerName);
+      
+      console.log('📊 Dashboard API response received:', {
+        status: response.status,
+        totalCost: response.data?.cost_summary?.totals?.total_cost || 0,
+        providerFilter: providerName || 'All',
+        responseSize: JSON.stringify(response.data).length
+      });
       setData(response.data);
       setLastUpdated(new Date());
       

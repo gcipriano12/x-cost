@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ResponsiveContainer, Treemap, Tooltip } from 'recharts';
 import { MapPin } from 'lucide-react';
+import { MockDataBadge } from '@/components/ui/mock-data-badge';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 
@@ -18,6 +19,7 @@ interface FlatRegionData {
 interface RegionHeatmapCardProps {
   data: FlatRegionData[]; // Agora espera a lista achatada e pré-processada
   currency: string;
+  isUsingMockData?: boolean;
 }
 
 // Mapa de cores por provedor
@@ -29,7 +31,7 @@ const PROVIDER_COLORS: { [key: string]: string } = {
   'Default': '#CCCCCC'       // Cinza para provedores não mapeados
 };
 
-export function RegionHeatmapCard({ data, currency }: RegionHeatmapCardProps) {
+export function RegionHeatmapCard({ data, currency, isUsingMockData = false }: RegionHeatmapCardProps) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   // Os dados já vêm como top 5 regiões achatadas da ComparisonSection.
@@ -153,11 +155,14 @@ export function RegionHeatmapCard({ data, currency }: RegionHeatmapCardProps) {
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-2 flex-shrink-0">
-        <CardTitle className="flex items-center text-base font-semibold">
-          <MapPin className="h-5 w-5 mr-2 text-green-500" />
-          <span className="hidden lg:inline">{t('regionHeatmap.title')}</span>
-          <span className="lg:hidden">{t('regionHeatmap.titleShort')}</span>
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center text-base font-semibold">
+            <MapPin className="h-5 w-5 mr-2 text-green-500" />
+            <span className="hidden lg:inline">{t('regionHeatmap.title')}</span>
+            <span className="lg:hidden">{t('regionHeatmap.titleShort')}</span>
+          </CardTitle>
+          {isUsingMockData && <MockDataBadge />}
+        </div>
       </CardHeader>
       <CardContent className="flex-grow px-4 pt-2 pb-3 overflow-auto">
         <div className="h-[250px] w-full">

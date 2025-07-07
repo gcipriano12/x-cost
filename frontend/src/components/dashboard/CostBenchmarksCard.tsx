@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Search } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { MockDataBadge } from '@/components/ui/mock-data-badge';
 import { useTranslation } from 'react-i18next';
 
 interface Benchmark {
@@ -16,9 +17,10 @@ interface Benchmark {
 interface CostBenchmarksCardProps {
   benchmarks: Benchmark[];
   currency: string;
+  isUsingMockData?: boolean;
 }
 
-export function CostBenchmarksCard({ benchmarks, currency }: CostBenchmarksCardProps) {
+export function CostBenchmarksCard({ benchmarks, currency, isUsingMockData = false }: CostBenchmarksCardProps) {
   const { t } = useTranslation();
   
   const getPercentileBadge = (percentile: number) => {
@@ -36,10 +38,13 @@ export function CostBenchmarksCard({ benchmarks, currency }: CostBenchmarksCardP
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-2 flex-shrink-0">
-        <CardTitle className="flex items-center text-base font-semibold">
-          <Search className="h-5 w-5 mr-2 text-purple-500" />
-          {t('benchmarks.title')}
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center text-base font-semibold">
+            <Search className="h-5 w-5 mr-2 text-purple-500" />
+            {t('benchmarks.title')}
+          </CardTitle>
+          {isUsingMockData && <MockDataBadge />}
+        </div>
       </CardHeader>
       <CardContent className="flex-grow px-4 pt-2 pb-3 overflow-auto">
         <div className="space-y-4">

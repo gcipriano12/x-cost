@@ -54,6 +54,8 @@ interface DashboardContentProps {
   regionHeatmapData: RegionData[];
   currency: string;
   isLoadingRealData?: boolean;
+  activeCredential?: any;
+  isTopServicesUsingMockData?: boolean;
 }
 
 export const DashboardContent: React.FC<DashboardContentProps> = ({
@@ -77,7 +79,9 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
   newServicesData,
   regionHeatmapData,
   currency,
-  isLoadingRealData = false
+  isLoadingRealData = false,
+  activeCredential,
+  isTopServicesUsingMockData = false
 }) => {
   const { isDark } = useTheme();
   const isMobile = useIsMobile();
@@ -101,8 +105,11 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
         
         <ServicesSection 
           topServicesData={topServicesData}
-          forecastData={forecastData}
           currency={currency}
+          credentialId={activeCredential?.id?.toString()}
+          providerName={providerFilter}
+          timeFilter={timeFilter}
+          isTopServicesUsingMockData={isTopServicesUsingMockData}
         />
         
         <TrendsSection 

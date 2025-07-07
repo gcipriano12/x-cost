@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, ArrowUpRight, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { MockDataBadge } from '@/components/ui/mock-data-badge';
 import { ProviderBadge } from '@/components/ui/provider-badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTheme } from '@/hooks/useTheme';
@@ -226,11 +227,14 @@ export function AnomaliesCard({ provider, days = 30, autoRefresh = true }: Anoma
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-1 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center text-lg font-medium">
-            <AlertTriangle className="mr-2 h-5 w-5 text-amber-500" />
-            <span className="hidden lg:inline">{t('anomalies.detected')}</span>
-            <span className="lg:hidden">{t('common.anomalies')}</span>
-          </CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="flex items-center text-lg font-medium">
+              <AlertTriangle className="mr-2 h-5 w-5 text-amber-500" />
+              <span className="hidden lg:inline">{t('anomalies.detected')}</span>
+              <span className="lg:hidden">{t('common.anomalies')}</span>
+            </CardTitle>
+            {(!anomalies || anomalies.length === 0) && <MockDataBadge />}
+          </div>
           <div className="flex items-center space-x-2">
             <div className={`whitespace-nowrap ${isMobile ? 'text-lg' : 'text-xl'} font-bold ${headerTextColorClass}`}>
               {totalImpact >= 1000 ? `$${(totalImpact / 1000).toFixed(1)}K` : `$${Math.round(totalImpact).toLocaleString()}`}

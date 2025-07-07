@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { TrendingUp, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { MockDataBadge } from '@/components/ui/mock-data-badge';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 
@@ -17,15 +18,26 @@ interface ForecastDataPoint {
 interface SpendingForecastCardProps {
   data: ForecastDataPoint[];
   currency: string;
+  budgetInfo?: {
+    total_budget: number;
+    monthly_budget: number;
+    budget_exceeded_months: string[];
+  };
+  isUsingMockData?: boolean;
 }
 
-export function SpendingForecastCard({ data, currency }: SpendingForecastCardProps) {
+export function SpendingForecastCard({ data, currency, budgetInfo, isUsingMockData = false }: SpendingForecastCardProps) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   
-  // Verificar se o último valor previsto ultrapassa o orçamento
-  const lastPoint = data[data.length - 1];
-  const budgetExceeded = lastPoint.forecast && lastPoint.budget && lastPoint.forecast > lastPoint.budget;
+  // Verificar se há meses onde a previsão excede o orçamento
+  const budgetExceeded = budgetInfo?.budget_exceeded_months && budgetInfo.budget_exceeded_months.length > 0;
+  
+  // Usar o budget mensal da API ou fallback para o primeiro ponto de dados
+  const monthlyBudget = budgetInfo?.monthly_budget || data[0]?.budget;
+  
+  // Obter ano atual para mostrar no contexto do gráfico
+  const currentYear = new Date().getFullYear();
   
   const formatCurrency = (value: number) => {
     if (!value) return '-';
@@ -56,7 +68,7 @@ export function SpendingForecastCard({ data, currency }: SpendingForecastCardPro
     return `${currency} ${(value / 1000).toFixed(0)}K`;
   };
   
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: any[]; label?: string }) => {
     if (active && payload && payload.length) {
       return (
         <div className={cn(
@@ -71,8 +83,8 @@ export function SpendingForecastCard({ data, currency }: SpendingForecastCardPro
           )}>
             {label}
           </p>
-          {payload.map((entry: any) => (
-            <div key={entry.dataKey} className="flex items-center text-sm mb-1 last:mb-0">
+          {payload.map((entry: any, index: number) => (
+            <div key={index} className="flex items-center text-sm mb-1 last:mb-0">
               <div
                 className="w-3 h-3 rounded-full mr-2"
                 style={{ backgroundColor: entry.color }}
@@ -98,11 +110,15 @@ export function SpendingForecastCard({ data, currency }: SpendingForecastCardPro
     <Card className="h-full overflow-hidden">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center text-lg font-medium">
-            <TrendingUp className="mr-2 h-5 w-5 text-XCost-blue-light" />
-            <span className="hidden lg:inline">{t('spendingForecast.title')}</span>
-            <span className="lg:hidden">{t('spendingForecast.titleShort')}</span>
-          </CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="flex items-center text-lg font-medium">
+              <TrendingUp className="mr-2 h-5 w-5 text-XCost-blue-light" />
+              <span className="hidden lg:inline">{t('spendingForecast.title')} {currentYear}</span>
+              <span className="lg:hidden">{t('spendingForecast.titleShort')} {currentYear}</span>
+            </CardTitle>
+            
+            {isUsingMockData && <MockDataBadge />}
+          </div>
           
           {budgetExceeded && (
             <Badge variant="outline" className={cn(
@@ -139,21 +155,23 @@ export function SpendingForecastCard({ data, currency }: SpendingForecastCardPro
                 axisLine={{ stroke: isDark ? "#475569" : "#e5e7eb" }}
               />
               <Tooltip content={<CustomTooltip />} />
-              <ReferenceLine 
-                y={data[0].budget} 
-                stroke={isDark ? "#f87171" : "#F87171"} 
-                strokeDasharray="3 3" 
-                strokeWidth={2}
-                label={{ 
-                  position: 'right',
-                  value: t('spendingForecast.budget'), 
-                  fill: isDark ? "#f87171" : "#F87171", 
-                  fontSize: 11,
-                  offset: 10,
-                  formatter: () => t('spendingForecast.budget'),
-                  className: isDark ? 'text-red-400' : 'text-red-500'
-                }}
-              />
+              {monthlyBudget && (
+                <ReferenceLine 
+                  y={monthlyBudget} 
+                  stroke={isDark ? "#f87171" : "#F87171"} 
+                  strokeDasharray="3 3" 
+                  strokeWidth={2}
+                  label={{ 
+                    position: 'right',
+                    value: t('spendingForecast.budget'), 
+                    fill: isDark ? "#f87171" : "#F87171", 
+                    fontSize: 11,
+                    offset: 10,
+                    formatter: () => t('spendingForecast.budget'),
+                    className: isDark ? 'text-red-400' : 'text-red-500'
+                  }}
+                />
+              )}
               <Line 
                 type="monotone" 
                 dataKey="actual" 
@@ -194,7 +212,7 @@ export function SpendingForecastCard({ data, currency }: SpendingForecastCardPro
           </div>
           <div className="flex items-center">
             <div className="w-3 h-3 rounded-full bg-[#F87171] mr-1"></div>
-            <span>{t('spendingForecast.budget')}: {formatCurrency(data[0].budget || 0)}</span>
+            <span>{t('spendingForecast.budget')}: {formatCurrency(monthlyBudget || 0)}</span>
           </div>
         </div>
       </CardContent>

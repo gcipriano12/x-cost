@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Activity, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { MockDataBadge } from '@/components/ui/mock-data-badge';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 
@@ -17,9 +18,10 @@ interface ResourceUsage {
 
 interface ResourceUtilizationCardProps {
   resources: ResourceUsage[];
+  isUsingMockData?: boolean;
 }
 
-export function ResourceUtilizationCard({ resources }: ResourceUtilizationCardProps) {
+export function ResourceUtilizationCard({ resources, isUsingMockData = false }: ResourceUtilizationCardProps) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const [currentPage, setCurrentPage] = useState(0);
@@ -100,11 +102,14 @@ export function ResourceUtilizationCard({ resources }: ResourceUtilizationCardPr
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-2 flex-shrink-0">
-        <CardTitle className="flex items-center text-lg font-medium">
-          <Activity className="mr-2 h-5 w-5 text-amber-500" />
-          <span className="hidden lg:inline">{t('resourceUtilization.title')}</span>
-          <span className="lg:hidden">{t('resourceUtilization.titleShort')}</span>
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center text-lg font-medium">
+            <Activity className="mr-2 h-5 w-5 text-amber-500" />
+            <span className="hidden lg:inline">{t('resourceUtilization.title')}</span>
+            <span className="lg:hidden">{t('resourceUtilization.titleShort')}</span>
+          </CardTitle>
+          {isUsingMockData && <MockDataBadge />}
+        </div>
       </CardHeader>
       <CardContent className="flex-grow pb-3 flex flex-col">
         <div className="flex-grow space-y-4">

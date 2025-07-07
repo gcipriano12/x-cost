@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ProviderBadge } from '@/components/ui/provider-badge';
+import { MockDataBadge } from '@/components/ui/mock-data-badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTheme } from '@/hooks/useTheme';
@@ -213,11 +214,14 @@ export function SavingsOpportunitiesCard({
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-1 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center text-lg font-medium">
-            <Lightbulb className={cn("mr-2 h-5 w-5", isDark ? "text-green-400" : "text-XCost-green")} />
-            <span className="hidden lg:inline">{t('common.savingsOpportunities')}</span>
-            <span className="lg:hidden">{t('savingsOpportunities.opportunitiesShort')}</span>
-          </CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="flex items-center text-lg font-medium">
+              <Lightbulb className={cn("mr-2 h-5 w-5", isDark ? "text-green-400" : "text-XCost-green")} />
+              <span className="hidden lg:inline">{t('common.savingsOpportunities')}</span>
+              <span className="lg:hidden">{t('savingsOpportunities.opportunitiesShort')}</span>
+            </CardTitle>
+            {(!opportunities || opportunities.length === 0) && <MockDataBadge />}
+          </div>
           <div className="flex items-center space-x-2">
             <div className={`whitespace-nowrap ${isMobile ? 'text-lg' : 'text-xl'} font-bold ${headerTextColorClass}`}>
               {totalPotentialSavings >= 1000 ? `$${(totalPotentialSavings / 1000).toFixed(1)}K` : `$${Math.round(totalPotentialSavings).toLocaleString()}`}

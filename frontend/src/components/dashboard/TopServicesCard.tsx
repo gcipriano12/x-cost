@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { MockDataBadge } from '@/components/ui/mock-data-badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
@@ -28,9 +29,10 @@ interface ServiceData {
 interface TopServicesCardProps {
   services: ServiceData[];
   currency: string;
+  isUsingMockData?: boolean;
 }
 
-export function TopServicesCard({ services, currency }: TopServicesCardProps) {
+export function TopServicesCard({ services, currency, isUsingMockData = false }: TopServicesCardProps) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   
@@ -76,10 +78,13 @@ export function TopServicesCard({ services, currency }: TopServicesCardProps) {
   return (
     <Card className="h-full overflow-hidden">
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center text-lg font-medium">
-          <BarChart2 className={cn("mr-2 h-5 w-5", isDark ? "text-blue-400" : "text-XCost-blue")} />
-          {t('topServices.title')}
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center text-lg font-medium">
+            <BarChart2 className={cn("mr-2 h-5 w-5", isDark ? "text-blue-400" : "text-XCost-blue")} />
+            {t('topServices.title')}
+          </CardTitle>
+          {isUsingMockData && <MockDataBadge />}
+        </div>
       </CardHeader>
       <CardContent className="p-0">
         <div className="h-[358px] overflow-y-auto">

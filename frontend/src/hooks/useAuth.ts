@@ -50,9 +50,10 @@ export const useAuthProvider = () => {
         description: "Welcome to X Cost!",
       });
     } catch (error: any) {
+      console.error('Login error:', error.response?.data);
       toast({
         title: "Login failed",
-        description: error.response?.data?.detail || "Invalid credentials",
+        description: error.response?.data?.message || error.response?.data?.detail || "Invalid credentials",
         variant: "destructive",
       });
       throw error;

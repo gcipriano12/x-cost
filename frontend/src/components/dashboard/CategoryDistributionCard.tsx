@@ -5,6 +5,7 @@ import { PieChart, BarChart3, Disc } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
+import { MockDataBadge } from '@/components/ui/mock-data-badge';
 import { useCategoryDistribution } from '@/hooks/useCategoryDistribution';
 import { timeFilterToDays } from '@/utils/timeFrame';
 
@@ -455,12 +456,13 @@ export function CategoryDistributionCard({
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-1 flex-shrink-0">
-        <div className="flex items-center">
+        <div className="flex items-center justify-between">
           <CardTitle className="flex items-center text-lg font-medium">
             <Disc className="mr-2 h-5 w-5 text-XCost-blue" />
             <span className="hidden lg:inline">{t('categoryDistribution.title')}</span>
             <span className="lg:hidden">{t('categoryDistribution.titleShort')}</span>
           </CardTitle>
+          {!hasCategoryData && <MockDataBadge />}
         </div>
       </CardHeader>
       <CardContent className="flex-grow p-3 overflow-hidden">

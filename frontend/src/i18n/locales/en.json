@@ -50,7 +50,8 @@
     "dataRefreshed": "Data refreshed",
     "allDataUpdated": "All dashboard data has been updated successfully",
     "refreshFailed": "Refresh failed",
-    "refreshFailedDescription": "Failed to refresh some data. Please try again."
+    "refreshFailedDescription": "Failed to refresh some data. Please try again.",
+    "mockData": "Mock Data"
   },
   "spendSummary": {
     "title": "Spend Summary",

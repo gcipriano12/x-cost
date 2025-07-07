@@ -4,6 +4,7 @@ import { TopServicesCard } from '../TopServicesCard';
 import { SpendingForecastCard } from '../SpendingForecastCard';
 import { Layers } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useForecast } from '@/hooks/useForecast';
 
 interface ServicesSectionProps {
   topServicesData: {
@@ -14,17 +15,75 @@ interface ServicesSectionProps {
     previousSpend: number;
     trend: number;
   }[];
-  forecastData: {
-    month: string;
-    actual?: number;
-    forecast?: number;
-    budget?: number;
-  }[];
   currency: string;
+  credentialId?: string;
+  providerName?: string;
+  timeFilter?: string;
+  isTopServicesUsingMockData?: boolean;
 }
 
-export function ServicesSection({ topServicesData, forecastData, currency }: ServicesSectionProps) {
+export function ServicesSection({ 
+  topServicesData, 
+  currency, 
+  credentialId, 
+  providerName,
+  timeFilter,
+  isTopServicesUsingMockData = false
+}: ServicesSectionProps) {
   const { t } = useTranslation();
+  
+  // Converter timeFilter para parâmetros de data
+  const getDateRangeFromTimeFilter = (filter?: string) => {
+    const now = new Date();
+    let startDate: string | undefined;
+    let endDate: string | undefined;
+    
+    switch (filter) {
+      case '7-days':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        endDate = now.toISOString().split('T')[0];
+        break;
+      case '30-days':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        endDate = now.toISOString().split('T')[0];
+        break;
+      case '90-days':
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        endDate = now.toISOString().split('T')[0];
+        break;
+      case 'current-year':
+        startDate = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
+        endDate = now.toISOString().split('T')[0];
+        break;
+      case 'previous-year':
+        startDate = new Date(now.getFullYear() - 1, 0, 1).toISOString().split('T')[0];
+        endDate = new Date(now.getFullYear() - 1, 11, 31).toISOString().split('T')[0];
+        break;
+      default:
+        // Default para último mês
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        endDate = now.toISOString().split('T')[0];
+    }
+    
+    return { startDate, endDate };
+  };
+
+  const { startDate, endDate } = getDateRangeFromTimeFilter(timeFilter);
+  
+  // Usar hook de forecast para buscar dados da API
+  const { 
+    data: forecastData, 
+    budget_info: budgetInfo,
+    isLoading: forecastLoading, 
+    isUsingMockData 
+  } = useForecast({
+    credentialId,
+    providerName,
+    startDate,
+    endDate,
+    months: 7,
+    enabled: true
+  });
 
   return (
     <div className="mb-6">
@@ -38,6 +97,7 @@ export function ServicesSection({ topServicesData, forecastData, currency }: Ser
           <TopServicesCard 
             services={topServicesData}
             currency={currency}
+            isUsingMockData={isTopServicesUsingMockData}
           />
         </div>
 
@@ -45,6 +105,8 @@ export function ServicesSection({ topServicesData, forecastData, currency }: Ser
           <SpendingForecastCard 
             data={forecastData}
             currency={currency}
+            budgetInfo={budgetInfo}
+            isUsingMockData={isUsingMockData}
           />
         </div>
       </div>

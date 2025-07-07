@@ -49,11 +49,11 @@ export function RealTimeSpendSummaryCard({
     }
   };
 
-  // Hook para distribuição por provedor
+  // Hook para distribuição por provedor - só passa providerName se realmente há filtro
   const { providerData, loading: providerLoading } = useProviderDistribution({
     timeFilter: timeFilter || '30-days',
     credentialId,
-    providerName
+    providerName: undefined // NUNCA filtrar na distribuição de provedores - sempre mostrar todos
   });
   
   // Hook para distribuição por conta (apenas quando há filtro de provedor)
@@ -206,46 +206,21 @@ function mapApiDataToSpendSummary(
   }
 
   // Calcular total cost baseado no filtro de provedor
-  let totalCost = data.cost_summary?.totals?.total_cost || 0;
+  const totalCost = data.cost_summary?.totals?.total_cost || 0;
   console.log('🔍 Initial total cost from API:', totalCost, 'Provider filter:', providerName);
   
-  // Se há filtro de provedor, calcular total baseado nas regiões filtradas do provedor
-  if (providerName && data.top_regions && Array.isArray(data.top_regions)) {
-    const originalTotalCost = totalCost;
-    totalCost = 0;
-    console.log('🔍 Processing regions for provider filter:', providerName);
-    console.log('🔍 Available regions:', data.top_regions.map(r => ({ region: r.region, cost: r.total_cost })));
-    data.top_regions.forEach(region => {
-      const regionName = region.region?.toLowerCase() || '';
-      let regionProvider = 'Unknown';
-      
-      // Usar a mesma lógica de mapeamento
-      if (regionName.includes('us-') || regionName.includes('eu-') || regionName.startsWith('ap-') || regionName.includes('ca-') || regionName.includes('sa-')) {
-        regionProvider = 'AWS';
-      } else if (regionName.includes('east us') || regionName.includes('west us') || regionName.includes('west europe') || regionName.includes('north europe') || regionName.includes('central us')) {
-        regionProvider = 'Azure';
-      } else if (regionName.includes('central1') || regionName.includes('west1') || regionName.includes('east1') || regionName.includes('europe-west') || regionName.includes('asia-') || regionName.includes('australia-')) {
-        regionProvider = 'GCP';
-      } else if (regionName.includes('oci') || regionName.includes('oracle') || regionName.includes('ashburn') || regionName.includes('phoenix') || regionName.includes('ap-southeast-1') || regionName.includes('ap-southeast-2') || regionName.includes('eu-frankfurt-1') || regionName.includes('us-ashburn-1') || regionName.includes('us-phoenix-1') || regionName.includes('uk-london-1') || regionName.includes('ca-toronto-1') || regionName.includes('ap-tokyo-1') || regionName.includes('ap-sydney-1') || regionName.includes('eu-zurich-1') || regionName.includes('me-jeddah-1') || regionName.includes('sa-saopaulo-1')) {
-        regionProvider = 'Oracle Cloud';
-      }
-      
-      console.log('🔍 Region:', regionName, 'Provider mapped to:', regionProvider, 'Cost:', region.total_cost);
-      
-      if (regionProvider === providerName) {
-        totalCost += region.total_cost || 0;
-        console.log('✅ Region matched provider filter - added cost:', region.total_cost);
-      }
-    });
-    console.log('🔍 Total cost after provider filtering:', totalCost);
+  // Se há filtro de provedor, a API deve retornar dados já filtrados
+  if (providerName) {
+    console.log('🔍 Provider filter active:', providerName);
+    console.log('🔍 API returned total cost:', totalCost);
     
-    // Se não encontrou nenhuma região para o provedor, usar o total original
-    if (totalCost === 0 && originalTotalCost > 0) {
-      console.log('⚠️ No regions found for provider', providerName, 'using original total cost:', originalTotalCost);
-      totalCost = originalTotalCost;
+    // Se a API retornou 0 para o provedor filtrado, pode ser que o backend não tenha dados
+    if (totalCost === 0) {
+      console.log('⚠️ Zero cost returned for provider filter:', providerName);
+      console.log('⚠️ This likely means the backend has no data for this provider');
+    } else {
+      console.log('✅ API returned valid cost for provider filter:', totalCost);
     }
-  } else if (providerName) {
-    console.log('⚠️ No top_regions data available for provider filtering:', providerName);
   }
   
   const averageCost = data.cost_summary?.totals?.average_cost || 0;
@@ -300,8 +275,14 @@ function mapApiDataToSpendSummary(
     baseValue
   ];
 
-  // Usar distribuição por provedor do hook em vez de calcular baseado em regiões
-  const providerBreakdown = providerBreakdownData || [];
+  // Usar distribuição por provedor do hook - se não há dados, deixar undefined para mostrar estado vazio
+  const providerBreakdown = (providerBreakdownData && providerBreakdownData.length > 0) ? providerBreakdownData : [];
+  
+  console.log('🔍 Provider breakdown final data:', {
+    providerBreakdownData: providerBreakdownData ? `${providerBreakdownData.length} items` : 'null/undefined',
+    actualData: providerBreakdownData,
+    finalProviderBreakdown: `${providerBreakdown.length} items`
+  });
 
   // Use real account distribution data from dedicated hook
   let accountBreakdown = undefined;
@@ -448,7 +429,7 @@ function mapApiDataToSpendSummary(
 
     if (provider) {
       switch (provider.toUpperCase()) {
-        case 'ORACLE':
+        case 'ORACLE CLOUD':
           wastePercentage = 18.0;
           savingsPercentage = 12.0;
           growthPercentage = 1.0;
@@ -472,7 +453,7 @@ function mapApiDataToSpendSummary(
     }
 
     // Calcular projeção anual realista (similar ao backend)
-    const annualGrowthRate = provider?.toUpperCase() === 'ORACLE' ? 8.0 : 
+    const annualGrowthRate = provider?.toUpperCase() === 'ORACLE CLOUD' ? 8.0 : 
                            provider?.toUpperCase() === 'AWS' ? 15.0 :
                            provider?.toUpperCase() === 'AZURE' ? 22.0 :
                            provider?.toUpperCase() === 'GCP' ? 12.0 : 12.0;

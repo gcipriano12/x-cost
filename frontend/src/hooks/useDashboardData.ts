@@ -4,6 +4,8 @@ import { DateRange } from 'react-day-picker';
 import { format, differenceInDays } from 'date-fns';
 import { useXCostData } from './useXCostData';
 import { useCategoryDistribution } from './useCategoryDistribution';
+import { useTopServices } from './useTopServices';
+import { useProviderDistribution } from './useProviderDistribution';
 
 // Types for dashboard data
 export type SpendSummary = {
@@ -224,6 +226,48 @@ export const useDashboardData = () => {
     credentialId: activeCredential?.id?.toString(),
     providerName: selectedProvider
   });
+  
+  // Hook para top services - converter datas para string no formato correto
+  const getDateString = (date?: Date) => date?.toISOString().split('T')[0];
+  const {
+    data: apiTopServicesData,
+    loading: topServicesLoading,
+    error: topServicesError,
+    isUsingMockData: topServicesIsUsingMockData
+  } = useTopServices({
+    credentialId: activeCredential?.id?.toString(),
+    startDate: getDateString(customDateRange?.from),
+    endDate: getDateString(customDateRange?.to),
+    providerName: selectedProvider,
+    limit: 5,
+    enabled: !!activeCredential?.id
+  });
+  
+  // Hook para provider distribution
+  const {
+    providerData: apiProviderDistributionData,
+    loading: providerDistributionLoading,
+    error: providerDistributionError,
+    hasData: hasProviderData
+  } = useProviderDistribution({
+    timeFilter,
+    customStartDate: customDateRange?.from,
+    customEndDate: customDateRange?.to,
+    credentialId: activeCredential?.id?.toString(),
+    providerName: selectedProvider
+  });
+  
+  // Função para transformar dados da nova API de Top Services para o formato esperado
+  const transformTopServicesData = (apiData: typeof apiTopServicesData): TopService[] => {
+    return apiData.map(service => ({
+      id: service.id,
+      name: service.service_name,
+      provider: service.provider,
+      currentSpend: service.cost,
+      previousSpend: service.cost - (service.cost * service.change_from_previous / 100),
+      trend: service.change_from_previous
+    }));
+  };
   
   // Mock data for the dashboard
   const mockDashboardData: DashboardData = {
@@ -756,9 +800,9 @@ export const useDashboardData = () => {
     ...filteredMockData,
     // Substituir com dados reais da API quando disponíveis E quando não for zero
     spendSummaryData: (apiSpendSummary && apiSpendSummary.totalSpend > 0) ? apiSpendSummary : filteredMockData.spendSummaryData,
-    providerDistributionData: apiProviderDistribution.length > 0 ? apiProviderDistribution : filteredMockData.providerDistributionData,
+    providerDistributionData: hasProviderData ? apiProviderDistributionData : filteredMockData.providerDistributionData,
     categoryDistributionData: hasCategoryData ? apiCategoryData : filteredMockData.categoryDistributionData,
-    topServicesData: apiTopServices.length > 0 ? apiTopServices : filteredMockData.topServicesData,
+    topServicesData: !topServicesIsUsingMockData && apiTopServicesData.length > 0 ? transformTopServicesData(apiTopServicesData) : filteredMockData.topServicesData,
   };
 
   return {
@@ -769,8 +813,10 @@ export const useDashboardData = () => {
     selectedProvider,
     setSelectedProvider,
     ...finalDashboardData,
-    isLoadingRealData: apiLoading || categoryLoading,
+    isLoadingRealData: apiLoading || categoryLoading || topServicesLoading || providerDistributionLoading,
     hasRealData: hasCredentials,
-    categoryError
+    categoryError,
+    activeCredential,
+    isTopServicesUsingMockData: topServicesIsUsingMockData
   };
 };

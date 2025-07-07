@@ -15,6 +15,17 @@ apiClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  // Debug: Log das requisições para dashboard e analytics
+  if (config.url?.includes('/dashboard/summary') || config.url?.includes('/analytics/by-provider')) {
+    console.log('🌐 API Request:', {
+      url: config.url,
+      method: config.method?.toUpperCase(),
+      params: config.params,
+      fullUrl: `${config.baseURL}${config.url}?${new URLSearchParams(config.params).toString()}`
+    });
+  }
+  
   return config;
 });
 
@@ -78,6 +89,40 @@ export const analyticsService = {
         days: params.days,
         top_n: params.topN,
         provider_name: params.providerName
+      }
+    }),
+
+  getForecastData: (params: {
+    credentialId?: string;
+    months?: number;
+    startDate?: string;
+    endDate?: string;
+    providerName?: string;
+  }) => 
+    apiClient.get('/api/v1/analytics/forecast', { 
+      params: {
+        credential_id: params.credentialId,
+        months: params.months || 7,
+        start_date: params.startDate,
+        end_date: params.endDate,
+        provider_name: params.providerName
+      }
+    }),
+
+  getTopServices: (params: {
+    credentialId?: string;
+    startDate?: string;
+    endDate?: string;
+    providerName?: string;
+    limit?: number;
+  }) => 
+    apiClient.get('/api/v1/services/top', { 
+      params: {
+        credential_id: params.credentialId,
+        start_date: params.startDate,
+        end_date: params.endDate,
+        provider_name: params.providerName,
+        limit: params.limit || 5
       }
     })
 };

@@ -4,6 +4,7 @@ import * as ProgressPrimitive from "@radix-ui/react-progress";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GitCompare, ArrowRight } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { MockDataBadge } from '@/components/ui/mock-data-badge';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 
@@ -17,9 +18,10 @@ interface Environment {
 interface EnvironmentComparisonCardProps {
   environments: Environment[];
   currency: string;
+  isUsingMockData?: boolean;
 }
 
-export function EnvironmentComparisonCard({ environments, currency }: EnvironmentComparisonCardProps) {
+export function EnvironmentComparisonCard({ environments, currency, isUsingMockData = false }: EnvironmentComparisonCardProps) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   // Find the environment with the highest cost for scaling
@@ -74,14 +76,17 @@ export function EnvironmentComparisonCard({ environments, currency }: Environmen
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-2 flex-shrink-0">
-        <CardTitle className="flex items-center text-base font-semibold">
-          <GitCompare className={cn(
-            "h-5 w-5 mr-2", 
-            isDark ? "text-blue-400" : "text-blue-500"
-          )} />
-          <span className="hidden lg:inline">{t('environmentComparison.title')}</span>
-          <span className="lg:hidden">{t('environmentComparison.titleShort')}</span>
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center text-base font-semibold">
+            <GitCompare className={cn(
+              "h-5 w-5 mr-2", 
+              isDark ? "text-blue-400" : "text-blue-500"
+            )} />
+            <span className="hidden lg:inline">{t('environmentComparison.title')}</span>
+            <span className="lg:hidden">{t('environmentComparison.titleShort')}</span>
+          </CardTitle>
+          {isUsingMockData && <MockDataBadge />}
+        </div>
       </CardHeader>
       <CardContent className="flex-grow px-4 pt-2 pb-3 overflow-auto">
         <div className="space-y-3">

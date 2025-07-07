@@ -57,18 +57,8 @@ export function useAccountDistribution({
       try {        
         // Construir URL com parâmetros
         const params = new URLSearchParams();
-        // Mapear nomes de provedores do frontend para o backend
-        let backendProviderName = providerName;
-        if (providerName === 'Oracle Cloud') {
-          backendProviderName = 'Oracle';
-        } else if (providerName === 'Google Cloud') {
-          backendProviderName = 'GCP';
-        } else if (providerName === 'Microsoft Azure') {
-          backendProviderName = 'Azure';
-        } else if (providerName === 'Amazon Web Services') {
-          backendProviderName = 'AWS';
-        }
-        // Se o providerName já for Oracle, AWS, Azure, GCP, manter como está
+        // USAR NOME EXATO - backend espera 'Oracle Cloud' não 'Oracle'
+        const backendProviderName = providerName; // Usar nome exato sem mapeamento
         
         params.append('provider', backendProviderName);
         params.append('time_filter', apiTimeFilter);
@@ -78,8 +68,22 @@ export function useAccountDistribution({
         }
 
         const url = `/api/v1/dashboard/account-distribution?${params.toString()}`;
+        
+        console.log('🔍 Account Distribution API call:', {
+          provider: backendProviderName,
+          timeFilter: apiTimeFilter,
+          credentialId,
+          fullUrl: url
+        });
 
         const response = await apiClient.get(url);
+        
+        console.log('📊 Account Distribution API response:', {
+          status: response.status,
+          success: response.data?.success,
+          dataLength: response.data?.data?.length || 0,
+          actualData: response.data?.data
+        });
 
         // Backend returns data in response.data.data format
         if (response.data && response.data.success && Array.isArray(response.data.data)) {

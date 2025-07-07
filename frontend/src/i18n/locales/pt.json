@@ -50,7 +50,8 @@
     "dataRefreshed": "Dados atualizados",
     "allDataUpdated": "Todos os dados do dashboard foram atualizados com sucesso",
     "refreshFailed": "Falha na atualização",
-    "refreshFailedDescription": "Falha ao atualizar alguns dados. Tente novamente."
+    "refreshFailedDescription": "Falha ao atualizar alguns dados. Tente novamente.",
+    "mockData": "Dados Mock"
   },
   "spendSummary": {
     "title": "Resumo de Gastos",

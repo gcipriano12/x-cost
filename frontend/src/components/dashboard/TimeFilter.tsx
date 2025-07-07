@@ -116,8 +116,8 @@ export function TimeFilter({ value, onChange, onCustomDateRange, currentCustomRa
           <SelectItem value="7d">{t('timeFilter.last7days')}</SelectItem>
           <SelectItem value="30d">{t('timeFilter.last30days')}</SelectItem>
           <SelectItem value="90d">{t('timeFilter.last90days')}</SelectItem>
-          <SelectItem value="previous-year">{t('timeFilter.previousYear')}</SelectItem>
           <SelectItem value="this-year">{t('timeFilter.thisYear')}</SelectItem>
+          <SelectItem value="previous-year">{t('timeFilter.previousYear')}</SelectItem>
           <SelectItem value="custom">{t('timeFilter.custom')}</SelectItem>
         </SelectContent>
       </Select>

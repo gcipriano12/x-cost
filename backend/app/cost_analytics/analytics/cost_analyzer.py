@@ -409,7 +409,8 @@ class CostAnalyzer:
         self,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        limit: int = 20
+        limit: int = 20,
+        provider_name: Optional[str] = None  # ✅ CORREÇÃO: Adicionar parâmetro
     ) -> Dict[str, Any]:
         """
         Analisa custos por provedor de cloud
@@ -418,6 +419,7 @@ class CostAnalyzer:
             start_date: Data inicial
             end_date: Data final
             limit: Limite de resultados
+            provider_name: Nome do provedor específico (filtro)
             
         Returns:
             Dicionário com análise por provedor
@@ -428,7 +430,8 @@ class CostAnalyzer:
                 dimension='provider_name',
                 limit=limit,
                 start_date=start_date,
-                end_date=end_date
+                end_date=end_date,
+                providers=[provider_name] if provider_name else None  # ✅ CORREÇÃO: Aplicar filtro
             )
             
             results = query.all()

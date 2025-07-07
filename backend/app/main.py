@@ -30,8 +30,9 @@ from app.auth_security import get_current_active_user, create_user, security_man
 # Router imports - All endpoints are now in dedicated routers
 from app.credentials_api import credentials_router, auth_router, audit_router
 from app.budget_api import budget_router
-from app.routers.analytics_api import analytics_router
+from app.routers.analytics_api import router as analytics_router
 from app.routers.optimization_api import optimization_router
+from app.routers.services_api import router as services_router
 from app.virtual_tags_api import router as virtual_tags_router
 
 # Utilities
@@ -215,6 +216,9 @@ app.include_router(budget_router)
 # Routers de analytics e otimização (novos)
 app.include_router(analytics_router)
 app.include_router(optimization_router)
+
+# Router de services
+app.include_router(services_router)
 
 # Router de Virtual Tags
 app.include_router(virtual_tags_router)

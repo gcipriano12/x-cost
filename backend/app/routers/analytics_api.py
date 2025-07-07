@@ -6,7 +6,7 @@ Endpoints para análise avançada de custos e dashboards
 
 import logging
 from datetime import date, datetime, timedelta
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -18,8 +18,11 @@ from app.models import DashboardSummary
 from app.credential_models import User
 from app.auth_security import get_current_active_user
 from app.cost_analytics import CostAnalyzer, DashboardAnalyzer
+from app.forecast_analytics import ForecastAnalyzer
+from app.forecast_models import ForecastMethod, ForecastResponse
 from app.utils.response_helpers import StandardResponse, calculate_processing_time
 from app.utils.validators import validate_date_range
+from app.forecast_analytics import ForecastAnalyzer, ForecastMethod, ForecastResponse
 
 logger = logging.getLogger(__name__)
 
@@ -333,70 +336,97 @@ async def get_cost_by_category(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/analytics/forecast")
+@router.get("/analytics/forecast", response_model=Dict[str, Any])
 @calculate_processing_time
-async def get_cost_forecast(
-    provider_name: Optional[str] = None,
-    service_name: Optional[str] = None,
-    historical_days: Optional[int] = 30,
-    forecast_days: Optional[int] = 30,
-    method: str = "linear",
+async def get_spending_forecast(
+    credential_id: Optional[str] = Query(None, description="ID da credencial específica"),
+    provider_name: Optional[str] = Query(None, description="Filtro por provedor (AWS, Azure, GCP)"),
+    months: int = Query(7, ge=1, le=24, description="Número de meses para previsão (1-24)"),
+    start_date: Optional[str] = Query(None, description="Data inicial para análise histórica (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="Data final para análise histórica (YYYY-MM-DD)"),
+    method: ForecastMethod = Query(ForecastMethod.WEIGHTED_MOVING_AVERAGE, description="Método de previsão"),
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_database)
 ):
     """
-    Gera previsão de custos futuros
+    Gera previsão de gastos em nuvem baseada em dados históricos
     
-    Utiliza dados históricos para prever custos futuros usando
-    algoritmos de machine learning simples.
+    Funcionalidades:
+    - Algoritmos de previsão: média móvel ponderada, regressão linear
+    - Análise de tendências e sazonalidade  
+    - Intervalos de confiança para previsões
+    - Integração com dados de orçamento
+    - Metadados de qualidade do modelo
+    
+    Retorna:
+    - Dados históricos e previsões futuras
+    - Informações de orçamento e alertas
+    - Métricas de confiabilidade do modelo
     """
     try:
-        # Validar parâmetros
-        if method not in ["linear", "exponential"]:
+        logger.info(f"Generating forecast for user {current_user.username}")
+        
+        # Validar e converter datas se fornecidas
+        start_date_obj = None
+        end_date_obj = None
+        
+        if start_date:
+            try:
+                start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
+            except ValueError:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid start_date format. Use YYYY-MM-DD"
+                )
+        
+        if end_date:
+            try:
+                end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
+            except ValueError:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid end_date format. Use YYYY-MM-DD"
+                )
+        
+        # Validar range de datas
+        if start_date_obj and end_date_obj and start_date_obj >= end_date_obj:
             raise HTTPException(
                 status_code=400,
-                detail="Method must be 'linear' or 'exponential'"
+                detail="start_date must be before end_date"
             )
         
-        if historical_days < 7 or historical_days > 365:
-            raise HTTPException(
-                status_code=400,
-                detail="historical_days must be between 7 and 365"
-            )
+        # Criar analisador de forecast
+        forecast_analyzer = ForecastAnalyzer(db)
         
-        if forecast_days < 1 or forecast_days > 90:
-            raise HTTPException(
-                status_code=400,
-                detail="forecast_days must be between 1 and 90"
-            )
-        
-        analyzer = CostAnalyzer(db)
-        forecast_result = analyzer.forecast_costs(
-            historical_days=historical_days or 30,
-            forecast_days=forecast_days or 30,
+        # Gerar previsão
+        forecast_result = forecast_analyzer.generate_forecast(
+            credential_id=credential_id,
             provider_name=provider_name,
-            service_name=service_name,
+            months=months,
+            start_date=start_date_obj,
+            end_date=end_date_obj,
             method=method
         )
         
-        if 'error' in forecast_result:
-            raise HTTPException(status_code=400, detail=forecast_result['error'])
+        logger.info(f"Forecast generated successfully: {len(forecast_result.forecast_data)} data points")
         
-        return StandardResponse.success({
-            **forecast_result,
-            "filters": {
-                "provider_name": provider_name,
-                "service_name": service_name,
-                "method": method
-            },
-            "requested_by": current_user.username
-        })
+        return StandardResponse.success(
+            data=forecast_result.model_dump(),
+            message=f"Forecast generated for {months} months using {method.value}"
+        )
         
-    except HTTPException:
-        raise
+    except ValueError as e:
+        logger.warning(f"Validation error in forecast: {e}")
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
     except Exception as e:
-        logger.error(f"Error generating forecast: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error generating forecast: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to generate forecast"
+        )
 
 
 @router.get("/analytics/comparison")
@@ -895,6 +925,7 @@ async def get_provider_distribution(
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     top_n: Optional[int] = Query(10, description="Number of top providers to return"),
     credential_id: Optional[str] = Query(None, description="Filter by credential ID"),
+    provider_name: Optional[str] = Query(None, description="Filter by specific provider name"),
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_database)
 ):
@@ -936,7 +967,8 @@ async def get_provider_distribution(
         provider_distribution = cost_analyzer.analyze_costs_by_provider(
             start_date=start_dt,
             end_date=end_dt,
-            limit=top_n
+            limit=top_n,
+            provider_name=provider_name  # ✅ CORREÇÃO: Passar filtro de provider
         )
         
         if 'error' in provider_distribution:

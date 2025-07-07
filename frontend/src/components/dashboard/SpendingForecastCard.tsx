@@ -36,8 +36,50 @@ export function SpendingForecastCard({ data, currency, budgetInfo, isUsingMockDa
   // Usar o budget mensal da API ou fallback para o primeiro ponto de dados
   const monthlyBudget = budgetInfo?.monthly_budget || data[0]?.budget;
   
-  // Obter ano atual para mostrar no contexto do gráfico
-  const currentYear = new Date().getFullYear();
+  // Função para converter mês abreviado para formato mês/ano (formato curto YY)
+  const formatMonthWithYear = (monthStr: string) => {
+    if (!monthStr) return monthStr;
+    
+    // Se já contém ano, retorna como está
+    if (monthStr.includes('/')) return monthStr;
+    
+    // Mapear meses abreviados para números
+    const monthMap: { [key: string]: number } = {
+      'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+      'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
+    };
+    
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1; // Julho 2025 = mês 7
+    
+    const monthNum = monthMap[monthStr];
+    if (!monthNum) return monthStr;
+    
+    // Determinar o ano baseado na posição no array e se há dados atuais ou forecast
+    const dataPoint = data.find(d => d.month === monthStr);
+    let year = currentYear;
+    
+    // Se tem dados atuais (actual), é histórico - pode ser ano passado ou atual
+    if (dataPoint?.actual !== undefined) {
+      // Para dados históricos, se o mês é posterior ao atual, é do ano passado
+      if (monthNum > currentMonth) {
+        year = currentYear - 1; // 2024
+      }
+      // Se o mês é anterior ou igual ao atual, é do ano atual
+      // (considerando que estamos em Jul/2025)
+    } else if (dataPoint?.forecast !== undefined) {
+      // Para forecast, assume que é do ano atual ou próximo
+      // Se o mês já passou no ano atual, é do próximo ano
+      if (monthNum < currentMonth) {
+        year = currentYear + 1; // 2026
+      }
+    }
+    
+    // Retornar formato curto (YY)
+    const shortYear = year.toString().slice(-2);
+    return `${monthStr}/${shortYear}`;
+  };
   
   const formatCurrency = (value: number) => {
     if (!value) return '-';
@@ -81,7 +123,7 @@ export function SpendingForecastCard({ data, currency, budgetInfo, isUsingMockDa
             "font-medium text-xs border-b pb-1 mb-2",
             isDark ? "border-slate-700" : "border-gray-200"
           )}>
-            {label}
+            {formatMonthWithYear(label || '')}
           </p>
           {payload.map((entry: any, index: number) => (
             <div key={index} className="flex items-center text-sm mb-1 last:mb-0">
@@ -113,8 +155,8 @@ export function SpendingForecastCard({ data, currency, budgetInfo, isUsingMockDa
           <div className="flex items-center gap-2">
             <CardTitle className="flex items-center text-lg font-medium">
               <TrendingUp className="mr-2 h-5 w-5 text-XCost-blue-light" />
-              <span className="hidden lg:inline">{t('spendingForecast.title')} {currentYear}</span>
-              <span className="lg:hidden">{t('spendingForecast.titleShort')} {currentYear}</span>
+              <span className="hidden lg:inline">{t('spendingForecast.title')}</span>
+              <span className="lg:hidden">{t('spendingForecast.titleShort')}</span>
             </CardTitle>
             
             {isUsingMockData && <MockDataBadge />}
@@ -146,6 +188,7 @@ export function SpendingForecastCard({ data, currency, budgetInfo, isUsingMockDa
                 tick={{ fontSize: 12, fill: isDark ? "#cbd5e1" : undefined }} 
                 tickLine={false}
                 axisLine={{ stroke: isDark ? "#475569" : "#e5e7eb" }}
+                tickFormatter={formatMonthWithYear}
               />
               <YAxis 
                 tickFormatter={formatYAxisTick}
@@ -195,7 +238,7 @@ export function SpendingForecastCard({ data, currency, budgetInfo, isUsingMockDa
           </ResponsiveContainer>
         </div>
         
-        <div className="mt-4 flex justify-between text-xs text-muted-foreground">
+        <div className="mt-1 flex justify-center items-center gap-6 text-xs text-muted-foreground">
           <div className="flex items-center">
             <div className={cn(
               "w-3 h-3 rounded-full mr-1",
@@ -211,7 +254,7 @@ export function SpendingForecastCard({ data, currency, budgetInfo, isUsingMockDa
             <span>{t('spendingForecast.forecast')}</span>
           </div>
           <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-[#F87171] mr-1"></div>
+            <div className="w-6 h-0 border-t-2 border-dashed border-[#F87171] mr-1 mt-1"></div>
             <span>{t('spendingForecast.budget')}: {formatCurrency(monthlyBudget || 0)}</span>
           </div>
         </div>

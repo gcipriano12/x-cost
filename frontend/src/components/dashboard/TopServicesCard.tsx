@@ -1,6 +1,5 @@
-import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { TrendingUp, TrendingDown, BarChart2, ArrowUpRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, BarChart2, ArrowUpRight, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -11,8 +10,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { MockDataBadge } from '@/components/ui/mock-data-badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ProviderBadge } from '@/components/ui/provider-badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
@@ -30,11 +30,33 @@ interface TopServicesCardProps {
   services: ServiceData[];
   currency: string;
   isUsingMockData?: boolean;
+  totalServices?: number;
+  currentPage?: number;
+  pageSize?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (size: number) => void;
 }
 
-export function TopServicesCard({ services, currency, isUsingMockData = false }: TopServicesCardProps) {
+// Page size options following the same pattern as Anomalies and Savings
+const PAGE_SIZES = [5, 10, 25, 50];
+
+export function TopServicesCard({ 
+  services, 
+  currency, 
+  isUsingMockData = false,
+  totalServices = 0,
+  currentPage = 1,
+  pageSize = 5,
+  totalPages = 1,
+  onPageChange,
+  onPageSizeChange
+}: TopServicesCardProps) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
+  
+  // Show pagination only if there are more services than page size
+  const shouldShowPagination = totalServices > pageSize;
   
   const formatCurrency = (value: number) => {
     if (value >= 1000000) {
@@ -54,26 +76,6 @@ export function TopServicesCard({ services, currency, isUsingMockData = false }:
     })}`;
   };
 
-  const getProviderColor = (provider: string) => {
-    switch(provider.toLowerCase()) {
-      case 'aws': 
-        return isDark 
-          ? 'bg-amber-900/50 text-amber-100 border-amber-800' 
-          : 'bg-amber-50 text-amber-700 border-amber-200';
-      case 'azure': 
-        return isDark 
-          ? 'bg-blue-900/50 text-blue-100 border-blue-800' 
-          : 'bg-blue-50 text-blue-700 border-blue-200';
-      case 'gcp': 
-        return isDark 
-          ? 'bg-emerald-900/50 text-emerald-100 border-emerald-800' 
-          : 'bg-emerald-50 text-emerald-700 border-emerald-200';
-      default: 
-        return isDark 
-          ? 'bg-slate-800 text-slate-300 border-slate-700' 
-          : 'bg-gray-50 text-gray-700 border-gray-200';
-    }
-  };
 
   return (
     <Card className="h-full overflow-hidden">
@@ -87,18 +89,18 @@ export function TopServicesCard({ services, currency, isUsingMockData = false }:
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="h-[358px] overflow-y-auto">
+        <div>
         <Table>
             <TableHeader className={cn(
               "sticky top-0 z-10",
               isDark ? "bg-slate-800" : "bg-gray-50"
             )}>
             <TableRow>
-                <TableHead className="font-medium text-xs">{t('topServices.service')}</TableHead>
-                <TableHead className="font-medium text-xs">{t('topServices.provider')}</TableHead>
-                <TableHead className="text-right font-medium text-xs">{t('topServices.currentSpend')}</TableHead>
-                <TableHead className="text-right font-medium text-xs">{t('topServices.variation')}</TableHead>
-                <TableHead className="w-24"></TableHead>
+                <TableHead className="text-center font-medium text-xs">{t('topServices.service')}</TableHead>
+                <TableHead className="text-center font-medium text-xs">{t('topServices.provider')}</TableHead>
+                <TableHead className="text-center font-medium text-xs">{t('topServices.currentSpend')}</TableHead>
+                <TableHead className="text-center font-medium text-xs">{t('topServices.variation')}</TableHead>
+                <TableHead className="text-center font-medium text-xs w-24">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -109,16 +111,14 @@ export function TopServicesCard({ services, currency, isUsingMockData = false }:
                   <TableRow key={service.id} className={cn(
                     isDark ? "hover:bg-slate-800/70" : "hover:bg-gray-50"
                   )}>
-                    <TableCell className="font-medium py-3 text-sm">{service.name}</TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant="outline" 
-                        className={`font-normal text-xs ${getProviderColor(service.provider)}`}
-                      >
-                        {service.provider}
-                      </Badge>
+                    <TableCell className="text-center font-medium py-3 text-sm">{service.name}</TableCell>
+                    <TableCell className="text-center">
+                      <ProviderBadge 
+                        provider={service.provider}
+                        size="xs"
+                      />
                     </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-center">
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -137,7 +137,7 @@ export function TopServicesCard({ services, currency, isUsingMockData = false }:
                         </Tooltip>
                       </TooltipProvider>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-center">
                       <span className={cn(
                         "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium",
                         isIncrease 
@@ -175,6 +175,70 @@ export function TopServicesCard({ services, currency, isUsingMockData = false }:
           </TableBody>
         </Table>
         </div>
+        
+        {/* Pagination Section */}
+        {shouldShowPagination && onPageChange && onPageSizeChange && (
+          <div className="flex items-center justify-between p-4 border-t">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Rows per page:</span>
+              <Select 
+                value={pageSize.toString()} 
+                onValueChange={(value) => onPageSizeChange(parseInt(value))}
+              >
+                <SelectTrigger className="w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAGE_SIZES.map((size) => (
+                    <SelectItem key={size} value={size.toString()}>
+                      {size}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => onPageChange(1)} 
+                disabled={currentPage === 1}
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => onPageChange(currentPage - 1)} 
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              <span className="text-sm text-muted-foreground px-2">
+                Page {currentPage} of {totalPages}
+              </span>
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => onPageChange(currentPage + 1)} 
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => onPageChange(totalPages)} 
+                disabled={currentPage === totalPages}
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

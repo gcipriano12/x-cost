@@ -16,8 +16,10 @@ apiClient.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   
-  // Debug: Log das requisições para dashboard e analytics
-  if (config.url?.includes('/dashboard/summary') || config.url?.includes('/analytics/by-provider')) {
+  // Debug: Log das requisições para dashboard, analytics e forecast
+  if (config.url?.includes('/dashboard/summary') || 
+      config.url?.includes('/analytics/by-provider') ||
+      config.url?.includes('/analytics/forecast')) {
     console.log('🌐 API Request:', {
       url: config.url,
       method: config.method?.toUpperCase(),
@@ -29,10 +31,30 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Interceptor para tratar erros de autenticação
+// Interceptor para tratar respostas e erros
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Log de respostas de forecast para debug
+    if (response.config.url?.includes('/analytics/forecast')) {
+      console.log('✅ API Response Success:', {
+        url: response.config.url,
+        status: response.status,
+        data: response.data
+      });
+    }
+    return response;
+  },
   (error) => {
+    // Log de erros de forecast para debug
+    if (error.config?.url?.includes('/analytics/forecast')) {
+      console.log('❌ API Response Error:', {
+        url: error.config.url,
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+    }
+
     if (error.response?.status === 401) {
       // Verificar se não estamos já na página de login para evitar loops
       const currentPath = window.location.pathname;

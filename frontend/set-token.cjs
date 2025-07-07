@@ -8,21 +8,15 @@ const token = fs.readFileSync(tokenPath, 'utf8').trim();
 console.log('🔑 Setting token in localStorage...');
 console.log(`Token: ${token.substring(0, 50)}...`);
 
-// Script que deve ser executado no console do browser (localhost:8080)
+// Script que deve ser executado no console do browser
 const browserScript = `
 // Definir token no localStorage
 localStorage.setItem('access_token', '${token}');
 console.log('✅ Token set in localStorage');
 console.log('Token:', localStorage.getItem('access_token')?.substring(0, 50) + '...');
 
-// Testar a API via proxy do Vite com datas corretas (12 meses de histórico)
-const testParams = new URLSearchParams({
-  months: '7',
-  start_date: '2024-07-07',  // 12 meses atrás
-  end_date: '2025-07-07'     // hoje
-});
-
-fetch('/api/v1/analytics/forecast?' + testParams.toString(), {
+// Testar a API
+fetch('/api/v1/analytics/forecast?months=7', {
   headers: {
     'Authorization': 'Bearer ' + localStorage.getItem('access_token'),
     'Content-Type': 'application/json'
@@ -39,17 +33,10 @@ fetch('/api/v1/analytics/forecast?' + testParams.toString(), {
 .then(data => {
   console.log('✅ API Success:', data);
   console.log('Forecast points:', data.data?.forecast_data?.length);
-  console.log('Is mock data:', !data.success || data.data?.metadata?.forecast_method === 'mock');
-  console.log('Model accuracy:', data.data?.metadata?.model_accuracy + '%');
-  console.log('Data completeness:', data.data?.metadata?.data_completeness + '%');
 })
 .catch(error => {
   console.log('❌ API Error:', error);
 });
-
-// Forçar recarregamento do hook useForecast
-console.log('🔄 Reloading page in 3 seconds to update forecast data...');
-setTimeout(() => window.location.reload(), 3000);
 `;
 
 console.log('\n📋 Execute this in browser console:');

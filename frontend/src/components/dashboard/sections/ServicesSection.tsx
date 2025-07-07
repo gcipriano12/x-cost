@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { TopServicesCard } from '../TopServicesCard';
 import { SpendingForecastCard } from '../SpendingForecastCard';
 import { Layers } from 'lucide-react';
@@ -7,14 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useForecast } from '@/hooks/useForecast';
 
 interface ServicesSectionProps {
-  topServicesData: {
-    id: string;
-    name: string;
-    provider: string;
-    currentSpend: number;
-    previousSpend: number;
-    trend: number;
-  }[];
+  topServicesData: any[];
   currency: string;
   credentialId?: string;
   providerName?: string;
@@ -23,7 +15,7 @@ interface ServicesSectionProps {
 }
 
 export function ServicesSection({ 
-  topServicesData, 
+  topServicesData,
   currency, 
   credentialId, 
   providerName,
@@ -68,7 +60,23 @@ export function ServicesSection({
     return { startDate, endDate };
   };
 
-  const { startDate, endDate } = getDateRangeFromTimeFilter(timeFilter);
+  // Para forecast, sempre usar um período histórico amplo (12 meses)
+  // independente do timeFilter, pois o forecast precisa de dados históricos suficientes
+  const getForecastDateRange = () => {
+    const now = new Date();
+    const startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString().split('T')[0]; // 12 meses atrás
+    const endDate = now.toISOString().split('T')[0]; // hoje
+    return { startDate, endDate };
+  };
+
+  const { startDate: topServicesStartDate, endDate: topServicesEndDate } = getDateRangeFromTimeFilter(timeFilter);
+  const { startDate: forecastStartDate, endDate: forecastEndDate } = getForecastDateRange();
+  
+  console.log('📊 ServicesSection dates:', {
+    timeFilter,
+    topServices: { start: topServicesStartDate, end: topServicesEndDate },
+    forecast: { start: forecastStartDate, end: forecastEndDate }
+  });
   
   // Usar hook de forecast para buscar dados da API
   const { 
@@ -79,8 +87,8 @@ export function ServicesSection({
   } = useForecast({
     credentialId,
     providerName,
-    startDate,
-    endDate,
+    startDate: forecastStartDate,
+    endDate: forecastEndDate,
     months: 7,
     enabled: true
   });

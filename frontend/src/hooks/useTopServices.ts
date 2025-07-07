@@ -18,6 +18,12 @@ export interface TopServicesResponse {
     start_date: string;
     end_date: string;
   };
+  pagination?: {
+    page: number;
+    per_page: number;
+    total_pages: number;
+    total_items: number;
+  };
 }
 
 interface UseTopServicesParams {
@@ -26,6 +32,7 @@ interface UseTopServicesParams {
   endDate?: string;
   providerName?: string;
   limit?: number;
+  page?: number;
   enabled?: boolean;
 }
 
@@ -35,12 +42,20 @@ export const useTopServices = ({
   endDate,
   providerName,
   limit = 5,
+  page = 1,
   enabled = true
 }: UseTopServicesParams) => {
   const [data, setData] = useState<TopServiceItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isUsingMockData, setIsUsingMockData] = useState(true);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    per_page: 5,
+    total_pages: 1,
+    total_items: 0
+  });
+  const [totalServices, setTotalServices] = useState(0);
 
   const fetchTopServices = async () => {
     if (!enabled || !credentialId) {
@@ -57,13 +72,36 @@ export const useTopServices = ({
         startDate,
         endDate,
         providerName,
-        limit
+        limit,
+        page
       });
 
       if (response.data && response.data.status === 'success') {
         const servicesData = response.data.data.services || [];
+        const responseData = response.data.data;
+        
         setData(servicesData);
+        setTotalServices(responseData.total_services || 0);
         setIsUsingMockData(servicesData.length === 0);
+        
+        // Update pagination info
+        if (responseData.pagination) {
+          setPagination({
+            page: responseData.pagination.page || page,
+            per_page: responseData.pagination.per_page || limit,
+            total_pages: responseData.pagination.total_pages || 1,
+            total_items: responseData.pagination.total_items || responseData.total_services || 0
+          });
+        } else {
+          // Fallback if no pagination info from backend
+          const totalPages = Math.ceil((responseData.total_services || 0) / limit);
+          setPagination({
+            page: page,
+            per_page: limit,
+            total_pages: totalPages,
+            total_items: responseData.total_services || 0
+          });
+        }
       } else {
         setError('Invalid response format');
         setIsUsingMockData(true);
@@ -79,13 +117,15 @@ export const useTopServices = ({
 
   useEffect(() => {
     fetchTopServices();
-  }, [credentialId, startDate, endDate, providerName, limit, enabled]);
+  }, [credentialId, startDate, endDate, providerName, limit, page, enabled]);
 
   return {
     data,
     loading,
     error,
     isUsingMockData,
+    totalServices,
+    pagination,
     refetch: fetchTopServices
   };
 };

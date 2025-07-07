@@ -81,25 +81,50 @@ export function useForecast({
         endDate,
         providerName
       });
-      return response.data.data;
+      console.log('🌐 API Response:', response);
+      console.log('📊 Response data:', response.data);
+      return response.data; // Retornar response.data diretamente (que contém success, data, etc)
     },
     enabled: enabled,
     retry: 2,
     staleTime: 5 * 60 * 1000, // 5 minutos
-    cacheTime: 10 * 60 * 1000, // 10 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos (cacheTime foi renomeado para gcTime)
   });
 
   // Atualizar dados quando a API responder
   useEffect(() => {
-    if (apiData?.forecast_data && apiData.forecast_data.length > 0) {
+    console.log('🔍 useForecast useEffect:', { 
+      apiData: apiData, 
+      isError, 
+      error: error?.message,
+      hasData: (apiData as any)?.data?.forecast_data?.length 
+    });
+    
+    // Verificar se temos uma resposta bem-sucedida com dados de forecast
+    const responseData = (apiData as any);
+    if (responseData?.success && responseData?.data?.forecast_data && responseData.data.forecast_data.length > 0) {
+      console.log('✅ API data received - setting real data:', responseData);
       setForecastData({
-        data: apiData.forecast_data,
-        metadata: apiData.metadata,
-        budget_info: apiData.budget_info
+        data: responseData.data.forecast_data,
+        metadata: responseData.data.metadata,
+        budget_info: responseData.data.budget_info
       });
       setIsUsingMockData(false);
     } else if (isError) {
+      console.log('❌ API error, using mock data:', error);
       // Em caso de erro, manter dados mock
+      setForecastData({
+        data: mockForecastData,
+        metadata: {
+          model_accuracy: 85,
+          confidence_level: 90,
+          data_completeness: 95,
+          forecast_method: 'mock'
+        }
+      });
+      setIsUsingMockData(true);
+    } else if (responseData && !responseData.success) {
+      console.log('❌ API returned unsuccessful response, using mock data:', responseData);
       setForecastData({
         data: mockForecastData,
         metadata: {

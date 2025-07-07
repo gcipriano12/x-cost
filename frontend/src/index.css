@@ -182,11 +182,11 @@
 
 /* Responsividade para sidebar colapsada - ajustar tamanho dos ícones conforme altura da tela */
 .sidebar-content-responsive {
-  gap: 0.125rem !important; /* Reduz gap entre grupos sempre */
+  gap: 0.0625rem !important; /* Reduz gap entre grupos ainda mais */
 }
 
 .sidebar-content-responsive [data-sidebar="group"] {
-  padding: 0.25rem !important; /* Reduz padding dos grupos sempre */
+  padding: 0.125rem !important; /* Reduz padding dos grupos ainda mais */
 }
 
 @media (max-height: 700px) {

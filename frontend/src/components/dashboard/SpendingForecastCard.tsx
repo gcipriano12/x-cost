@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
@@ -23,10 +23,16 @@ interface SpendingForecastCardProps {
     monthly_budget: number;
     budget_exceeded_months: string[];
   };
+  metadata?: {
+    model_accuracy: number;
+    confidence_level: number;
+    data_completeness: number;
+    forecast_method: string;
+  };
   isUsingMockData?: boolean;
 }
 
-export function SpendingForecastCard({ data, currency, budgetInfo, isUsingMockData = false }: SpendingForecastCardProps) {
+export function SpendingForecastCard({ data, currency, budgetInfo, metadata, isUsingMockData = false }: SpendingForecastCardProps) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   
@@ -36,49 +42,75 @@ export function SpendingForecastCard({ data, currency, budgetInfo, isUsingMockDa
   // Usar o budget mensal da API ou fallback para o primeiro ponto de dados
   const monthlyBudget = budgetInfo?.monthly_budget || data[0]?.budget;
   
-  // Função para converter mês abreviado para formato mês/ano (formato curto YY)
-  const formatMonthWithYear = (monthStr: string) => {
-    if (!monthStr) return monthStr;
-    
-    // Se já contém ano, retorna como está
-    if (monthStr.includes('/')) return monthStr;
-    
-    // Mapear meses abreviados para números
-    const monthMap: { [key: string]: number } = {
-      'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
-      'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
-    };
-    
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth() + 1; // Julho 2025 = mês 7
-    
-    const monthNum = monthMap[monthStr];
-    if (!monthNum) return monthStr;
-    
-    // Determinar o ano baseado na posição no array e se há dados atuais ou forecast
-    const dataPoint = data.find(d => d.month === monthStr);
-    let year = currentYear;
-    
-    // Se tem dados atuais (actual), é histórico - pode ser ano passado ou atual
-    if (dataPoint?.actual !== undefined) {
-      // Para dados históricos, se o mês é posterior ao atual, é do ano passado
-      if (monthNum > currentMonth) {
+  // Função para determinar estilo da tag de acurácia
+  const getAccuracyBadgeStyle = (accuracy: number) => {
+    if (accuracy >= 80) {
+      return {
+        bgColor: isDark ? "bg-green-900/50" : "bg-green-50",
+        textColor: isDark ? "text-green-100" : "text-green-700",
+        borderColor: isDark ? "border-green-800" : "border-green-200",
+        label: t('spendingForecast.highAccuracy')
+      };
+    } else if (accuracy >= 60) {
+      return {
+        bgColor: isDark ? "bg-yellow-900/50" : "bg-yellow-50",
+        textColor: isDark ? "text-yellow-100" : "text-yellow-700",
+        borderColor: isDark ? "border-yellow-800" : "border-yellow-200",
+        label: t('spendingForecast.mediumAccuracy')
+      };
+    } else {
+      return {
+        bgColor: isDark ? "bg-orange-900/50" : "bg-orange-50",
+        textColor: isDark ? "text-orange-100" : "text-orange-700",
+        borderColor: isDark ? "border-orange-800" : "border-orange-200",
+        label: t('spendingForecast.lowAccuracy')
+      };
+    }
+  };
+  
+  // Processar dados com formatação correta das datas ANTES de passar para o gráfico
+  const processedData = useMemo(() => {
+    return data.map((item, index) => {
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear(); // 2025
+      
+      // Lógica baseada nos dados reais (20 pontos total):
+      // Índices 0-5: Jul/24 a Dec/24 (2024)
+      // Índices 6-18: Jan/25 a Dec/25 (2025) 
+      // Índice 19: Jan/26 (2026)
+      let year: number;
+      if (index <= 5) {
         year = currentYear - 1; // 2024
-      }
-      // Se o mês é anterior ou igual ao atual, é do ano atual
-      // (considerando que estamos em Jul/2025)
-    } else if (dataPoint?.forecast !== undefined) {
-      // Para forecast, assume que é do ano atual ou próximo
-      // Se o mês já passou no ano atual, é do próximo ano
-      if (monthNum < currentMonth) {
+      } else if (index <= 18) {
+        year = currentYear; // 2025
+      } else {
         year = currentYear + 1; // 2026
       }
+      
+      const shortYear = year.toString().slice(-2);
+      const formattedMonth = `${item.month}/${shortYear}`;
+      
+      return {
+        ...item,
+        formattedMonth, // Nova propriedade com mês/ano formatado
+        originalMonth: item.month // Manter o mês original para referência
+      };
+    });
+  }, [data]);
+
+  // Função para converter mês abreviado para formato mês/ano (para tooltip)
+  const formatMonthWithYear = (monthStr: string) => {
+    // Encontrar o item nos dados processados que corresponde
+    const matchingItem = processedData.find(item => 
+      item.originalMonth === monthStr || item.formattedMonth === monthStr
+    );
+    
+    if (matchingItem) {
+      return matchingItem.formattedMonth;
     }
     
-    // Retornar formato curto (YY)
-    const shortYear = year.toString().slice(-2);
-    return `${monthStr}/${shortYear}`;
+    // Fallback: se não encontrar, retornar como está
+    return monthStr;
   };
   
   const formatCurrency = (value: number) => {
@@ -159,6 +191,21 @@ export function SpendingForecastCard({ data, currency, budgetInfo, isUsingMockDa
               <span className="lg:hidden">{t('spendingForecast.titleShort')}</span>
             </CardTitle>
             
+            {/* Tag de Acurácia */}
+            {metadata?.model_accuracy && (
+              <Badge 
+                variant="outline" 
+                className={cn(
+                  "text-xs",
+                  getAccuracyBadgeStyle(metadata.model_accuracy).bgColor,
+                  getAccuracyBadgeStyle(metadata.model_accuracy).textColor,
+                  getAccuracyBadgeStyle(metadata.model_accuracy).borderColor
+                )}
+              >
+                {metadata.model_accuracy.toFixed(0)}% {t('spendingForecast.accuracy')}
+              </Badge>
+            )}
+            
             {isUsingMockData && <MockDataBadge />}
           </div>
           
@@ -176,7 +223,7 @@ export function SpendingForecastCard({ data, currency, budgetInfo, isUsingMockDa
         <div className="h-[330px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
-              data={data}
+              data={processedData}
               margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
             >
               <CartesianGrid 
@@ -184,11 +231,10 @@ export function SpendingForecastCard({ data, currency, budgetInfo, isUsingMockDa
                 stroke={isDark ? "#334155" : "#f5f5f5"} 
               />
               <XAxis 
-                dataKey="month" 
+                dataKey="formattedMonth" 
                 tick={{ fontSize: 12, fill: isDark ? "#cbd5e1" : undefined }} 
                 tickLine={false}
                 axisLine={{ stroke: isDark ? "#475569" : "#e5e7eb" }}
-                tickFormatter={formatMonthWithYear}
               />
               <YAxis 
                 tickFormatter={formatYAxisTick}

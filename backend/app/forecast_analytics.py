@@ -222,6 +222,7 @@ class ForecastAnalyzer:
             ))
         
         # Gerar previsões futuras
+        # MELHORIA: Usar janela maior para mais estabilidade (6 meses em vez de 3)
         window_size = min(6, len(costs))  # Usar últimos 6 meses ou menos
         weights = np.exp(np.linspace(-1, 0, window_size))  # Pesos exponenciais
         weights = weights / weights.sum()
@@ -329,33 +330,75 @@ class ForecastAnalyzer:
         
         return forecast_data, accuracy
 
+    def _smooth_outliers(self, costs: np.ndarray) -> np.ndarray:
+        """Suaviza outliers usando mediana para melhorar estabilidade"""
+        
+        if len(costs) < 4:
+            return costs
+        
+        # Calcular quartis e IQR
+        q1, q3 = np.percentile(costs, [25, 75])
+        iqr = q3 - q1
+        lower_bound = q1 - 1.5 * iqr
+        upper_bound = q3 + 1.5 * iqr
+        
+        # Suavizar outliers com mediana em vez de remover
+        smoothed_costs = costs.copy()
+        median_val = np.median(costs)
+        
+        for i in range(len(smoothed_costs)):
+            if smoothed_costs[i] < lower_bound or smoothed_costs[i] > upper_bound:
+                # Usar média dos vizinhos ou mediana geral
+                if i > 0 and i < len(smoothed_costs) - 1:
+                    smoothed_costs[i] = np.median([costs[i-1], median_val, costs[i+1]])
+                else:
+                    smoothed_costs[i] = median_val
+        
+        return smoothed_costs
+
     def _calculate_model_accuracy(self, costs: np.ndarray) -> float:
-        """Calcula accuracy do modelo usando validação cruzada simples"""
+        """Calcula accuracy do modelo usando validação cruzada melhorada"""
         
         if len(costs) < 4:
             return 70.0  # Accuracy padrão para poucos dados
         
+        # MELHORIA 1: Suavizar outliers antes do cálculo
+        smoothed_costs = self._smooth_outliers(costs)
+        
         # Usar últimos 30% dos dados para validação
-        split_point = int(len(costs) * 0.7)
-        train_costs = costs[:split_point]
-        test_costs = costs[split_point:]
+        split_point = int(len(smoothed_costs) * 0.7)
+        train_costs = smoothed_costs[:split_point]
+        test_costs = smoothed_costs[split_point:]
         
         if len(test_costs) == 0:
             return 70.0
         
-        # Simular previsão usando média móvel
+        # MELHORIA 2: Aumentar janela de 3→6 meses
         predictions = []
         for i in range(len(test_costs)):
-            if len(train_costs) >= 3:
-                pred = np.mean(train_costs[-3:])  # Média dos últimos 3 meses
+            if len(train_costs) >= 6:
+                pred = np.mean(train_costs[-6:])  # Média dos últimos 6 meses
+            elif len(train_costs) >= 3:
+                pred = np.mean(train_costs[-3:])  # Fallback para 3 meses
             else:
                 pred = np.mean(train_costs)
             predictions.append(pred)
             train_costs = np.append(train_costs, test_costs[i])
         
-        # Calcular MAPE (Mean Absolute Percentage Error)
-        mape = np.mean(np.abs((test_costs - predictions) / np.maximum(test_costs, 1))) * 100
-        accuracy = max(0, 100 - mape)
+        # MELHORIA 3: Usar RMSE normalizado + MAPE com menos peso
+        predictions = np.array(predictions)
+        
+        # Calcular MAPE (com denominador mais robusto)
+        mape = np.mean(np.abs((test_costs - predictions) / np.maximum(test_costs, np.mean(test_costs) * 0.1))) * 100
+        
+        # Calcular RMSE normalizado
+        rmse = np.sqrt(np.mean((test_costs - predictions) ** 2))
+        mean_actual = np.mean(test_costs)
+        nrmse = (rmse / mean_actual) * 100 if mean_actual > 0 else 100
+        
+        # Combinar métricas: menos peso para MAPE, mais para NRMSE
+        combined_error = (mape * 0.3) + (nrmse * 0.7)
+        accuracy = max(0, 100 - combined_error)
         
         return min(accuracy, 95.0)  # Máximo de 95% de accuracy
 

@@ -81,6 +81,7 @@ export function ServicesSection({
   // Usar hook de forecast para buscar dados da API
   const { 
     data: forecastData, 
+    metadata: forecastMetadata,
     budget_info: budgetInfo,
     isLoading: forecastLoading, 
     isUsingMockData 
@@ -114,6 +115,7 @@ export function ServicesSection({
             data={forecastData}
             currency={currency}
             budgetInfo={budgetInfo}
+            metadata={forecastMetadata}
             isUsingMockData={isUsingMockData}
           />
         </div>

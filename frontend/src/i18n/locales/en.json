@@ -88,7 +88,11 @@
     "actualSpend": "Actual spend",
     "forecast": "Forecast",
     "actualSpendChart": "Actual Spend",
-    "forecastChart": "Forecast"
+    "forecastChart": "Forecast",
+    "accuracy": "Accuracy",
+    "highAccuracy": "High Accuracy",
+    "mediumAccuracy": "Medium Accuracy",
+    "lowAccuracy": "Low Accuracy"
   },
   "spendingTeams": {
     "title": "Spending by Team"

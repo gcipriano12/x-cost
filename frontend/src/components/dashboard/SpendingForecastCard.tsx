@@ -251,13 +251,12 @@ export function SpendingForecastCard({ data, currency, budgetInfo, metadata, isU
                   strokeDasharray="3 3" 
                   strokeWidth={2}
                   label={{ 
-                    position: 'right',
+                    position: 'insideTopLeft',
                     value: t('spendingForecast.budget'), 
                     fill: isDark ? "#f87171" : "#F87171", 
-                    fontSize: 11,
-                    offset: 10,
-                    formatter: () => t('spendingForecast.budget'),
-                    className: isDark ? 'text-red-400' : 'text-red-500'
+                    fontSize: 12,
+                    offset: 5,
+                    textAnchor: 'start'
                   }}
                 />
               )}

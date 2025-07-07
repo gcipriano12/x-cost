@@ -157,11 +157,42 @@ export function SpendSummaryCard({
     return name.substring(0, maxLength - 3) + '...';
   };
 
-  // Prepare account breakdown with colors if not already set
-  const processedAccountBreakdown = accountBreakdown?.map((account, index) => ({
+  // Prepare account breakdown with colors if not already set and deduplicate by account name
+  console.log('🔧 Deduplicating account breakdown data:', accountBreakdown);
+  
+  const accountMap = new Map();
+  accountBreakdown?.forEach((account) => {
+    // Limpar o nome da conta para remover números extras em Oracle Cloud Account
+    let accountKey = account.billing_account_name || account.accountName || account.accountId;
+    
+    // Regra especial para Oracle Cloud Account X - extrair apenas "Oracle Cloud Account"
+    if (accountKey.startsWith('Oracle Cloud Account')) {
+      accountKey = 'Oracle Cloud Account';
+    }
+    
+    // Se esta conta já existe no mapa, some o valor
+    if (accountMap.has(accountKey)) {
+      const existingAccount = accountMap.get(accountKey);
+      existingAccount.value += account.value;
+      console.log(`🔄 Combining duplicate account "${accountKey}": adding ${account.value}% to existing ${existingAccount.value - account.value}%`);
+    } else {
+      // Se não existe, adicione ao mapa com o nome normalizado
+      const cleanedAccount = {...account};
+      if (accountKey === 'Oracle Cloud Account') {
+        cleanedAccount.billing_account_name = 'Oracle Cloud Account';
+        cleanedAccount.accountName = 'Oracle Cloud Account';
+      }
+      accountMap.set(accountKey, cleanedAccount);
+    }
+  });
+  
+  // Converter o mapa de volta para array e adicionar cores
+  const processedAccountBreakdown = Array.from(accountMap.values()).map((account, index) => ({
     ...account,
     color: account.color || generateAccountColor(index)
   })) || [];
+  
+  console.log('✅ Account breakdown after deduplication:', processedAccountBreakdown);
 
   // Calcular valores absolutos para cada item (provider ou account)
   let currentBreakdown = showAccountDistribution ? processedAccountBreakdown : providerBreakdown;
@@ -255,17 +286,21 @@ export function SpendSummaryCard({
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }: any) => {
     const value = pieData[index].value;
     
-    // Só exibir texto se a fatia for grande o suficiente (maior que 8%)
-    if (value < 8) {
+    // Só exibir texto se a fatia for grande o suficiente (maior que 2%)
+    if (value < 2) {
       return null;
     }
     
     // Calcular posição do texto - fatias menores mais externas, fatias grandes mais centralizadas
     let radiusMultiplier = 0.8; // Posição padrão
     
-    // Para fatias menores (8-15%), posicionar próximo da borda externa
-    if (value < 15) {
+    // Para fatias menores (5-10%), posicionar próximo da borda externa
+    if (value < 10) {
       radiusMultiplier = 0.75;
+    }
+    // Para fatias muito pequenas (5-7%), ajustar ainda mais para evitar sobreposição
+    else if (value < 7) {
+      radiusMultiplier = 0.7;
     }
     // Para fatias médias (15-40%), posição externa
     else if (value < 40) {
@@ -280,22 +315,15 @@ export function SpendSummaryCard({
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
     
-    // Usar a cor intensificada específica do provedor
-    const providerColor = intensifyColor(pieData[index].originalColor);
-
     return (
-      <text 
-        x={x} 
-        y={y} 
-        fill={providerColor} 
-        textAnchor="middle" // Centralizar o texto para evitar sobreposição
+      <text
+        x={x}
+        y={y}
+        fill={isDark ? "#fff" : "#000"}
+        textAnchor="middle"
         dominantBaseline="central"
-        fontSize={value < 15 ? 13 : 14} // Fonte maior: 13px para fatias menores, 14px para maiores
+        fontSize={11}
         fontWeight="bold"
-        className="drop-shadow-sm"
-        stroke={isDark ? "#333" : "#fff"}
-        strokeWidth={0.5}
-        paintOrder="stroke"
       >
         {`${value.toFixed(1)}%`}
       </text>

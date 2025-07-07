@@ -289,15 +289,43 @@ function mapApiDataToSpendSummary(
   console.log('🔍 Account breakdown logic - Provider:', providerName, 'AccountData:', accountDistributionData);
   
   if (providerName && accountDistributionData && accountDistributionData.length > 0) {
-    // Use real API data from useAccountDistribution hook
-    accountBreakdown = accountDistributionData.map(account => ({
+    // Use real API data from useAccountDistribution hook but deduplicate by account name
+    const accountMap = new Map();
+    
+    // Primeiro passo: mapear e juntar contas duplicadas
+    accountDistributionData.forEach(account => {
+      // Limpar o nome da conta para remover números extras em Oracle Cloud Account
+      let accountKey = account.billing_account_name || 'Unknown Account';
+      
+      // Regra especial para Oracle Cloud Account X - extrair apenas "Oracle Cloud Account"
+      if (accountKey.startsWith('Oracle Cloud Account')) {
+        accountKey = 'Oracle Cloud Account';
+      }
+      
+      if (accountMap.has(accountKey)) {
+        // Se a conta já existe, somamos os percentuais
+        const existingAccount = accountMap.get(accountKey);
+        existingAccount.percentage += account.percentage;
+      } else {
+        // Se não existe, adicionamos ao mapa com o nome normalizado
+        const cleanedAccount = {...account};
+        if (accountKey === 'Oracle Cloud Account') {
+          cleanedAccount.billing_account_name = 'Oracle Cloud Account';
+        }
+        accountMap.set(accountKey, cleanedAccount);
+      }
+    });
+    
+    // Segundo passo: converter o mapa para o formato de accountBreakdown
+    accountBreakdown = Array.from(accountMap.values()).map(account => ({
       accountId: account.account_id || 'unknown',
       billing_account_name: account.billing_account_name || 'Unknown Account',
       accountName: account.billing_account_name || 'Unknown Account', // For backwards compatibility
-      value: Math.round(account.percentage * 10) / 10, // percentage is already a number
+      value: Math.round(account.percentage * 10) / 10, // percentage is already a number (rounded to 1 decimal)
       color: '' // Color will be generated in SpendSummaryCard
     }));
-    console.log('✅ Created account breakdown with', accountBreakdown.length, 'accounts:', accountBreakdown);
+    
+    console.log('✅ Created account breakdown with', accountBreakdown.length, 'accounts (after deduplication):', accountBreakdown);
   } else if (providerName) {
     console.log('⚠️ No account distribution data available for provider:', providerName, 'Conditions:', {
       hasProvider: !!providerName,

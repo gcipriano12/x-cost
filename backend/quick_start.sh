@@ -16,6 +16,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Configuração do LocalStack externo
+LOCALSTACK_PATH="/Users/gcipriano/Repositories/localstack-web"
+
 # Função para logging
 log_info() {
     echo -e "${BLUE}ℹ️  $1${NC}"
@@ -33,9 +36,73 @@ log_error() {
     echo -e "${RED}❌ $1${NC}"
 }
 
-# Função para limpeza de containers conflitantes
+# Função para verificar LocalStack externo
+check_external_localstack() {
+    log_info "Verificando LocalStack externo em: $LOCALSTACK_PATH"
+    
+    if [ ! -d "$LOCALSTACK_PATH" ]; then
+        log_error "Diretório do LocalStack não encontrado: $LOCALSTACK_PATH"
+        log_error "Certifique-se de que o LocalStack está clonado no caminho correto"
+        exit 1
+    fi
+    
+    if [ ! -f "$LOCALSTACK_PATH/docker-compose.yml" ]; then
+        log_error "docker-compose.yml não encontrado em: $LOCALSTACK_PATH"
+        exit 1
+    fi
+    
+    log_success "LocalStack externo encontrado"
+}
+
+# Função para gerenciar LocalStack externo
+manage_external_localstack() {
+    local action=$1
+    
+    log_info "Executando '$action' no LocalStack externo..."
+    
+    cd "$LOCALSTACK_PATH"
+    
+    case $action in
+        "start")
+            if $COMPOSE_CMD ps | grep -q "localstack.*Up"; then
+                log_info "LocalStack já está rodando"
+            else
+                log_info "Iniciando LocalStack..."
+                $COMPOSE_CMD up -d
+                
+                # Aguardar LocalStack ficar disponível
+                log_info "Aguardando LocalStack ficar disponível..."
+                for i in {1..30}; do
+                    if curl -s http://localhost:4566/_localstack/health &> /dev/null; then
+                        log_success "LocalStack está rodando e disponível"
+                        break
+                    fi
+                    log_info "Aguardando LocalStack ($i/30)..."
+                    sleep 2
+                done
+                
+                if ! curl -s http://localhost:4566/_localstack/health &> /dev/null; then
+                    log_error "LocalStack não ficou disponível"
+                    return 1
+                fi
+            fi
+            ;;
+        "stop")
+            $COMPOSE_CMD down
+            log_success "LocalStack parado"
+            ;;
+        "status")
+            $COMPOSE_CMD ps
+            ;;
+    esac
+    
+    # Voltar ao diretório original
+    cd - > /dev/null
+}
+
+# Função para limpeza de containers conflitantes (removendo localstack)
 cleanup_containers() {
-    local containers=("finops_postgres" "finops_redis" "finops_localstack")
+    local containers=("finops_postgres" "finops_redis")
     
     for container in "${containers[@]}"; do
         if $CONTAINER_ENGINE ps -a --format "{{.Names}}" | grep -q "^${container}$"; then
@@ -76,6 +143,9 @@ if [ ! -f "requirements.txt" ]; then
     log_error "requirements.txt não encontrado. Execute este script na raiz do projeto."
     exit 1
 fi
+
+# Verificar LocalStack externo
+check_external_localstack
 
 # 1. Criar estrutura de diretórios
 log_info "Criando estrutura de diretórios..."
@@ -267,16 +337,19 @@ fi
 # Subir serviços de infraestrutura
 log_info "Configurando serviços de infraestrutura..."
 
-# Limpar containers antigos que podem estar conflitando
+# Limpar containers antigos que podem estar conflitando (sem localstack)
 log_info "Limpando containers antigos se existirem..."
 cleanup_containers
 
 # Parar qualquer compose que possa estar rodando
 $COMPOSE_CMD down --remove-orphans 2>/dev/null || true
 
-# Subir serviços limpos
-log_info "Iniciando serviços: postgres, redis, localstack"
-$COMPOSE_CMD up -d postgres redis localstack
+# Subir apenas postgres e redis (sem localstack)
+log_info "Iniciando serviços: postgres, redis"
+$COMPOSE_CMD up -d postgres redis
+
+# Gerenciar LocalStack externo
+manage_external_localstack "start"
 
 log_info "Aguardando serviços iniciarem..."
 sleep 10
@@ -289,8 +362,11 @@ if $COMPOSE_CMD ps | grep -q "unhealthy"; then
 fi
 
 # Listar status dos containers
-log_info "Status dos containers:"
+log_info "Status dos containers locais:"
 $COMPOSE_CMD ps
+
+log_info "Status do LocalStack externo:"
+manage_external_localstack "status"
 
 log_success "Serviços $CONTAINER_ENGINE iniciados"
 
@@ -459,7 +535,7 @@ echo "✅ Compose Command: $COMPOSE_CMD"
 echo "✅ Ambiente Python configurado"
 echo "✅ Banco de dados PostgreSQL rodando"
 echo "✅ Redis cache rodando"
-echo "✅ LocalStack (AWS simulado) rodando"
+echo "✅ LocalStack externo rodando ($LOCALSTACK_PATH)"
 echo "✅ API FinOps testada e funcionando"
 echo "✅ Usuário admin criado"
 echo "✅ Credencial de teste criada"
@@ -481,6 +557,7 @@ echo "4. Interfaces úteis:"
 echo "   - API Docs: http://localhost:8000/docs"
 echo "   - PostgreSQL: http://localhost:8080"
 echo "   - Redis: http://localhost:8081"
+echo "   - LocalStack: http://localhost:4566"
 echo ""
 echo "5. Executar testes:"
 echo "   PYTHONPATH=. pytest"
@@ -500,8 +577,11 @@ log_info "Leia a documentação em docs/ para mais informações"
 echo ""
 echo "🔧 Comandos Úteis com $CONTAINER_ENGINE:"
 echo ""
-echo "# Parar serviços:"
+echo "# Parar serviços locais:"
 echo "$COMPOSE_CMD down"
+echo ""
+echo "# Parar LocalStack externo:"
+echo "(cd $LOCALSTACK_PATH && $COMPOSE_CMD down)"
 echo ""
 echo "# Ver status:"
 echo "$COMPOSE_CMD ps"
@@ -520,6 +600,12 @@ echo ""
 echo "# Resetar banco:"
 echo "PYTHONPATH=. python scripts/init_db.py"
 echo ""
+echo "# Gerenciar LocalStack externo:"
+echo "cd $LOCALSTACK_PATH"
+echo "$COMPOSE_CMD up -d      # Iniciar"
+echo "$COMPOSE_CMD down       # Parar"
+echo "$COMPOSE_CMD logs -f    # Ver logs"
+echo ""
 
 if [ "$CONTAINER_ENGINE" = "podman" ]; then
     echo "🐳 Comandos específicos do Podman:"
@@ -535,64 +621,10 @@ if [ "$CONTAINER_ENGINE" = "podman" ]; then
     echo ""
 fi
 
-echo "Happy coding with $CONTAINER_ENGINE! 🚀"ais"
-echo "└── podman-compose.yml   # Serviços Docker"
-echo ""
-echo "✅ Ambiente Python configurado"
-echo "✅ Banco de dados PostgreSQL rodando"
-echo "✅ Redis cache rodando"
-echo "✅ LocalStack (AWS simulado) rodando"
-echo "✅ API FinOps testada e funcionando"
-echo "✅ Usuário admin criado"
-echo "✅ Credencial de teste criada"
-echo ""
-echo "📋 Próximos Passos:"
-echo ""
-echo "1. Iniciar a API:"
-echo "   source venv/bin/activate"
-echo "   PYTHONPATH=. uvicorn app.main:app --reload"
-echo ""
-echo "2. Acessar documentação:"
-echo "   http://localhost:8000/docs"
-echo ""
-echo "3. Login padrão:"
-echo "   Usuário: admin"
-echo "   Senha: ChangeMe123!"
-echo ""
-echo "4. Interfaces úteis:"
-echo "   - API Docs: http://localhost:8000/docs"
-echo "   - PostgreSQL: http://localhost:8080"
-echo "   - Redis: http://localhost:8081"
-echo ""
-echo "5. Executar testes:"
-echo "   PYTHONPATH=. pytest"
-echo ""
-echo "6. Ver logs:"
-echo "   docker-compose logs -f"
-echo ""
-echo "📚 Documentação:"
-echo "   - docs/DEVELOPMENT_GUIDE.md    # Desenvolvimento"
-echo "   - docs/SECURITY_ARCHITECTURE.md # Segurança"
-echo "   - docs/FRONTEND_INTEGRATION.md  # Integração Frontend"
+echo "🌐 LocalStack Externo:"
+echo "  Path: $LOCALSTACK_PATH"
+echo "  Health Check: http://localhost:4566/_localstack/health"
+echo "  Dashboard: http://localhost:4566 (se disponível)"
 echo ""
 
-log_warning "IMPORTANTE: Altere a senha padrão em produção!"
-log_info "Leia a documentação em docs/ para mais informações"
-
-echo ""
-echo "🔧 Comandos Úteis:"
-echo ""
-echo "# Parar serviços:"
-echo "docker-compose down"
-echo ""
-echo "# Ver status:"
-echo "docker-compose ps"
-echo ""
-echo "# Conectar ao banco:"
-echo "psql postgresql://finops_user:finops_password@localhost:5432/finops_db"
-echo ""
-echo "# Resetar banco:"
-echo "PYTHONPATH=. python scripts/init_db.py"
-echo ""
-
-echo "Happy coding! 🚀"
+echo "Happy coding with $CONTAINER_ENGINE! 🚀"

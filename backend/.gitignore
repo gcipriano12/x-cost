@@ -185,24 +185,3 @@ coverage.xml
 # Local development
 development.ini
 local.ini
-
-# Arquivos de token e credenciais - SEGURANÇA
-*token*.txt
-*token*.py
-*token*.js
-.env
-.env.*
-!.env.example
-current-token.txt
-*-token-*.py
-*-token-*.js
-*.token
-secrets.py
-credentials.py
-auth_tokens.py
-
-# Arquivos sensíveis
-*.secret
-*.secrets
-*secrets*
-*credentials*

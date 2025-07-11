@@ -76,6 +76,14 @@ class CloudCredentialConfig(Base):
     region_preference = Column(String(50))  # Região preferencial
     additional_config = Column(JSONB)  # Configurações extras não-sensíveis
     
+    # Campos estendidos para sistema de duplas credenciais
+    access_pattern = Column(String(20))  # DATA_ONLY, API_ONLY, HYBRID
+    credential_type = Column(String(20))  # ROLE_BASED, PROGRAMMATIC
+    api_role_arn = Column(String(500))  # ARN da role para acesso à API
+    data_role_arn = Column(String(500))  # ARN da role para acesso aos dados
+    external_id = Column(String(100))  # External ID para assume role
+    session_duration = Column(Integer, default=3600)  # Duração da sessão em segundos
+    
     # Status e validação
     status = Column(Enum(CredentialStatus), default=CredentialStatus.ACTIVE, index=True)
     last_validated = Column(DateTime)
@@ -171,6 +179,14 @@ class CredentialConfigCreate(BaseModel):
     credentials: ProviderCredentials
     expires_at: Optional[datetime] = Field(default=None)
     additional_config: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    
+    # Campos estendidos para sistema de duplas credenciais
+    access_pattern: Optional[str] = Field(default=None, description="Padrão de acesso: DATA_ONLY, API_ONLY, ou HYBRID")
+    credential_type: Optional[str] = Field(default=None, description="Tipo de credencial: ROLE_BASED ou PROGRAMMATIC")
+    api_role_arn: Optional[str] = Field(default=None, description="ARN da role para acesso à API")
+    data_role_arn: Optional[str] = Field(default=None, description="ARN da role para acesso aos dados")
+    external_id: Optional[str] = Field(default=None, description="External ID para assume role")
+    session_duration: Optional[int] = Field(default=3600, description="Duração da sessão em segundos")
 
 class CredentialConfigUpdate(BaseModel):
     """Modelo para atualização de configuração de credencial"""
@@ -180,6 +196,14 @@ class CredentialConfigUpdate(BaseModel):
     status: Optional[CredentialStatus] = Field(default=None)
     expires_at: Optional[datetime] = Field(default=None)
     additional_config: Optional[Dict[str, Any]] = Field(default=None)
+    
+    # Campos estendidos para sistema de duplas credenciais
+    access_pattern: Optional[str] = Field(default=None, description="Padrão de acesso: DATA_ONLY, API_ONLY, ou HYBRID")
+    credential_type: Optional[str] = Field(default=None, description="Tipo de credencial: ROLE_BASED ou PROGRAMMATIC")
+    api_role_arn: Optional[str] = Field(default=None, description="ARN da role para acesso à API")
+    data_role_arn: Optional[str] = Field(default=None, description="ARN da role para acesso aos dados")
+    external_id: Optional[str] = Field(default=None, description="External ID para assume role")
+    session_duration: Optional[int] = Field(default=None, description="Duração da sessão em segundos")
 
 class CredentialConfigResponse(BaseModel):
     """Modelo de resposta para configuração de credencial (sem dados sensíveis)"""
@@ -196,6 +220,14 @@ class CredentialConfigResponse(BaseModel):
     created_by: str  # Username
     created_at: datetime
     updated_at: datetime
+    
+    # Campos estendidos para sistema de duplas credenciais
+    access_pattern: Optional[str] = Field(default=None, description="Padrão de acesso: DATA_ONLY, API_ONLY, ou HYBRID")
+    credential_type: Optional[str] = Field(default=None, description="Tipo de credencial: ROLE_BASED ou PROGRAMMATIC")
+    api_role_arn: Optional[str] = Field(default=None, description="ARN da role para acesso à API")
+    data_role_arn: Optional[str] = Field(default=None, description="ARN da role para acesso aos dados")
+    external_id: Optional[str] = Field(default=None, description="External ID para assume role")
+    session_duration: Optional[int] = Field(default=None, description="Duração da sessão em segundos")
     
     class Config:
         from_attributes = True

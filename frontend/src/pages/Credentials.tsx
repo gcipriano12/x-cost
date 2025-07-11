@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import Dashboard from '@/components/dashboard/Dashboard';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Key, Plus, TestTube, Edit, Trash2 } from 'lucide-react';
+import { Key, Plus, TestTube, Edit, Trash2, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -10,11 +10,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useCredentials } from '@/hooks/useCredentials';
-import { AWSCredentials } from '@/types/api';
+import { AWSCredentials, CredentialsResponse } from '@/types/api';
+import { AccessPattern, CredentialType, EnhancedValidationResult } from '@/types/credentials';
 import { useForm } from 'react-hook-form';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import AccessPatternSelector from '@/components/credentials/AccessPatternSelector';
+import RoleConfiguration from '@/components/credentials/RoleConfiguration';
+import CredentialValidation from '@/components/credentials/CredentialValidation';
 
 const AWS_REGIONS = [
   'us-east-1', 'us-east-2', 'us-west-1', 'us-west-2',
@@ -27,6 +32,19 @@ const Credentials = () => {
   const { credentials, loading, createCredential, updateCredential, deleteCredential, testCredential } = useCredentials();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCredential, setEditingCredential] = useState<number | null>(null);
+  
+  // Estados para sistema dual de credenciais
+  const [accessPattern, setAccessPattern] = useState<AccessPattern>(AccessPattern.HYBRID);
+  const [credentialType, setCredentialType] = useState<CredentialType>(CredentialType.PROGRAMMATIC);
+  const [roleConfig, setRoleConfig] = useState({
+    useRoles: false,
+    dataRoleArn: '',
+    apiRoleArn: '',
+    externalId: '',
+    managedIdentityId: ''
+  });
+  const [validationResult, setValidationResult] = useState<EnhancedValidationResult | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
 
   const form = useForm<Omit<AWSCredentials, 'id'>>({
     defaultValues: {
@@ -38,22 +56,71 @@ const Credentials = () => {
     },
   });
 
+  // Função de validação estendida
+  const handleEnhancedValidation = async (credentialId?: string) => {
+    if (!credentialId) return;
+    
+    setIsValidating(true);
+    try {
+      const response = await fetch(`/api/v1/credentials/${credentialId}/enhanced-test`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) throw new Error('Validation failed');
+      
+      const result = await response.json();
+      setValidationResult(result);
+      return result;
+    } catch (error) {
+      console.error('Enhanced validation error:', error);
+      throw error;
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
   const onSubmit = async (data: Omit<AWSCredentials, 'id'>) => {
     try {
+      // Preparar dados estendidos mantendo compatibilidade
+      const submitData = {
+        ...data,
+        // Adicionar campos estendidos
+        access_pattern: accessPattern,
+        credential_type: roleConfig.useRoles ? CredentialType.ROLE_BASED : CredentialType.PROGRAMMATIC,
+        data_role_arn: roleConfig.dataRoleArn,
+        api_role_arn: roleConfig.apiRoleArn,
+        external_id: roleConfig.externalId,
+        use_roles: roleConfig.useRoles
+      };
+      
       if (editingCredential) {
-        await updateCredential(editingCredential, data);
+        await updateCredential(editingCredential, submitData);
       } else {
-        await createCredential(data);
+        await createCredential(submitData);
       }
       setDialogOpen(false);
       setEditingCredential(null);
       form.reset();
+      // Reset estados dos novos campos
+      setAccessPattern(AccessPattern.HYBRID);
+      setRoleConfig({ useRoles: false, dataRoleArn: '', apiRoleArn: '', externalId: '', managedIdentityId: '' });
+      setValidationResult(null);
     } catch (error) {
       console.error('Error saving credential:', error);
     }
   };
 
-  const handleEdit = (credential: any) => {
+  const handleEdit = (credential: CredentialsResponse & {
+    access_pattern?: AccessPattern;
+    use_roles?: boolean;
+    data_role_arn?: string;
+    api_role_arn?: string;
+    external_id?: string;
+  }) => {
     setEditingCredential(credential.id);
     form.reset({
       name: credential.name,
@@ -62,6 +129,21 @@ const Credentials = () => {
       aws_region: credential.aws_region,
       is_active: credential.is_active,
     });
+    
+    // Carregar dados estendidos se existirem
+    if (credential.access_pattern) {
+      setAccessPattern(credential.access_pattern);
+    }
+    if (credential.use_roles) {
+      setRoleConfig({
+        useRoles: credential.use_roles,
+        dataRoleArn: credential.data_role_arn || '',
+        apiRoleArn: credential.api_role_arn || '',
+        externalId: credential.external_id || '',
+        managedIdentityId: ''
+      });
+    }
+    
     setDialogOpen(true);
   };
 
@@ -88,22 +170,25 @@ const Credentials = () => {
                 <Button onClick={() => {
                   setEditingCredential(null);
                   form.reset();
+                  setAccessPattern(AccessPattern.HYBRID);
+                  setRoleConfig({ useRoles: false, dataRoleArn: '', apiRoleArn: '', externalId: '', managedIdentityId: '' });
+                  setValidationResult(null);
                 }}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Credential
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
+              <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>
                     {editingCredential ? 'Edit AWS Credential' : 'Add AWS Credential'}
                   </DialogTitle>
                   <DialogDescription>
-                    Enter your AWS credentials to enable cost analysis.
+                    Configure your AWS credentials with enhanced access patterns for secure and flexible cost analysis.
                   </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     <FormField
                       control={form.control}
                       name="name"
@@ -174,6 +259,50 @@ const Credentials = () => {
                         </FormItem>
                       )}
                     />
+                    
+                    {/* Seletor de padrão de acesso - NOVO */}
+                    <div className="space-y-4">
+                      <AccessPatternSelector
+                        value={accessPattern}
+                        onChange={setAccessPattern}
+                        provider="AWS"
+                        disabled={loading}
+                      />
+                    </div>
+                    
+                    {/* Configuração de roles - NOVO */}
+                    <div className="space-y-4">
+                      <RoleConfiguration
+                        provider="AWS"
+                        accessPattern={accessPattern}
+                        value={roleConfig}
+                        onChange={setRoleConfig}
+                      />
+                    </div>
+                    
+                    {/* Nota sobre uso híbrido */}
+                    {roleConfig.useRoles && accessPattern === AccessPattern.HYBRID && (
+                      <Alert>
+                        <Info className="h-4 w-4" />
+                        <AlertDescription>
+                          No modo híbrido, as credenciais programáticas serão usadas para assumir roles 
+                          e acessar APIs que não suportam role-based access.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    {/* Validação aprimorada - NOVO */}
+                    {editingCredential && (
+                      <div className="space-y-4">
+                        <CredentialValidation
+                          credentialId={editingCredential.toString()}
+                          accessPattern={accessPattern}
+                          onValidate={handleEnhancedValidation}
+                          isValidating={isValidating}
+                          validationResult={validationResult}
+                        />
+                      </div>
+                    )}
                     
                     <div className="flex justify-end space-x-2 pt-4">
                       <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>

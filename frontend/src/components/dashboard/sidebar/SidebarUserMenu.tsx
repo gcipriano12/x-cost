@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User } from 'lucide-react';
+import { User, Key, UserCircle, Settings, HelpCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { SidebarMenuItem, SidebarMenuButton, useSidebar } from '@/components/ui/sidebar';
 import {
@@ -57,9 +57,22 @@ export const SidebarUserMenu = () => {
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuLabel>svc_finops</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>{t('common.profile')}</DropdownMenuItem>
-          <DropdownMenuItem>{t('common.settings')}</DropdownMenuItem>
-          <DropdownMenuItem>{t('common.support')}</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate('/profile')}>
+            <UserCircle className="mr-2 h-4 w-4" />
+            {t('common.profile')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate('/credentials')}>
+            <Key className="mr-2 h-4 w-4" />
+            {t('common.credentials')}
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <Settings className="mr-2 h-4 w-4" />
+            {t('common.settings')}
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <HelpCircle className="mr-2 h-4 w-4" />
+            {t('common.support')}
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem 
             className="text-red-500 cursor-pointer"

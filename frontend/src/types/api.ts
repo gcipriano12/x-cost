@@ -10,7 +10,19 @@ export interface LoginResponse {
   expires_in: number;
 }
 
-// Tipos de credenciais AWS
+// Enums para sistema dual de credenciais
+export enum AccessPattern {
+  DATA_ONLY = 'data_only',
+  API_ONLY = 'api_only',
+  HYBRID = 'hybrid'
+}
+
+export enum CredentialType {
+  ACCESS_KEY = 'access_key',
+  ASSUME_ROLE = 'assume_role'
+}
+
+// Tipos de credenciais AWS (compatibilidade mantida)
 export interface AWSCredentials {
   id?: number;
   name: string;
@@ -20,6 +32,55 @@ export interface AWSCredentials {
   is_active: boolean;
   created_at?: string;
   updated_at?: string;
+  // Novos campos opcionais para compatibilidade
+  access_pattern?: AccessPattern;
+  credential_type?: CredentialType;
+  data_role_arn?: string;
+  api_role_arn?: string;
+  external_id?: string;
+}
+
+// Interface estendida para credenciais aprimoradas
+export interface EnhancedAWSCredentials {
+  id?: number;
+  name: string;
+  aws_access_key_id: string;
+  aws_secret_access_key: string;
+  aws_region: string;
+  is_active: boolean;
+  access_pattern: AccessPattern;
+  credential_type: CredentialType;
+  data_role_arn?: string;
+  api_role_arn?: string;
+  external_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Resultado de validação estendida
+export interface EnhancedValidationResult {
+  is_valid: boolean;
+  data_access_valid?: boolean;
+  api_access_valid?: boolean;
+  data_access_info?: {
+    can_read_billing: boolean;
+    accessible_buckets: string[];
+    role_assumed: string;
+  };
+  api_access_info?: {
+    cost_explorer_access: boolean;
+    support_api_access: boolean;
+  };
+  validation_details?: {
+    access_key_valid: boolean;
+    region_accessible: boolean;
+    permissions_summary: string[];
+  };
+  error_details?: {
+    error_type: string;
+    error_message: string;
+    suggestions: string[];
+  };
 }
 
 export interface CredentialsResponse {
@@ -29,6 +90,12 @@ export interface CredentialsResponse {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  // Novos campos opcionais para compatibilidade
+  access_pattern?: AccessPattern;
+  credential_type?: CredentialType;
+  data_role_arn?: string;
+  api_role_arn?: string;
+  external_id?: string;
 }
 
 // Tipos de analytics

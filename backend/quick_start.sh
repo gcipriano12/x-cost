@@ -16,9 +16,6 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Configuração do LocalStack externo
-LOCALSTACK_PATH="/Users/gcipriano/Repositories/localstack-web"
-
 # Função para logging
 log_info() {
     echo -e "${BLUE}ℹ️  $1${NC}"

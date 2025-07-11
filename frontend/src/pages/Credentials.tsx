@@ -31,7 +31,7 @@ const AWS_REGIONS = [
 const Credentials = () => {
   const { credentials, loading, createCredential, updateCredential, deleteCredential, testCredential } = useCredentials();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingCredential, setEditingCredential] = useState<number | null>(null);
+  const [editingCredential, setEditingCredential] = useState<string | null>(null);
   
   // Estados para sistema dual de credenciais
   const [accessPattern, setAccessPattern] = useState<AccessPattern>(AccessPattern.HYBRID);
@@ -114,20 +114,14 @@ const Credentials = () => {
     }
   };
 
-  const handleEdit = (credential: CredentialsResponse & {
-    access_pattern?: AccessPattern;
-    use_roles?: boolean;
-    data_role_arn?: string;
-    api_role_arn?: string;
-    external_id?: string;
-  }) => {
+  const handleEdit = (credential: CredentialsResponse) => {
     setEditingCredential(credential.id);
     form.reset({
       name: credential.name,
       aws_access_key_id: '',
       aws_secret_access_key: '',
-      aws_region: credential.aws_region,
-      is_active: credential.is_active,
+      aws_region: credential.region_preference || credential.aws_region || '',
+      is_active: credential.status === 'active',
     });
     
     // Carregar dados estendidos se existirem
@@ -147,13 +141,13 @@ const Credentials = () => {
     setDialogOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this credential?')) {
       await deleteCredential(id);
     }
   };
 
-  const handleTest = async (id: number) => {
+  const handleTest = async (id: string) => {
     await testCredential(id);
   };
 
@@ -349,10 +343,10 @@ const Credentials = () => {
                       {credentials.map((credential) => (
                         <TableRow key={credential.id}>
                           <TableCell className="font-medium">{credential.name}</TableCell>
-                          <TableCell>{credential.aws_region}</TableCell>
+                          <TableCell>{credential.region_preference || credential.aws_region || '-'}</TableCell>
                           <TableCell>
-                            <Badge variant={credential.is_active ? 'default' : 'secondary'}>
-                              {credential.is_active ? 'Active' : 'Inactive'}
+                            <Badge variant={credential.status === 'active' ? 'default' : 'secondary'}>
+                              {credential.status === 'active' ? 'Active' : 'Inactive'}
                             </Badge>
                           </TableCell>
                           <TableCell>

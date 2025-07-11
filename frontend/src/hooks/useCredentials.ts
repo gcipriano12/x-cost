@@ -9,10 +9,15 @@ export const useCredentials = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const fetchCredentials = async () => {
+  const fetchCredentials = async (forceRefresh = false) => {
     setLoading(true);
     try {
-      const response = await apiClient.get<CredentialsResponse[]>('/api/v1/credentials/');
+      // Adicionar timestamp para evitar cache
+      const url = forceRefresh 
+        ? `/api/v1/credentials/?_t=${Date.now()}` 
+        : '/api/v1/credentials/';
+      
+      const response = await apiClient.get<CredentialsResponse[]>(url);
       setCredentials(response.data);
     } catch (error: any) {
       toast({
@@ -28,7 +33,7 @@ export const useCredentials = () => {
   const createCredential = async (data: Omit<AWSCredentials, 'id'>) => {
     try {
       const response = await apiClient.post<CredentialsResponse>('/api/v1/credentials/', data);
-      await fetchCredentials();
+      await fetchCredentials(true); // Forçar refresh
       toast({
         title: "Credential created",
         description: "AWS credential has been added successfully.",
@@ -44,10 +49,10 @@ export const useCredentials = () => {
     }
   };
 
-  const updateCredential = async (id: number, data: Partial<AWSCredentials>) => {
+  const updateCredential = async (id: string, data: Partial<AWSCredentials>) => {
     try {
       const response = await apiClient.put<CredentialsResponse>(`/api/v1/credentials/${id}`, data);
-      await fetchCredentials();
+      await fetchCredentials(true); // Forçar refresh
       toast({
         title: "Credential updated",
         description: "AWS credential has been updated successfully.",
@@ -63,10 +68,10 @@ export const useCredentials = () => {
     }
   };
 
-  const deleteCredential = async (id: number) => {
+  const deleteCredential = async (id: string) => {
     try {
       await apiClient.delete(`/api/v1/credentials/${id}`);
-      await fetchCredentials();
+      await fetchCredentials(true); // Forçar refresh
       toast({
         title: "Credential deleted",
         description: "AWS credential has been removed successfully.",
@@ -81,7 +86,7 @@ export const useCredentials = () => {
     }
   };
 
-  const testCredential = async (id: number) => {
+  const testCredential = async (id: string) => {
     try {
       setLoading(true);
       const response = await apiClient.post(`/api/v1/credentials/${id}/test`);
@@ -103,7 +108,7 @@ export const useCredentials = () => {
   };
 
   useEffect(() => {
-    fetchCredentials();
+    fetchCredentials(true); // Forçar refresh na primeira carga
   }, []);
 
   return {

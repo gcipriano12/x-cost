@@ -84,18 +84,28 @@ export interface EnhancedValidationResult {
 }
 
 export interface CredentialsResponse {
-  id: number;
+  id: string;
   name: string;
-  aws_region: string;
-  is_active: boolean;
+  description?: string;
+  provider_type: string;
+  account_id: string;
+  region_preference?: string;
+  status: string;
+  last_validated?: string;
+  validation_error?: string;
+  expires_at?: string;
+  created_by: string;
   created_at: string;
   updated_at: string;
-  // Novos campos opcionais para compatibilidade
-  access_pattern?: AccessPattern;
-  credential_type?: CredentialType;
-  data_role_arn?: string;
+  access_pattern?: string;
+  credential_type?: string;
   api_role_arn?: string;
+  data_role_arn?: string;
   external_id?: string;
+  session_duration?: number;
+  // Campos legados para compatibilidade
+  aws_region?: string;
+  is_active?: boolean;
 }
 
 // Tipos de analytics

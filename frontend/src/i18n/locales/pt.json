@@ -219,6 +219,26 @@
     "titleShort": "Utilização",
     "averageUtilization": "Utilização média de recursos"
   },
+  "seasonality": {
+    "title": "Sazonalidade de Custos",
+    "titleShort": "Sazonalidade",
+    "monthlyComparison": "Este Mês vs Histórico",
+    "weeklyPattern": "Padrão Semanal",
+    "seasonalProgress": "Pico Sazonal Esperado",
+    "trendVariation": "Variação vs Tendência",
+    "averageSeasonality": "Sazonalidade média",
+    "monthlyComparisonTooltip": "Compara os gastos do mês atual com a média histórica do mesmo mês em anos anteriores. 100% = igual ao histórico, >100% = acima da média",
+    "weeklyPatternTooltip": "Mede a consistência dos padrões de gasto durante a semana (segunda a domingo). Valores baixos indicam mudanças nos hábitos de consumo",
+    "seasonalProgressTooltip": "Mostra o progresso até o próximo pico sazonal esperado (geralmente dezembro). Ajuda a prever quando os custos aumentarão",
+    "trendVariationTooltip": "Indica o quanto os gastos atuais desviam da tendência de longo prazo projetada. Valores extremos sugerem mudanças no padrão de consumo",
+    "errorMessage": "Não foi possível carregar dados de sazonalidade",
+    "noData": "Endpoint da API ainda não implementado",
+    "status": {
+      "normal": "Normal",
+      "attention": "Atenção",
+      "alert": "Alerta"
+    }
+  },
   "savingsOpportunities": {
     "title": "Oportunidades de Economia",
     "opportunities": "Oportunidades",

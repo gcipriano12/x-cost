@@ -223,6 +223,26 @@
     "titleShort": "Utilization",
     "averageUtilization": "Average resource utilization"
   },
+  "seasonality": {
+    "title": "Cost Seasonality",
+    "titleShort": "Seasonality",
+    "monthlyComparison": "This Month vs Historical",
+    "weeklyPattern": "Weekly Pattern",
+    "seasonalProgress": "Expected Seasonal Peak",
+    "trendVariation": "Variation vs Trend",
+    "averageSeasonality": "Average seasonality",
+    "monthlyComparisonTooltip": "Compares current month spending with historical average for the same month in previous years. 100% = equal to historical, >100% = above average",
+    "weeklyPatternTooltip": "Measures consistency of spending patterns throughout the week (Monday to Sunday). Low values indicate changes in consumption habits",
+    "seasonalProgressTooltip": "Shows progress towards the next expected seasonal peak (usually December). Helps predict when costs will increase",
+    "trendVariationTooltip": "Indicates how much current spending deviates from projected long-term trend. Extreme values suggest changes in consumption patterns",
+    "errorMessage": "Unable to load seasonality data",
+    "noData": "API endpoint not implemented yet",
+    "status": {
+      "normal": "Normal",
+      "attention": "Attention",
+      "alert": "Alert"
+    }
+  },
   "savingsOpportunities": {
     "title": "Savings Opportunities",
     "opportunities": "Opportunities",

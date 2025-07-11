@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { SpendingTeamsCard } from '../SpendingTeamsCard';
-import { ResourceUtilizationCard } from '../ResourceUtilizationCard';
+import { SeasonalityCard } from '../SeasonalityCard';
 import { FinOpsComplianceCard } from '../FinOpsComplianceCard';
 import { ChartLine } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -11,12 +11,6 @@ interface TrendsSectionProps {
     name: string;
     value: number;
     color: string;
-  }[];
-  resourcesData: {
-    name: string;
-    usage: number;
-    totalAvailable: number;
-    warningThreshold: number;
   }[];
   complianceData: {
     id: string;
@@ -29,7 +23,6 @@ interface TrendsSectionProps {
 
 export function TrendsSection({ 
   spendingCategoriesData, 
-  resourcesData, 
   complianceData, 
   currency 
 }: TrendsSectionProps) {
@@ -51,9 +44,7 @@ export function TrendsSection({
         </div>
         
         <div className="col-span-1">
-          <ResourceUtilizationCard 
-            resources={resourcesData}
-          />
+          <SeasonalityCard />
         </div>
         
         <div className="col-span-1">

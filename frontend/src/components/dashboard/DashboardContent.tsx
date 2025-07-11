@@ -44,7 +44,6 @@ interface DashboardContentProps {
   savingsOpportunitiesData: SavingsOpportunities;
   spendingTeamsData: SpendingTeam[];
   forecastData: ForecastData[];
-  resourcesData: Resource[];
   complianceData: ComplianceItem[];
   kpiData: KPI[];
   costEventsData: CostEvent[];
@@ -70,7 +69,6 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
   savingsOpportunitiesData,
   spendingTeamsData,
   forecastData,
-  resourcesData,
   complianceData,
   kpiData,
   costEventsData,
@@ -112,7 +110,6 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
         
         <TrendsSection 
           spendingCategoriesData={spendingTeamsData}
-          resourcesData={resourcesData}
           complianceData={complianceData}
           currency={currency}
         />

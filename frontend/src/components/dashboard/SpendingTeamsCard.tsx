@@ -77,6 +77,33 @@ export function SpendingTeamsCard({ categories, currency, maxTeamsToShow = 15 }:
 
   const { displayData, hiddenTeamsCount, hiddenTeamsValue } = processTeamsData(categories);
   
+  // Componente personalizado para truncar nomes longos
+  const CustomYAxisTick = (props: any) => {
+    const { x, y, payload } = props;
+    const maxLength = 12; // Máximo de caracteres antes de truncar
+    
+    let displayName = payload.value;
+    if (displayName.length > maxLength) {
+      displayName = displayName.substring(0, maxLength - 3) + '...';
+    }
+    
+    return (
+      <g transform={`translate(${x},${y})`}>
+        <text 
+          x={0} 
+          y={0} 
+          dy={4} 
+          textAnchor="end" 
+          fill={isDark ? "#94a3b8" : "#64748b"}
+          fontSize={11}
+          fontWeight={500}
+        >
+          {displayName}
+        </text>
+      </g>
+    );
+  };
+  
   // Calcular altura dinâmica baseada no número de itens
   const calculateHeight = (itemCount: number) => {
     const minHeight = 320;
@@ -96,7 +123,7 @@ export function SpendingTeamsCard({ categories, currency, maxTeamsToShow = 15 }:
           {t('spendingTeams.title')}
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-grow p-1 pb-2 flex flex-col">
+      <CardContent className="flex-grow p-0 pb-2 flex flex-col">
         {displayData.length === 0 ? (
           <div className="flex-grow flex items-center justify-center">
             <div className="text-center py-8">
@@ -128,7 +155,7 @@ export function SpendingTeamsCard({ categories, currency, maxTeamsToShow = 15 }:
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={displayData}
-                margin={{ top: 5, right: 30, left: 5, bottom: 5 }}
+                margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
                 barGap={3}
                 barCategoryGap={8}
                 layout="vertical"
@@ -153,12 +180,8 @@ export function SpendingTeamsCard({ categories, currency, maxTeamsToShow = 15 }:
                 <YAxis 
                   dataKey="name"
                   type="category" 
-                  width={140} // Aumentado para acomodar "Outros (N)"
-                  tick={{ 
-                    fontSize: 11, // Reduzido para comportar mais texto
-                    fontWeight: 500,
-                    fill: isDark ? "#94a3b8" : "#64748b"
-                  }}
+                  width={90} // Reduzido para menos espaço à esquerda
+                  tick={<CustomYAxisTick />}
                   tickLine={false}
                   axisLine={{ stroke: isDark ? "#333333" : "#e0e0e0" }}
                   interval={0} // Mostrar todos os labels

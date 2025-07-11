@@ -34,7 +34,6 @@ const Index = () => {
     savingsOpportunitiesData,
     spendingTeamsData,
     forecastData,
-    resourcesData,
     complianceData,
     kpiData,
     costEventsData,
@@ -129,7 +128,6 @@ const Index = () => {
             savingsOpportunitiesData={savingsOpportunitiesData}
             spendingTeamsData={spendingTeamsData}
             forecastData={forecastData}
-            resourcesData={resourcesData}
             complianceData={complianceData}
             kpiData={kpiData}
             costEventsData={costEventsData}

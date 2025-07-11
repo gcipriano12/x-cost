@@ -28,7 +28,6 @@ export default function Dashboard({ children }: DashboardProps) {
     savingsOpportunitiesData,
     spendingTeamsData,
     forecastData,
-    resourcesData,
     complianceData,
     kpiData,
     costEventsData,
@@ -67,7 +66,6 @@ export default function Dashboard({ children }: DashboardProps) {
                 savingsOpportunitiesData={savingsOpportunitiesData}
                 spendingTeamsData={spendingTeamsData}
                 forecastData={forecastData}
-                resourcesData={resourcesData}
                 complianceData={complianceData}
                 kpiData={kpiData}
                 costEventsData={costEventsData}

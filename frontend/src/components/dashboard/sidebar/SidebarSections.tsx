@@ -63,7 +63,10 @@ export const SidebarSections = () => {
   return (
     <>
       {/* Seção Inform */}
-      <SidebarGroup className={cn(isMobile && openMobile && 'mobile-expanded-group-spacing')}>
+      <SidebarGroup className={cn(
+        !showText && 'collapsed-compact-spacing',
+        showText && 'expanded-compact-spacing'
+      )}>
         <div className={`px-3 text-xs font-semibold text-[#0080af] ${showText ? "" : "hidden"}`}>
           {t('categories.inform')}
         </div>
@@ -75,7 +78,10 @@ export const SidebarSections = () => {
       </SidebarGroup>
 
       {/* Seção Optimize */}
-      <SidebarGroup className={cn(isMobile && openMobile && 'mobile-expanded-group-spacing')}>
+      <SidebarGroup className={cn(
+        !showText && 'collapsed-compact-spacing',
+        showText && 'expanded-compact-spacing'
+      )}>
         <div className={`px-3 text-xs font-semibold text-[#bd3bfd] ${showText ? "" : "hidden"}`}>
           {t('categories.optimize')}
         </div>
@@ -87,7 +93,10 @@ export const SidebarSections = () => {
       </SidebarGroup>
 
       {/* Seção Operate */}
-      <SidebarGroup className={cn(isMobile && openMobile && 'mobile-expanded-group-spacing')}>
+      <SidebarGroup className={cn(
+        !showText && 'collapsed-compact-spacing',
+        showText && 'expanded-compact-spacing'
+      )}>
         <div className={`px-3 text-xs font-semibold text-[#00c693] ${showText ? "" : "hidden"}`}>
           {t('categories.operate')}
         </div>

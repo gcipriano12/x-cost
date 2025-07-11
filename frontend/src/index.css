@@ -156,16 +156,59 @@
   color: #888;
 }
 
-.mobile-expanded-group-spacing {
-  padding-top: 0; /* Remove padding superior */
-  padding-bottom: 0; /* Remove padding inferior */
-  margin-top: -0.25rem; /* Margem negativa maior para aproximar ainda mais as seções */
-  /* Manter padding horizontal padrão de p-1.5 */
-  padding-left: 0.375rem;
-  padding-right: 0.375rem;
+/* Ajuste sutil para sidebar EXPANDIDA - apenas reduzir espaço entre seções */
+.expanded-compact-spacing {
+  /* Manter todo o padding normal, apenas ajustar margem entre seções */
+  margin-top: -0.375rem; /* Margem negativa pequena para aproximar seções */
 }
 
-/* Reduzir espaçamento entre itens da sidebar quando colapsada */
+/* Primeira seção sem margem negativa superior */
+.expanded-compact-spacing:first-child {
+  margin-top: 0; /* Primeira seção mantém posição normal */
+}
+
+/* Espaçamento compacto para sidebar COLAPSADA */
+.collapsed-compact-spacing {
+  padding: 0.100rem !important; /* Padding muito reduzido */
+  margin-top: -0.25rem; /* Margem negativa para aproximar grupos */
+  margin-bottom: -0.25rem;
+}
+
+/* Primeira seção sem margem negativa superior */
+.collapsed-compact-spacing:first-child {
+  margin-top: 0;
+}
+
+/* Reduzir espaçamento entre os itens quando colapsada */
+.collapsed-compact-spacing [data-sidebar="menu"] {
+  gap: 0.125rem !important; /* Gap mínimo entre ícones */
+}
+
+/* Botões de menu mais compactos quando colapsada */
+.collapsed-compact-spacing [data-sidebar="menu-button"] {
+  height: 2rem !important; /* Altura reduzida */
+  min-height: 2rem !important;
+  padding: 0.25rem !important;
+  margin: 0.125rem 0 !important; /* Margem vertical mínima */
+}
+
+/* Para telas pequenas, compactar ainda mais */
+@media (max-height: 768px) {
+  .collapsed-compact-spacing {
+    padding: 0.0625rem !important; /* Padding ainda menor */
+    margin-top: -0.375rem;
+    margin-bottom: -0.375rem;
+  }
+  
+  .collapsed-compact-spacing [data-sidebar="menu-button"] {
+    height: 1.75rem !important; /* Altura ainda menor */
+    min-height: 1.75rem !important;
+    padding: 0.125rem !important;
+    margin: 0.0625rem 0 !important;
+  }
+}
+
+/* Reduzir espaçamento entre itens da sidebar quando colapsada - BACKUP */
 .sidebar-compact-spacing {
   gap: 0.25rem !important; /* Reduz gap entre grupos */
 }

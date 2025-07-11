@@ -33,6 +33,9 @@ import Governance from "./pages/Governance";
 import Analytics from "./pages/Analytics";
 import Credentials from "./pages/Credentials";
 import TeamSpending from "./pages/TeamSpending";
+import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
+import Support from "./pages/Support";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +82,9 @@ const App = () => {
                 <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
                 <Route path="/credentials" element={<ProtectedRoute><Credentials /></ProtectedRoute>} />
                 <Route path="/team-spending" element={<ProtectedRoute><TeamSpending /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

@@ -65,11 +65,11 @@ export const SidebarUserMenu = () => {
             <Key className="mr-2 h-4 w-4" />
             {t('common.credentials')}
           </DropdownMenuItem>
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate('/settings')}>
             <Settings className="mr-2 h-4 w-4" />
             {t('common.settings')}
           </DropdownMenuItem>
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate('/support')}>
             <HelpCircle className="mr-2 h-4 w-4" />
             {t('common.support')}
           </DropdownMenuItem>

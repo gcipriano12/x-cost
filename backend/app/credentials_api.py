@@ -997,6 +997,15 @@ async def _test_aws_data_access(credential_data: dict, role_arn: str = None, ext
         import boto3
         from botocore.exceptions import ClientError, NoCredentialsError
         
+        # Verificar se é LocalStack
+        is_localstack = (
+            credential_data.get('account_id') == '000000000000' or
+            credential_data.get('access_key_id') == 'test'
+        )
+        
+        # Configurar endpoint para LocalStack
+        endpoint_url = "http://localhost:4566" if is_localstack else None
+        
         # Criar cliente com credenciais base
         if 'aws_access_key_id' in credential_data:
             session = boto3.Session(
@@ -1004,12 +1013,18 @@ async def _test_aws_data_access(credential_data: dict, role_arn: str = None, ext
                 aws_secret_access_key=credential_data['aws_secret_access_key'],
                 region_name=credential_data.get('region', 'us-east-1')
             )
+        elif 'access_key_id' in credential_data:
+            session = boto3.Session(
+                aws_access_key_id=credential_data['access_key_id'],
+                aws_secret_access_key=credential_data['secret_access_key'],
+                region_name=credential_data.get('region', 'us-east-1')
+            )
         else:
             session = boto3.Session()
         
         # Se role_arn fornecida, assumir role
-        if role_arn:
-            sts_client = session.client('sts')
+        if role_arn and not is_localstack:  # LocalStack Community não suporta assume role completo
+            sts_client = session.client('sts', endpoint_url=endpoint_url)
             assume_role_kwargs = {
                 'RoleArn': role_arn,
                 'RoleSessionName': 'xcost-data-validation',
@@ -1030,53 +1045,77 @@ async def _test_aws_data_access(credential_data: dict, role_arn: str = None, ext
         
         services_tested = []
         
-        # Testar Cost Explorer
-        try:
-            ce_client = session.client('ce', region_name='us-east-1')  # Cost Explorer é global
-            ce_client.get_cost_and_usage(
-                TimePeriod={
-                    'Start': '2024-01-01',
-                    'End': '2024-01-02'
-                },
-                Granularity='DAILY',
-                Metrics=['BlendedCost']
-            )
-            services_tested.append({"service": "Cost Explorer", "status": "SUCCESS"})
-        except ClientError as e:
+        if is_localstack:
+            # Para LocalStack, testar serviços disponíveis
+            try:
+                s3_client = session.client('s3', endpoint_url=endpoint_url)
+                s3_client.list_buckets()
+                services_tested.append({"service": "S3", "status": "SUCCESS"})
+            except Exception as e:
+                services_tested.append({
+                    "service": "S3", 
+                    "status": "FAILED", 
+                    "error": str(e)
+                })
+            
+            # Cost Explorer não disponível no LocalStack Community
             services_tested.append({
                 "service": "Cost Explorer", 
-                "status": "FAILED", 
-                "error": str(e)
+                "status": "NOT_AVAILABLE", 
+                "message": "Cost Explorer não disponível no LocalStack Community"
             })
-        except Exception as e:
-            services_tested.append({
-                "service": "Cost Explorer", 
-                "status": "ERROR", 
-                "error": str(e)
-            })
-        
-        # Testar S3 (para Cost and Usage Reports)
-        try:
-            s3_client = session.client('s3')
-            s3_client.list_buckets()
-            services_tested.append({"service": "S3", "status": "SUCCESS"})
-        except ClientError as e:
-            services_tested.append({
-                "service": "S3", 
-                "status": "FAILED", 
-                "error": str(e)
-            })
-        except Exception as e:
-            services_tested.append({
-                "service": "S3", 
-                "status": "ERROR", 
-                "error": str(e)
-            })
+        else:
+            # Para AWS real, testar Cost Explorer
+            try:
+                ce_client = session.client('ce', region_name='us-east-1', endpoint_url=endpoint_url)
+                ce_client.get_cost_and_usage(
+                    TimePeriod={
+                        'Start': '2024-01-01',
+                        'End': '2024-01-02'
+                    },
+                    Granularity='DAILY',
+                    Metrics=['BlendedCost']
+                )
+                services_tested.append({"service": "Cost Explorer", "status": "SUCCESS"})
+            except ClientError as e:
+                services_tested.append({
+                    "service": "Cost Explorer", 
+                    "status": "FAILED", 
+                    "error": str(e)
+                })
+            except Exception as e:
+                services_tested.append({
+                    "service": "Cost Explorer", 
+                    "status": "ERROR", 
+                    "error": str(e)
+                })
+            
+            # Testar S3 (para Cost and Usage Reports)
+            try:
+                s3_client = session.client('s3', endpoint_url=endpoint_url)
+                s3_client.list_buckets()
+                services_tested.append({"service": "S3", "status": "SUCCESS"})
+            except ClientError as e:
+                services_tested.append({
+                    "service": "S3", 
+                    "status": "FAILED", 
+                    "error": str(e)
+                })
+            except Exception as e:
+                services_tested.append({
+                    "service": "S3", 
+                    "status": "ERROR", 
+                    "error": str(e)
+                })
         
         # Determinar status geral
         success_count = len([s for s in services_tested if s["status"] == "SUCCESS"])
+        available_count = len([s for s in services_tested if s["status"] in ["SUCCESS", "NOT_AVAILABLE"]])
+        
         if success_count == len(services_tested):
             status = "SUCCESS"
+        elif available_count == len(services_tested):
+            status = "SUCCESS_WITH_LIMITATIONS"
         elif success_count > 0:
             status = "PARTIAL"
         else:
@@ -1085,7 +1124,8 @@ async def _test_aws_data_access(credential_data: dict, role_arn: str = None, ext
         return {
             "status": status,
             "services": services_tested,
-            "role_used": role_arn or "base_credentials"
+            "role_used": role_arn or "base_credentials",
+            "environment": "LocalStack" if is_localstack else "AWS"
         }
         
     except Exception as e:
@@ -1469,6 +1509,7 @@ async def validate_credentials_background(
                     credential.validation_error = validation_result.get('error_message')
                 
                 credential.last_validated = datetime.utcnow()
+                db.commit()  # COMMIT ESTAVA FALTANDO!
                 
                 logger.info(f"Background validation completed for credential {credential_id}: {validation_result['is_valid']}")
             

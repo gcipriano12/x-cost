@@ -126,61 +126,21 @@ async def get_anomalies(
         # Mapear provider para formato interno (título para matching com dados simulados)
         provider_name = provider.upper() if provider else None
         
-        # Buscar anomalias
-        anomalies = await service.get_anomalies_by_provider(provider_name=provider_name)
+        # Usar sistema otimizado de busca de anomalias
+        from app.optimized_anomalies import get_optimized_anomalies
         
-        # Aplicar filtros
-        filtered_anomalies = []
-        for anomaly in anomalies:
-            # Filtro por severidade
-            if severity and hasattr(anomaly, 'severity') and anomaly.severity.lower() != severity.lower():
-                continue
-            
-            # Filtro por tipo de anomalia
-            if anomaly_type and hasattr(anomaly, 'anomaly_type') and anomaly_type.lower() not in anomaly.anomaly_type.lower():
-                continue
-            
-            # Filtro por nome do serviço
-            if service_name and hasattr(anomaly, 'service') and service_name.lower() not in anomaly.service.lower():
-                continue
-            
-            # Filtro por impacto de custo mínimo
-            if min_cost_impact is not None and hasattr(anomaly, 'cost_impact') and anomaly.cost_impact < min_cost_impact:
-                continue
-            
-            # Filtro por impacto de custo máximo
-            if max_cost_impact is not None and hasattr(anomaly, 'cost_impact') and anomaly.cost_impact > max_cost_impact:
-                continue
-            
-            # Filtro por data
-            if start_date and hasattr(anomaly, 'detected_at'):
-                anomaly_date = anomaly.detected_at.date() if hasattr(anomaly.detected_at, 'date') else anomaly.detected_at
-                if anomaly_date < start_date:
-                    continue
-            
-            if end_date and hasattr(anomaly, 'detected_at'):
-                anomaly_date = anomaly.detected_at.date() if hasattr(anomaly.detected_at, 'date') else anomaly.detected_at
-                if anomaly_date > end_date:
-                    continue
-            
-            # Filtro de busca
-            if search:
-                search_term = search.lower()
-                searchable_fields = []
-                
-                if hasattr(anomaly, 'resource_name'):
-                    searchable_fields.append(str(anomaly.resource_name).lower())
-                if hasattr(anomaly, 'description'):
-                    searchable_fields.append(str(anomaly.description).lower())
-                if hasattr(anomaly, 'service'):
-                    searchable_fields.append(str(anomaly.service).lower())
-                if hasattr(anomaly, 'anomaly_type'):
-                    searchable_fields.append(str(anomaly.anomaly_type).lower())
-                
-                if not any(search_term in field for field in searchable_fields):
-                    continue
-            
-            filtered_anomalies.append(anomaly)
+        filtered_anomalies = await get_optimized_anomalies(
+            provider_name=provider_name,
+            severity=severity,
+            anomaly_type=anomaly_type,
+            service_name=service_name,
+            min_cost_impact=min_cost_impact,
+            max_cost_impact=max_cost_impact,
+            start_date=start_date,
+            end_date=end_date,
+            search=search,
+            service=service
+        )
         
         # Ordenação
         def get_sort_key(anomaly):
@@ -612,6 +572,69 @@ async def get_optimization_types():
             RecommendationType.SCHEDULING: "Resource scheduling optimizations"
         }
     })
+
+
+@router.post("/cache/clear")
+@rate_limit(max_requests=10, window_minutes=1)
+async def clear_optimization_cache(
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Limpa o cache de otimização (anomalias, oportunidades, etc.)
+    
+    **Rate Limiting:** 10 requests per minute per user
+    """
+    try:
+        from app.optimized_anomalies import clear_anomalies_cache, get_cache_stats
+        
+        # Obter estatísticas antes de limpar
+        stats_before = get_cache_stats()
+        
+        # Limpar cache
+        clear_anomalies_cache()
+        
+        # Obter estatísticas depois
+        stats_after = get_cache_stats()
+        
+        logger.info(f"Cache de otimização limpo por {current_user.username}")
+        
+        return StandardResponse.success({
+            "message": "Cache de otimização limpo com sucesso",
+            "cache_stats_before": stats_before,
+            "cache_stats_after": stats_after,
+            "cleared_by": current_user.username,
+            "timestamp": datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro ao limpar cache de otimização: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao limpar cache")
+
+
+@router.get("/cache/stats")
+@rate_limit(max_requests=50, window_minutes=1)
+async def get_optimization_cache_stats(
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Obtém estatísticas do cache de otimização
+    
+    **Rate Limiting:** 50 requests per minute per user
+    """
+    try:
+        from app.optimized_anomalies import get_cache_stats
+        
+        stats = get_cache_stats()
+        
+        return StandardResponse.success({
+            "cache_stats": stats,
+            "timestamp": datetime.utcnow().isoformat(),
+            "requested_by": current_user.username
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro ao obter estatísticas do cache: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao obter estatísticas do cache")
 
 
 # Alias para compatibilidade

@@ -7,6 +7,8 @@ Endpoints para análise avançada de custos e dashboards
 import logging
 from datetime import date, datetime, timedelta
 from typing import Optional, Dict, Any
+from functools import lru_cache
+import hashlib
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -21,10 +23,15 @@ from app.cost_analytics import CostAnalyzer, DashboardAnalyzer
 from app.forecast_analytics import ForecastAnalyzer
 from app.forecast_models import ForecastMethod, ForecastResponse
 from app.utils.response_helpers import StandardResponse, calculate_processing_time
+from app.schemas.seasonality import SeasonalityResponse
 from app.utils.validators import validate_date_range
 from app.forecast_analytics import ForecastAnalyzer, ForecastMethod, ForecastResponse
 
 logger = logging.getLogger(__name__)
+
+# Cache para seasonality (1 hora de duração)
+_seasonality_cache = {}
+_cache_duration_seconds = 3600  # 1 hora
 
 # Criar router
 router = APIRouter(prefix="/api/v1", tags=["Analytics"])
@@ -1267,3 +1274,100 @@ async def get_dashboard_highlights(
         "highlights": highlights,
         "provider": provider_name or "All Providers"
     }
+
+
+@router.get("/analytics/seasonality")
+@calculate_processing_time
+async def get_cost_seasonality(
+    provider_name: Optional[str] = Query(None, description="Filter by provider (AWS, Azure, GCP)"),
+    period: str = Query("current_month", description="Analysis period (current_month, current_quarter)"),
+    team_id: Optional[str] = Query(None, description="Filter by team ID"),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_database)
+):
+    """
+    Obtém métricas de sazonalidade de custos
+    
+    Analisa padrões sazonais incluindo:
+    - Comparação mensal vs histórico
+    - Aderência ao padrão semanal
+    - Progresso até pico sazonal
+    - Variação vs tendência de longo prazo
+    
+    **Parâmetros:**
+    - **provider_name**: Filtro por provedor (AWS, Azure, GCP)
+    - **period**: Período de análise (current_month, current_quarter)
+    - **team_id**: Filtro por equipe específica
+    
+    **Retorna:**
+    - Métricas de sazonalidade (0-100%)
+    - Status do padrão sazonal (normal/attention/alert)
+    - Metadados da análise
+    """
+    try:
+        from app.services.seasonality_analyzer import SeasonalityAnalyzer
+        
+        # Validar parâmetros
+        if period not in ["current_month", "current_quarter"]:
+            raise HTTPException(
+                status_code=400,
+                detail="Period must be 'current_month' or 'current_quarter'"
+            )
+        
+        if provider_name and provider_name not in ["AWS", "Azure", "GCP", "Google Cloud"]:
+            raise HTTPException(
+                status_code=400, 
+                detail="Provider must be AWS, Azure, or GCP"
+            )
+        
+        # Gerar chave de cache
+        cache_key = f"seasonality_{provider_name or 'all'}_{period}_{team_id or 'all'}"
+        current_time = datetime.utcnow()
+        
+        # Verificar cache
+        if cache_key in _seasonality_cache:
+            cached_data, cached_time = _seasonality_cache[cache_key]
+            if (current_time - cached_time).total_seconds() < _cache_duration_seconds:
+                logger.info(f"Returning cached seasonality data for {cache_key}")
+                return cached_data
+        
+        # Inicializar analisador
+        analyzer = SeasonalityAnalyzer(db)
+        
+        # Realizar análise
+        result = analyzer.analyze_seasonality(
+            provider_name=provider_name,
+            period=period,
+            team_id=team_id
+        )
+        
+        # Converter para formato camelCase esperado pelo frontend
+        response_data = {
+            "monthlyComparison": result.monthlyComparison,
+            "weeklyPattern": result.weeklyPattern,
+            "seasonalProgress": result.seasonalProgress,
+            "trendVariation": result.trendVariation,
+            "status": result.status,
+            "lastUpdated": result.lastUpdated.isoformat(),
+            "metadata": {
+                "historicalMonths": result.metadata.historicalMonths,
+                "dataQuality": result.metadata.dataQuality,
+                "nextPeakExpected": result.metadata.nextPeakExpected,
+            }
+        }
+        
+        # Salvar no cache
+        _seasonality_cache[cache_key] = (response_data, current_time)
+        
+        logger.info(f"Seasonality analysis completed for user {current_user.username}")
+        
+        return response_data
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in seasonality analysis: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error during seasonality analysis"
+        )

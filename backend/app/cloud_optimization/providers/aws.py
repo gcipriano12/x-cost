@@ -579,39 +579,53 @@ class AWSOptimizationService(BaseOptimizationService):
         import random
         import uuid
         
+        # Verificar cache interno primeiro
+        cache_key = f"simulated_anomalies_{days}_{min_impact}"
+        cache_time = getattr(self, '_simulation_cache_time', None)
+        current_time = datetime.utcnow()
+        
+        # Cache por 10 minutos para reduzir gerações desnecessárias
+        if (hasattr(self, '_simulation_cache') and 
+            cache_time and 
+            (current_time - cache_time).total_seconds() < 600):
+            self.logger.info("Usando anomalias simuladas do cache interno")
+            return self._simulation_cache.get(cache_key, [])
+        
+        self.logger.info(f"Gerando novas anomalias simuladas (cache expirado ou inexistente)")
+        
         simulated_anomalies = []
         
         # Calcular datas
         end_date = datetime.utcnow()
         start_date = end_date - timedelta(days=days)
         
-        # Dados por provedor
+        # Reduzir dados por provedor para otimização
         provider_data = {
             'AWS': {
-                'services': ['EC2', 'S3', 'RDS', 'Lambda', 'CloudFront', 'EBS', 'VPC', 'Route53'],
-                'regions': ['us-east-1', 'us-west-2', 'eu-west-1', 'ap-southeast-1']
+                'services': ['EC2', 'S3', 'RDS', 'Lambda'],
+                'regions': ['us-east-1', 'us-west-2']
             },
             'Azure': {
-                'services': ['Virtual Machines', 'Storage Account', 'SQL Database', 'Functions', 'CDN', 'Virtual Network', 'Load Balancer'],
-                'regions': ['East US', 'West US 2', 'West Europe', 'Southeast Asia']
+                'services': ['Virtual Machines', 'Storage Account', 'SQL Database'],
+                'regions': ['East US', 'West US 2']
             },
             'GCP': {
-                'services': ['Compute Engine', 'Cloud Storage', 'Cloud SQL', 'Cloud Functions', 'Cloud CDN', 'VPC', 'Cloud Load Balancing'],
-                'regions': ['us-central1', 'us-west1', 'europe-west1', 'asia-southeast1']
+                'services': ['Compute Engine', 'Cloud Storage', 'Cloud SQL'],
+                'regions': ['us-central1', 'us-west1']
             },
             'Oracle': {
-                'services': ['Compute', 'Object Storage', 'Autonomous Database', 'Functions', 'Load Balancer', 'Virtual Cloud Network'],
-                'regions': ['us-ashburn-1', 'us-phoenix-1', 'eu-frankfurt-1', 'ap-tokyo-1']
+                'services': ['Compute', 'Object Storage', 'Autonomous Database'],
+                'regions': ['us-ashburn-1', 'us-phoenix-1']
             }
         }
         
         anomaly_types = ['spike', 'drift', 'unusual_pattern', 'cost_increase']
         severities = ['low', 'medium', 'high', 'critical']
         
-        # Gerar anomalias para cada provedor
+        # Gerar anomalias para cada provedor (reduzido para performance)
         for provider, data in provider_data.items():
-            # Gerar 1-3 anomalias por provedor
-            num_anomalies = random.randint(1, 3)
+            # Gerar 1-2 anomalias por provedor (reduzido de 1-3)
+            num_anomalies = random.randint(1, 2)
             
             for i in range(num_anomalies):
                 service = random.choice(data['services'])
@@ -659,7 +673,13 @@ class AWSOptimizationService(BaseOptimizationService):
                 
                 simulated_anomalies.append(anomaly)
         
-        self.logger.info(f"Geradas {len(simulated_anomalies)} anomalias simuladas para {len(provider_data)} provedores")
+        # Salvar no cache interno
+        if not hasattr(self, '_simulation_cache'):
+            self._simulation_cache = {}
+        self._simulation_cache[cache_key] = simulated_anomalies
+        self._simulation_cache_time = current_time
+        
+        self.logger.info(f"Geradas e cacheadas {len(simulated_anomalies)} anomalias simuladas para {len(provider_data)} provedores")
         return simulated_anomalies
     
     def _normalize_aws_anomaly(self, aws_anomaly: dict) -> Optional[CloudAnomaly]:

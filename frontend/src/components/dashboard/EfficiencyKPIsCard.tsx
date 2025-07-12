@@ -259,7 +259,7 @@ export function EfficiencyKPIsCard({ kpis, isUsingMockData = false }: Efficiency
                               maximumFractionDigits: 2
                             }) 
                           : kpi.value}
-                        {kpi.unit && <span className="text-sm font-normal ml-1">{kpi.unit}</span>}
+                        {kpi.unit && <span className="text-sm font-normal ml-1">{t(kpi.unit, kpi.unit)}</span>}
                       </div>
                       {getTrendIcon(kpi.trend, kpi.isGoodWhenHigher)}
                     </div>
@@ -268,7 +268,7 @@ export function EfficiencyKPIsCard({ kpis, isUsingMockData = false }: Efficiency
                         {t('kpis.target')}: {kpi.target.toLocaleString('en-US', {
                           minimumFractionDigits: kpi.target % 1 !== 0 ? 2 : 0,
                           maximumFractionDigits: 2
-                        })}{kpi.unit}
+                        })}{kpi.unit && t(kpi.unit, kpi.unit)}
                       </div>
                     )}
                   </div>

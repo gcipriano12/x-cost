@@ -375,6 +375,16 @@
       "unallocatedCostPercentage": "(Unallocated Costs ÷ Total Cloud Spend) × 100",
       "tagPolicyComplianceRate": "(Properly Tagged Resources ÷ Total Resources) × 100",
       "anomalyDetectionSavings": "Sum of (Predicted Spike Cost - Cost at Shutdown)"
+    },
+    "units": {
+      "percentage": "%",
+      "currencyPerUnit": "/unit",
+      "currencyPerHour": "/hour", 
+      "currencyPerVCPU": "/vCPU",
+      "currency": "",
+      "ratio": "",
+      "decimal": "",
+      "count": ""
     }
   },
   "benchmarks": {

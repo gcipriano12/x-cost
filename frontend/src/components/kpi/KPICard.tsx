@@ -42,12 +42,12 @@ export const KPICard: React.FC<KPICardProps> = ({ kpi, onClick, compact = false 
   }[kpi.status];
   
   // Ícone de tendência
-  const TrendIcon = kpi.trend && kpi.trend > 0 ? TrendingUp : 
-                   kpi.trend && kpi.trend < 0 ? TrendingDown : Minus;
+  const TrendIcon = (kpi.trend && typeof kpi.trend === 'number' && kpi.trend > 0) ? TrendingUp : 
+                   (kpi.trend && typeof kpi.trend === 'number' && kpi.trend < 0) ? TrendingDown : Minus;
   
   // Cor da tendência baseada em is_good_when_higher
   const getTrendColor = () => {
-    if (!kpi.trend || kpi.trend === 0) return 'text-gray-500';
+    if (!kpi.trend || typeof kpi.trend !== 'number' || kpi.trend === 0) return 'text-gray-500';
     
     const isPositiveTrend = kpi.trend > 0;
     const isGoodTrend = kpi.is_good_when_higher ? isPositiveTrend : !isPositiveTrend;
@@ -56,7 +56,9 @@ export const KPICard: React.FC<KPICardProps> = ({ kpi, onClick, compact = false 
   };
   
   // Calcular progresso em relação ao target
-  const progress = kpi.target ? (kpi.value / kpi.target) * 100 : 0;
+  const progress = (kpi.target && typeof kpi.value === 'number' && typeof kpi.target === 'number') 
+    ? (kpi.value / kpi.target) * 100 
+    : 0;
   const progressCapped = Math.min(Math.max(progress, 0), 100);
   
   if (compact) {
@@ -74,7 +76,7 @@ export const KPICard: React.FC<KPICardProps> = ({ kpi, onClick, compact = false 
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm font-mono">
-            {kpi.value.toFixed(kpi.unit === '%' ? 1 : 2)}{kpi.unit}
+            {typeof kpi.value === 'number' ? kpi.value.toFixed(kpi.unit === '%' ? 1 : 2) : kpi.value}{kpi.unit}
           </span>
           <TrendIcon className={cn("h-4 w-4", getTrendColor())} />
         </div>
@@ -103,7 +105,7 @@ export const KPICard: React.FC<KPICardProps> = ({ kpi, onClick, compact = false 
           {/* Valor principal */}
           <div className="flex items-baseline justify-between">
             <span className="text-2xl font-bold">
-              {kpi.value.toFixed(kpi.unit === '%' ? 1 : 2)}
+              {typeof kpi.value === 'number' ? kpi.value.toFixed(kpi.unit === '%' ? 1 : 2) : kpi.value}
             </span>
             <span className="text-sm text-gray-500">{kpi.unit}</span>
           </div>
@@ -112,7 +114,7 @@ export const KPICard: React.FC<KPICardProps> = ({ kpi, onClick, compact = false 
           <div className="flex items-center gap-2">
             <TrendIcon className={cn("h-4 w-4", getTrendColor())} />
             <span className={cn("text-sm", getTrendColor())}>
-              {kpi.trend && kpi.trend > 0 ? '+' : ''}{kpi.trend?.toFixed(1)}%
+              {(kpi.trend && typeof kpi.trend === 'number' && kpi.trend > 0) ? '+' : ''}{typeof kpi.trend === 'number' ? kpi.trend.toFixed(1) : (kpi.trend || '0')}%
             </span>
           </div>
           
@@ -120,7 +122,7 @@ export const KPICard: React.FC<KPICardProps> = ({ kpi, onClick, compact = false 
           {kpi.target && (
             <div className="space-y-1">
               <div className="flex justify-between text-xs text-gray-500">
-                <span>Target: {kpi.target}{kpi.unit}</span>
+                <span>Target: {typeof kpi.target === 'number' ? kpi.target.toFixed(kpi.unit === '%' ? 1 : 2) : kpi.target}{kpi.unit}</span>
                 <span>{progressCapped.toFixed(0)}%</span>
               </div>
               <Progress 

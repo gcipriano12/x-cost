@@ -367,6 +367,16 @@
       "unallocatedCostPercentage": "(Custos não alocados ÷ Gasto total na nuvem) × 100",
       "tagPolicyComplianceRate": "(Recursos corretamente tagueados ÷ Total de recursos) × 100",
       "anomalyDetectionSavings": "Soma de (Custo previsto do pico - Custo no desligamento)"
+    },
+    "units": {
+      "percentage": "%",
+      "currencyPerUnit": "/unidade",
+      "currencyPerHour": "/hora", 
+      "currencyPerVCPU": "/vCPU",
+      "currency": "",
+      "ratio": "",
+      "decimal": "",
+      "count": ""
     }
   },
   

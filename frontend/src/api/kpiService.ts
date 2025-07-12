@@ -1,4 +1,4 @@
-import apiClient from '@/api/client';
+import { apiClient } from '@/api/client';
 import { KPIValue, KPICategoryResponse, KPIConfig, KPICategory } from '@/types/kpi.types';
 
 class KPIService {

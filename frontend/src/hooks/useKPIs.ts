@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import kpiService from '@/api/kpiService';
 import { KPICategory } from '@/types/kpi.types';
-import { toast } from '@/hooks/useToast';
+import { toast } from '@/components/ui/use-toast';
 
 export const useKPIs = (category?: KPICategory) => {
   const queryClient = useQueryClient();

@@ -300,9 +300,13 @@
   "sections": {
     "kpis": "Key Performance Indicators",
     "eficiencia": "Efficiency",
+    "eficienciaShort": "Effic.",
     "tarifacao": "Pricing",
+    "tarifacaoShort": "Pric.",
     "planejamento": "Planning",
+    "planejamentoShort": "Plan.",
     "governanca": "Governance",
+    "governancaShort": "Gov.",
     "noKpisForCategory": "No KPIs available for this category",
     "servicesAndForecasts": "Services and Forecasts",
     "trendsAndUtilization": "Trends and Utilization", 

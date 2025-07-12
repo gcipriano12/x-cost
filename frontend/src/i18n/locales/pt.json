@@ -294,11 +294,15 @@
     "trendsAndUtilization": "Tendências e Utilização", 
     "indicatorsAndEvents": "Indicadores e Eventos",
     "comparisonsAndReferences": "Comparativos e Referências",
-    "kpis": "Indicadores Chave de Performance",
+    "kpis": "Indicadores de Performance",
     "eficiencia": "Eficiência",
+    "eficienciaShort": "Efic.",
     "tarifacao": "Tarifação",
+    "tarifacaoShort": "Tarif.",
     "planejamento": "Planejamento",
+    "planejamentoShort": "Planej.",
     "governanca": "Governança",
+    "governancaShort": "Gov.",
     "noKpisForCategory": "Nenhum KPI disponível para esta categoria"
   },
   

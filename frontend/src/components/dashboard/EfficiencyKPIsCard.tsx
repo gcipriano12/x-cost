@@ -85,6 +85,14 @@ export function EfficiencyKPIsCard({ kpis, isUsingMockData = false }: Efficiency
     governanca: t('sections.governanca')
   };
 
+  // Labels curtos para telas pequenas
+  const CATEGORY_LABELS_SHORT: Record<KPICategory, string> = {
+    eficiencia: t('sections.eficienciaShort'),
+    tarifacao: t('sections.tarifacaoShort'),
+    planejamento: t('sections.planejamentoShort'),
+    governanca: t('sections.governancaShort')
+  };
+
   // Gerar cores de categoria com base no tema atual
   const CATEGORY_COLORS = createCategoryColors(isDark);
 
@@ -159,14 +167,14 @@ export function EfficiencyKPIsCard({ kpis, isUsingMockData = false }: Efficiency
           </div>
           
           {/* Container com scroll horizontal para telas pequenas */}
-          <div className="w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 -mx-1 px-1">
-            <div className="flex space-x-1 min-w-max">
+          <div className="w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 -mx-2 px-1">
+            <div className="flex space-x-0.5 sm:space-x-1 min-w-max">
               {categories.map((category) => (
                 <Button
                   key={category}
                   variant={activeCategory === category ? "default" : "outline"}
                   size="sm"
-                  className={`px-2 sm:px-3 py-1 h-8 text-xs ${
+                  className={`px-1.5 sm:px-3 py-1 h-8 text-xs whitespace-nowrap ${
                     activeCategory === category 
                       ? `${CATEGORY_COLORS[category].bg} ${CATEGORY_COLORS[category].hover} text-white` 
                       : cn(
@@ -179,7 +187,8 @@ export function EfficiencyKPIsCard({ kpis, isUsingMockData = false }: Efficiency
                   }`}
                   onClick={() => handleCategoryChange(category)}
                 >
-                  {CATEGORY_LABELS[category]}
+                  <span className="hidden md:inline">{CATEGORY_LABELS[category]}</span>
+                  <span className="md:hidden">{CATEGORY_LABELS_SHORT[category]}</span>
                 </Button>
               ))}
             </div>

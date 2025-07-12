@@ -38,6 +38,7 @@ from app.routers.analytics_api import router as analytics_router
 from app.routers.optimization_api import optimization_router
 from app.routers.services_api import router as services_router
 from app.routers.team_costs import router as team_costs_router
+from app.routers.kpi_api import router as kpi_router
 from app.virtual_tags_api import router as virtual_tags_router
 
 # Utilities
@@ -225,6 +226,9 @@ app.include_router(budget_router)
 # Routers de analytics e otimização (novos)
 app.include_router(analytics_router)
 app.include_router(optimization_router)
+
+# Router de KPIs
+app.include_router(kpi_router)
 
 # Router de services
 app.include_router(services_router)
